@@ -3,11 +3,11 @@ import * as pty from "node-pty";
 import sflow from "sflow";
 
 await main();
-new Map([])
+
 export default async function main() {
     console.clear()
 
-    const PREFIXLENGTH = 7 // length of "sflow |" prefix
+    const PREFIXLENGTH = 0
     const shell = pty.spawn('claude', [], {
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
@@ -24,7 +24,6 @@ export default async function main() {
     process.stdin.setRawMode(true)
     await sflow(fromReadable<Buffer>(process.stdin))
         .map((e) => e.toString())
-        // .log(e => "input |" + JSON.stringify(e))
         .by({
             writable: new WritableStream<string>({ write: (data) => shell.write(data) }),
             readable: new ReadableStream<string>({
@@ -47,12 +46,8 @@ export default async function main() {
                     shell.write("\r")
                 }
             })
-            // .lines({ EOL: "NONE" })
-            // .log(e => "forked|" + (e))
             .run()
         )
-        // .lines({ EOL: "LF" })
-        // .map(e => 'sflow |' + e)
         .to(fromWritable(process.stdout));
 
 }
