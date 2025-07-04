@@ -1,0 +1,41 @@
+{
+  "name": "main",
+  "version": "0.0.0",
+  "homepage": "https://github.com/snomiao/auto-claude#readme",
+  "license": "MIT",
+  "author": "snomiao <snomiao@gmail.com>",
+  "files": [
+    "*.ts",
+    "dist"
+  ],
+  "repository": "https://github.com/snomiao/auto-claude",
+  "scripts": {
+    "build": "bun build index.ts --outdir=dist && bun build:umd",
+    "build:umd": "bunx rollup dist/index.js --file dist/index.umd.js --format umd --name \"main\"",
+    "prerelease": "bun run build && bun run test",
+    "release": "bunx standard-version && git push --follow-tags && npm publish",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.18",
+    "@types/jest": "^30.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "private": true,
+  "type": "module",
+  "exports": {
+    "import": "./dist/index.js",
+    "types": "./index.ts"
+  },
+  "module": "index.ts",
+  "types": "./index.ts",
+  "dependencies": {
+    "@types/node": "^24.0.10",
+    "from-node-stream": "^0.0.11",
+    "node-pty": "^1.0.0",
+    "sflow": "^1.20.2",
+    "strip-ansi-control-characters": "^2.0.0"
+  }
+}
