@@ -14,11 +14,14 @@
     "build:umd": "bunx rollup dist/index.js --file dist/index.umd.js --format umd --name \"main\"",
     "prerelease": "bun run build && bun run test",
     "release": "bunx standard-version && git push --follow-tags && npm publish",
-    "test": "bun test"
+    "test": "bun test",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/bun": "^1.2.18",
-    "@types/jest": "^30.0.0"
+    "@types/jest": "^30.0.0",
+    "husky": "^9.1.7",
+    "semantic-release": "^24.2.6"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
