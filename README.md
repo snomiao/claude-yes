@@ -18,6 +18,8 @@ bun install
 
 ## Usage
 
+⚠️ **Important Security Warning**: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation.
+
 ```bash
 bun run index.ts
 ```
