@@ -17,6 +17,8 @@ First, install Claude Code globally:
 npm install -g @anthropic-ai/claude-code
 ```
 
+Learn more about Claude Code: https://www.anthropic.com/claude-code
+
 Then install this project:
 
 ```bash
