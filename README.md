@@ -42,6 +42,17 @@ The tool will:
 - `test` - Run tests
 - `release` - Build, test, and publish a new version
 
+## Implementation
+
+The tool simply mirrors the terminal and looks for "❯ 1. Yes" patterns to automatically respond with "\r" to proceed with Claude's prompts.
+
+```
+❯ 1. Yes
+  2. No
+```
+
+The tool will automatically send "\r" when it detects this pattern.
+
 ## Dependencies
 
 - `node-pty` - For spawning and managing the Claude CLI process
