@@ -19,6 +19,8 @@ export default async function main() {
         const { columns, rows } = process.stdout;
         shell.resize(columns - PREFIXLENGTH, rows);
     });
+
+    // when claude process exits, exit the main process
     shell.onExit(({ exitCode, signal }) => {
         process.exit(exitCode);
     })
