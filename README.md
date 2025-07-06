@@ -8,6 +8,7 @@ A wrapper tool that automates interactions with the Claude CLI by automatically 
 
 - Same as `claude` command
 - Automatically responds to common prompts like "Yes, proceed" and "Yes"
+- So, this will Let claude run until your task done, and wait for your next prompt.
 
 ## Installation
 
@@ -29,8 +30,11 @@ npm install auto-claude -g
 
 
 ```bash
-auto-claude
+auto-claude [command] [prompts]
 # works exactly same as `claude` command, and automatically says "Yes" to all yes/no prompts
+
+# e.g.
+auto-claude "run all tests and commit current changes"
 
 ```
 
@@ -60,6 +64,10 @@ The tool will automatically send "\r" when it detects this pattern.
 - `node-pty` - For spawning and managing the Claude CLI process
 - `sflow` - For stream processing and data flow management
 - `from-node-stream` - For converting Node.js streams to web streams
+
+## Inspiration
+
+This project was inspired by: [Claude Code full auto while I sleep : r/ClaudeAI](https://www.reddit.com/r/ClaudeAI/comments/1klk6aw/claude_code_full_auto_while_i_sleep/)
 
 ## License
 
