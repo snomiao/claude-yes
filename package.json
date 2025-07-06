@@ -1,7 +1,7 @@
 {
   "name": "yes-claude",
   "version": "0.0.0",
-  "homepage": "https://github.com/snomiao/auto-claude#readme",
+  "homepage": "https://github.com/snomiao/yes-claude#readme",
   "license": "MIT",
   "author": "snomiao <snomiao@gmail.com>",
   "keywords": [
@@ -19,7 +19,7 @@
     "dist"
   ],
   "bin": "dist/index.js",
-  "repository": "https://github.com/snomiao/auto-claude",
+  "repository": "https://github.com/snomiao/yes-claude",
   "scripts": {
     "dev": "tsx index.ts",
     "build": "bun build index.ts --outdir=dist --target=node --banner=\"#!/usr/bin/env node\"",
