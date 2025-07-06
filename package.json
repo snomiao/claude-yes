@@ -8,12 +8,11 @@
     "*.ts",
     "dist"
   ],
+  "bin": "dist/index.js",
   "repository": "https://github.com/snomiao/auto-claude",
   "scripts": {
-    "build": "bun build index.ts --outdir=dist && bun build:umd",
-    "build:umd": "bunx rollup dist/index.js --file dist/index.umd.js --format umd --name \"main\"",
-    "prerelease": "bun run build && bun run test",
-    "release": "bunx standard-version && git push --follow-tags && npm publish",
+    "dev": "tsx index.ts",
+    "build": "bun build index.ts --outdir=dist --target=node --banner=\"#!/usr/bin/env node\"",
     "test": "bun test",
     "prepare": "husky"
   },
@@ -21,12 +20,12 @@
     "@types/bun": "^1.2.18",
     "@types/jest": "^30.0.0",
     "husky": "^9.1.7",
-    "semantic-release": "^24.2.6"
+    "semantic-release": "^24.2.6",
+    "tsx": "^4.20.3"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
   },
-  "private": true,
   "type": "module",
   "exports": {
     "import": "./dist/index.js",
