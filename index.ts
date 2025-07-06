@@ -6,8 +6,6 @@ import sflow from "sflow";
 if (esMain(import.meta)) await main();
 
 export default async function main() {
-    console.clear()
-
     const PREFIXLENGTH = 0
     const shell = pty.spawn('claude', process.argv.slice(2), {
         cols: process.stdout.columns - PREFIXLENGTH,
