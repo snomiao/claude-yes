@@ -2,7 +2,7 @@
 
 A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.
 
-⚠️ **Important Security Warning**: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation.
+⚠️ **Important Security Warning**: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.
 
 ## Features
 
