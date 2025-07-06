@@ -4,6 +4,16 @@
   "homepage": "https://github.com/snomiao/auto-claude#readme",
   "license": "MIT",
   "author": "snomiao <snomiao@gmail.com>",
+  "keywords": [
+    "claude",
+    "ai",
+    "automation",
+    "cli",
+    "wrapper",
+    "assistant",
+    "anthropic",
+    "auto-response"
+  ],
   "files": [
     "*.ts",
     "dist"
