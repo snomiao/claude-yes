@@ -28,6 +28,8 @@ npm install auto-claude -g
 
 ```bash
 auto-claude
+# works exactly same as `claude` command, and automatically says "Yes" to all yes/no prompts
+
 ```
 
 The tool will:
