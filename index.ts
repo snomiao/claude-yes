@@ -40,7 +40,7 @@ export default async function main() {
             .map(e => e.replaceAll('\r', '')) // remove carriage return
             .forEach(async e => {
                 if (e.match(/❯ 1. Yes/)) {
-                    await sleep(1000)
+                    await sleep(200)
                     shell.write("\r")
                 }
             })
