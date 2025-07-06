@@ -2,34 +2,39 @@
 
 A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.
 
+⚠️ **Important Security Warning**: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation.
+
 ## Features
 
-- Spawns and manages a Claude CLI process
+- Same as `claude` command
 - Automatically responds to common prompts like "Yes, proceed" and "Yes"
-- Streams output with prefixed logging for better visibility
-- Handles terminal resizing for proper PTY management
-- Filters and processes ANSI control characters
 
 ## Installation
 
+First, install Claude Code globally:
+
 ```bash
-bun install
+npm install -g @anthropic-ai/claude-code
+```
+
+Then install this project:
+
+```bash
+npm install auto-claude -g
 ```
 
 ## Usage
 
-⚠️ **Important Security Warning**: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation.
 
 ```bash
-bun run index.ts
+auto-claude
 ```
 
 The tool will:
 1. Clear the terminal
 2. Spawn a Claude CLI process
 3. Forward your input to Claude
-4. Automatically respond to confirmation prompts
-5. Display output with "sflow |" prefix
+4. Automatically say YES, YES, YES, YES, YES to claude
 
 ## Scripts
 
