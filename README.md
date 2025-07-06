@@ -42,12 +42,6 @@ The tool will:
 1. run Claude Code
 2. Whenever claude stucked on yes/no prompts, Automatically say YES, YES, YES, YES, YES to claude
 
-## Scripts
-
-- `build` - Build the project and create UMD bundle
-- `test` - Run tests
-- `release` - Build, test, and publish a new version
-
 ## Implementation
 
 The tool simply mirrors the terminal use node-pty and looks for "❯ 1. Yes" patterns to automatically respond with "\r" to proceed with Claude's prompts.
