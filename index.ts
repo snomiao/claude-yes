@@ -6,11 +6,19 @@ import sflow from "sflow";
 if (esMain(import.meta)) await main();
 
 export default async function main() {
-    process.stdin.setRawMode(true) //must be called any stdout/stdin usage
-
     console.log('Starting claude, automatically responding to yes/no prompts...');
-    console.log('⚠️ **Important Security Warning**: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.')
-    const PREFIXLENGTH = 0
+    console.log('⚠️ **Important Security Warning**: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.');
+
+    if (!process.stdin.isTTY) {
+        console.error('Error: This script requires a TTY (terminal) input. Please run it in a terminal.');
+        console.error('If you want to use prompts, try run:')
+        console.error('  yes-claude "your prompt here"');
+        return;
+    }
+
+    process.stdin.setRawMode(true) //must be called any stdout/stdin usage
+    const PREFIXLENGTH = 0;
+
     const shell = pty.spawn('claude', process.argv.slice(2), {
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
@@ -29,15 +37,14 @@ export default async function main() {
         process.exit(exitCode);
     })
 
+    const shellTransformStream = {
+        writable: new WritableStream<string>({ write: (data) => shell.write(data) }),
+        readable: new ReadableStream<string>({ start: (controller) => shell.onData((data) => controller.enqueue(data)) })
+    };
+
     await sflow(fromReadable<Buffer>(process.stdin))
         .map((e) => e.toString())
-        .by({
-            writable: new WritableStream<string>({ write: (data) => shell.write(data) }),
-            readable: new ReadableStream<string>({
-                start: (controller) => shell.onData((data) => controller.enqueue(data)
-                )
-            })
-        })
+        .by(shellTransformStream)
         .forkTo(e => e
             .map(e => removeControlCharacters(e as string))
             .map(e => e.replaceAll('\r', '')) // remove carriage return
@@ -59,4 +66,4 @@ function removeControlCharacters(str: string): string {
 
 function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
-} 
+}

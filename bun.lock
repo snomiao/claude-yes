@@ -15,6 +15,7 @@
         "@types/bun": "^1.2.18",
         "@types/jest": "^30.0.0",
         "husky": "^9.1.7",
+        "prettier": "^3.6.2",
         "semantic-release": "^24.2.6",
         "tsx": "^4.20.3",
       },
@@ -645,6 +646,8 @@
     "polyfill-text-decoder-stream": ["polyfill-text-decoder-stream@0.0.10", "", { "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-qiFgrQbd2XOGD7yHVOzoZ6zWHEWp1rRct1ZIauh+m6J+Qu0KHMlOFtYcCHesQnt0N97kYoMF3rJURuNyvd9qlg=="],
 
     "polyfill-text-encoder-stream": ["polyfill-text-encoder-stream@0.0.9", "", { "dependencies": { "ansi-styles": "^5.2.0", "braces": "^3.0.3", "bun-types": "^1.1.13", "chalk": "^4.1.2", "ci-info": "^3.9.0", "color-convert": "^2.0.1", "color-name": "^1.1.4", "diff-sequences": "^29.6.3", "escape-string-regexp": "^2.0.0", "expect": "^29.7.0", "fill-range": "^7.1.1", "graceful-fs": "^4.2.11", "has-flag": "^4.0.0", "is-number": "^7.0.0", "jest-diff": "^29.7.0", "jest-get-type": "^29.6.3", "jest-matcher-utils": "^29.7.0", "jest-message-util": "^29.7.0", "jest-util": "^29.7.0", "js-tokens": "^4.0.0", "micromatch": "^4.0.7", "picocolors": "^1.0.1", "picomatch": "^2.3.1", "pretty-format": "^29.7.0", "react-is": "^18.3.1", "slash": "^3.0.0", "stack-utils": "^2.0.6", "supports-color": "^7.2.0", "to-regex-range": "^5.0.1", "undici-types": "^5.26.5" }, "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-N70k4dW5r1ldm/EhaGvR25mMMr5x/h5ZprYqryCDtyVPFZ4bn4SeA7Vr9dosim4YLSgvMGvlg3xMpL4kJ6wS3w=="],
+
+    "prettier": ["prettier@3.6.2", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ=="],
 
     "pretty-format": ["pretty-format@30.0.2", "", { "dependencies": { "@jest/schemas": "30.0.1", "ansi-styles": "^5.2.0", "react-is": "^18.3.1" } }, "sha512-yC5/EBSOrTtqhCKfLHqoUIAXVRZnukHPwWBJWR7h84Q3Be1DRQZLncwcfLoPA5RPQ65qfiCMqgYwdUuQ//eVpg=="],
 
