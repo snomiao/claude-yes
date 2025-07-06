@@ -33,10 +33,8 @@ auto-claude
 ```
 
 The tool will:
-1. Clear the terminal
-2. Spawn a Claude CLI process
-3. Forward your input to Claude
-4. Automatically say YES, YES, YES, YES, YES to claude
+1. run Claude Code
+2. Whenever claude stucked on yes/no prompts, Automatically say YES, YES, YES, YES, YES to claude
 
 ## Scripts
 
@@ -46,7 +44,7 @@ The tool will:
 
 ## Implementation
 
-The tool simply mirrors the terminal and looks for "❯ 1. Yes" patterns to automatically respond with "\r" to proceed with Claude's prompts.
+The tool simply mirrors the terminal use node-pty and looks for "❯ 1. Yes" patterns to automatically respond with "\r" to proceed with Claude's prompts.
 
 ```
 ❯ 1. Yes
