@@ -6,6 +6,8 @@ import sflow from "sflow";
 if (esMain(import.meta)) await main();
 
 export default async function main() {
+    console.log('Starting claude, automatically responding to yes/no prompts...');
+    console.log('⚠️ **Important Security Warning**: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.')
     const PREFIXLENGTH = 0
     const shell = pty.spawn('claude', process.argv.slice(2), {
         cols: process.stdout.columns - PREFIXLENGTH,
@@ -13,18 +15,18 @@ export default async function main() {
         cwd: process.cwd(),
         env: process.env,
     });
-
+    
     // when current tty resized, resize the pty
     process.stdout.on('resize', () => {
         const { columns, rows } = process.stdout;
         shell.resize(columns - PREFIXLENGTH, rows);
     });
-
+    
     // when claude process exits, exit the main process with the same exit code
     shell.onExit(({ exitCode, signal }) => {
         process.exit(exitCode);
     })
-
+    
     process.stdin.setRawMode(true)
     await sflow(fromReadable<Buffer>(process.stdin))
         .map((e) => e.toString())
@@ -47,7 +49,6 @@ export default async function main() {
             .run()
         )
         .to(fromWritable(process.stdout));
-
 }
 
 function removeControlCharacters(str: string): string {
