@@ -20,7 +20,7 @@ export default async function main() {
         shell.resize(columns - PREFIXLENGTH, rows);
     });
 
-    // when claude process exits, exit the main process
+    // when claude process exits, exit the main process with the same exit code
     shell.onExit(({ exitCode, signal }) => {
         process.exit(exitCode);
     })
