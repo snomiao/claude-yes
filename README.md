@@ -1,4 +1,4 @@
-# Auto Claude
+# Yes! Claude
 
 A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.
 
