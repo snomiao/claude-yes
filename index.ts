@@ -1,8 +1,9 @@
+import esMain from "es-main";
 import { fromReadable, fromWritable } from "from-node-stream";
 import * as pty from "node-pty";
 import sflow from "sflow";
 
-await main();
+if (esMain(import.meta)) main();
 
 export default async function main() {
     console.clear()
@@ -59,4 +60,4 @@ function removeControlCharacters(str: string): string {
 
 function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
-}
+} 
