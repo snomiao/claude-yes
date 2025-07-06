@@ -9,11 +9,11 @@ export default async function main() {
     console.clear()
 
     const PREFIXLENGTH = 0
-    const shell = pty.spawn('claude', [], {
+    const shell = pty.spawn('claude', process.argv.slice(2), {
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
         cwd: process.cwd(),
-        env: process.env
+        env: process.env,
     });
 
     // when current tty resized, resize the pty
