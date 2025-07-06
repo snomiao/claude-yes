@@ -6,8 +6,8 @@ import sflow from "sflow";
 if (esMain(import.meta)) await main();
 
 export default async function main() {
-    console.log('Starting claude, automatically responding to yes/no prompts...');
-    console.log('⚠️ **Important Security Warning**: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.');
+    console.log('⭐ Starting claude, automatically responding to yes/no prompts...');
+    console.log('⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.');
 
     if (!process.stdin.isTTY) {
         console.error('Error: This script requires a TTY (terminal) input. Please run it in a terminal.');
@@ -16,7 +16,7 @@ export default async function main() {
         return;
     }
 
-    process.stdin.setRawMode(true) //must be called any stdout/stdin usage
+    process.stdin.setRawMode?.(true) //must be called any stdout/stdin usage
     const PREFIXLENGTH = 0;
 
     const shell = pty.spawn('claude', process.argv.slice(2), {
@@ -37,14 +37,14 @@ export default async function main() {
         process.exit(exitCode);
     })
 
-    const shellTransformStream = {
+    const shellStdio = {
         writable: new WritableStream<string>({ write: (data) => shell.write(data) }),
         readable: new ReadableStream<string>({ start: (controller) => shell.onData((data) => controller.enqueue(data)) })
     };
 
     await sflow(fromReadable<Buffer>(process.stdin))
         .map((e) => e.toString())
-        .by(shellTransformStream)
+        .by(shellStdio)
         .forkTo(e => e
             .map(e => removeControlCharacters(e as string))
             .map(e => e.replaceAll('\r', '')) // remove carriage return

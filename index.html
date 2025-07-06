@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yes! Claude - Automated Claude CLI Wrapper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .feature {
+            text-align: center;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .warning strong {
+            color: #856404;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .links {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .links a {
+            margin: 0 1rem;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Yes! Claude</h1>
+            <p>Automated Claude CLI Wrapper Tool</p>
+        </div>
+        
+        <div class="card">
+            <h2>What is Yes! Claude?</h2>
+            <p>Yes! Claude is a wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses. It works exactly like the <code>claude</code> command but automatically responds "Yes" to confirmation prompts, allowing Claude to run continuously until your task is complete.</p>
+        </div>
+        
+        <div class="warning">
+            <strong>⚠️ Important Security Warning:</strong> Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🚀</div>
+                <h3>Automated</h3>
+                <p>Automatically responds to common prompts like "Yes, proceed" and "Yes"</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h3>Continuous</h3>
+                <p>Lets Claude run until your task is done, then waits for your next prompt</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔄</div>
+                <h3>Compatible</h3>
+                <p>Works exactly the same as the claude command with automatic responses</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Installation</h2>
+            <p>First, install Claude Code globally:</p>
+            <div class="code-block">npm install -g @anthropic-ai/claude-code</div>
+            <p>Then install this project:</p>
+            <div class="code-block">npm install auto-claude -g</div>
+        </div>
+        
+        <div class="card">
+            <h2>Usage</h2>
+            <div class="code-block">auto-claude [command] [prompts]
+# works exactly same as `claude` command, and automatically says "Yes" to all yes/no prompts
+
+# e.g.
+auto-claude "run all tests and commit current changes"</div>
+            <p>The tool will:</p>
+            <ol>
+                <li>Run Claude Code</li>
+                <li>Whenever Claude gets stuck on yes/no prompts, automatically say YES to proceed</li>
+            </ol>
+        </div>
+        
+        <div class="card">
+            <h2>How it Works</h2>
+            <p>The tool uses node-pty to spawn and manage the Claude CLI process, looking for patterns like:</p>
+            <div class="code-block">❯ 1. Yes
+  2. No</div>
+            <p>When detected, it automatically sends a carriage return to select "Yes" and continue.</p>
+        </div>
+        
+        <div class="links">
+            <a href="https://github.com/snomiao/yes-claude" class="btn">View on GitHub</a>
+            <a href="https://www.anthropic.com/claude-code" class="btn btn-secondary">Learn about Claude Code</a>
+        </div>
+        
+        <div class="footer">
+            <p>MIT License | Made with ❤️ by snomiao</p>
+        </div>
+    </div>
+</body>
+</html>
