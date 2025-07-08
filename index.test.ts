@@ -42,6 +42,6 @@ it('Write file with auto bypass permission prompt', async () => {
 
     expect(p.exitCode).toBe(0); // expect the process to exit successfully
 
-    // 30 seconds timeout for this test, it usually takes 13s to run (10s for claude to respond, 3s for idle watcher to exit)
+    // 30 seconds timeout for this test, it usually takes 13s to run (10s for claude to solve this problem, 3s for idle watcher to exit)
 }, 30e3);
 
