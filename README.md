@@ -30,18 +30,26 @@ npm install yes-claude -g
 
 
 ```bash
-yes-claude [command] [prompts]
+yes-claude [command] [prompts] [--exit-on-idle]
 # works exactly same as `claude` command, and automatically says "Yes" to all yes/no prompts
 
 # e.g.
 yes-claude "run all tests and commit current changes"
 bunx yes-claude "Solve TODO.md"
 
+# Auto-exit when Claude becomes idle (useful for automation)
+yes-claude "run all tests and commit current changes" --exit-on-idle
+
 ```
 
 The tool will:
 1. run Claude Code
 2. Whenever claude stucked on yes/no prompts, Automatically say YES, YES, YES, YES, YES to claude
+3. When using `--exit-on-idle` flag, automatically exit when Claude becomes idle for 3 seconds (useful for automation scripts)
+
+## Options
+
+- `--exit-on-idle`: Automatically exit when Claude becomes idle for 3 seconds. Useful for automation scripts where you want the process to terminate when Claude finishes its work.
 
 ## Implementation
 
