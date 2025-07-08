@@ -23,18 +23,18 @@ Learn more about Claude Code: https://www.anthropic.com/claude-code
 Then install this project:
 
 ```bash
-npm install auto-claude -g
+npm install yes-claude -g
 ```
 
 ## Usage
 
 
 ```bash
-auto-claude [command] [prompts]
+yes-claude [command] [prompts]
 # works exactly same as `claude` command, and automatically says "Yes" to all yes/no prompts
 
 # e.g.
-auto-claude "run all tests and commit current changes"
+yes-claude "run all tests and commit current changes"
 bunx yes-claude "Solve TODO.md"
 
 ```
