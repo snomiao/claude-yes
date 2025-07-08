@@ -18,8 +18,13 @@
     "*.ts",
     "dist"
   ],
-  "bin": "dist/index.js",
-  "repository": "https://github.com/snomiao/yes-claude",
+  "bin": {
+    "yes-claude": "dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/snomiao/yes-claude.git"
+  },
   "scripts": {
     "dev": "tsx index.ts",
     "build": "bun build index.ts --outdir=dist --target=node --banner=\"#!/usr/bin/env node\"",
@@ -52,5 +57,14 @@
     "node-pty": "^1.0.0",
     "sflow": "^1.20.2",
     "strip-ansi-control-characters": "^2.0.0"
+  },
+  "private": true,
+  "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "bugs": {
+    "url": "https://github.com/snomiao/yes-claude/issues"
   }
 }

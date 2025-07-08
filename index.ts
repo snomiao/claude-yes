@@ -2,6 +2,8 @@ import esMain from "es-main";
 import { fromReadable, fromWritable } from "from-node-stream";
 import * as pty from "node-pty";
 import sflow from "sflow";
+import { createIdleWatcher } from "./createIdleWatcher";
+import { removeControlCharacters } from "./removeControlCharacters";
 
 if (esMain(import.meta)) await main();
 
@@ -9,17 +11,24 @@ export default async function main() {
     console.log('⭐ Starting claude, automatically responding to yes/no prompts...');
     console.log('⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.');
 
-    if (!process.stdin.isTTY) {
-        console.error('Error: This script requires a TTY (terminal) input. Please run it in a terminal.');
-        console.error('If you want to use prompts, try run:')
-        console.error('  yes-claude "your prompt here"');
-        return;
-    }
+    // if (!process.stdin.isTTY) {
+    //     console.error('Error: This script requires a TTY (terminal) input. Please run it in a terminal.');
+    //     console.error('If you want to use prompts, try run:')
+    //     console.error('  yes-claude "your prompt here"');
+    //     return;
+    // }
 
     process.stdin.setRawMode?.(true) //must be called any stdout/stdin usage
-    const PREFIXLENGTH = 0;
+    const prefix = '' // "YESC|"
+    const PREFIXLENGTH = prefix.length;
 
-    const shell = pty.spawn('claude', process.argv.slice(2), {
+    const exitOnIdleFlag = "--exit-on-idle"
+
+    const rawArgs = process.argv.slice(2);
+    const exitOnIdle = rawArgs.includes(exitOnIdleFlag); // check if --exit-on-idle flag is passed
+    const claudeArgs = (rawArgs).filter(e => e !== exitOnIdleFlag); // remove --exit-on-idle flag if exists
+
+    const shell = pty.spawn('claude', claudeArgs, {
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
         cwd: process.cwd(),
@@ -33,17 +42,42 @@ export default async function main() {
     });
 
     // when claude process exits, exit the main process with the same exit code
-    shell.onExit(({ exitCode, signal }) => {
-        process.exit(exitCode);
-    })
+    shell.onExit(({ exitCode }) => void process.exit(exitCode))
+    const exitShell = async () => {
+        // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
+        await sflow(['\r', '/exit', '\r']).forEach(async (e) => {
+            await sleep(100)
+            shell.write(e)
+        }).run();
+
+        // wait for shell to exit or kill it with a timeout
+        let exited = false;
+        await Promise.race([
+            new Promise<void>((resolve) => shell.onExit(() => { resolve(); exited = true; })), // resolve when shell exits
+            // if shell doesn't exit in 5 seconds, kill it
+            new Promise<void>((resolve) => setTimeout(() => {
+                if (exited) return; // if shell already exited, do nothing
+                shell.kill(); // kill the shell process if it doesn't exit in time
+                resolve();
+            }, 5000)) // 5 seconds timeout
+        ]);
+    }
 
     const shellStdio = {
-        writable: new WritableStream<string>({ write: (data) => shell.write(data) }),
-        readable: new ReadableStream<string>({ start: (controller) => shell.onData((data) => controller.enqueue(data)) })
+        writable: new WritableStream<string>({ write: (data) => shell.write(data), close: () => { } }),
+        readable: new ReadableStream<string>({ start: (controller) => shell.onData((data) => controller.enqueue(data)), cancel: () => shell.kill() })
     };
 
+    const idleWatcher = createIdleWatcher(async () => {
+        if (exitOnIdle) {
+            console.log('Claude is idle, exiting...');
+            await exitShell()
+        }
+    }, 3000); // 3 seconds idle timeout
+
     await sflow(fromReadable<Buffer>(process.stdin))
-        .map((e) => e.toString())
+        .map((buffer) => buffer.toString())
+        // .forEach(e => appendFile('.cache/io.log', "input |" + JSON.stringify(e) + '\n')) // for debugging
         .by(shellStdio)
         .forkTo(e => e
             .map(e => removeControlCharacters(e as string))
@@ -54,14 +88,18 @@ export default async function main() {
                     shell.write("\r")
                 }
             })
+            .forEach(async e => {
+                if (e.match(/❯ 1. Dark mode✔|Press Enter to continue…/)) {
+                    await sleep(200)
+                    shell.write("\r")
+                }
+            })
+            // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
             .run()
         )
+        .replaceAll(/.*(?:\r\n?|\r?\n)/g, (line) => prefix + line) // add prefix
+        .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status
         .to(fromWritable(process.stdout));
-}
-
-function removeControlCharacters(str: string): string {
-    // Matches control characters in the C0 and C1 ranges, including Delete (U+007F)
-    return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
 }
 
 function sleep(ms: number) {
