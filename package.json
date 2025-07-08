@@ -19,7 +19,8 @@
     "dist"
   ],
   "bin": {
-    "yes-claude": "dist/index.js"
+    "yes-claude": "dist/index.js",
+    "ccx": "dist/ccx.js"
   },
   "repository": {
     "type": "git",
@@ -27,7 +28,7 @@
   },
   "scripts": {
     "dev": "tsx index.ts",
-    "build": "bun build index.ts --outdir=dist --target=node --banner=\"#!/usr/bin/env node\"",
+    "build": "bun build index.ts ccx.ts --outdir=dist --target=node --banner=\"#!/usr/bin/env node\"",
     "test": "bun test",
     "prepare": "husky",
     "fmt": "prettier -w ."

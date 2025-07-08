@@ -1,3 +1,4 @@
+
 import esMain from "es-main";
 import { fromReadable, fromWritable } from "from-node-stream";
 import * as pty from "node-pty";
@@ -5,9 +6,24 @@ import sflow from "sflow";
 import { createIdleWatcher } from "./createIdleWatcher";
 import { removeControlCharacters } from "./removeControlCharacters";
 
-if (esMain(import.meta)) await main();
+if (esMain(import.meta)) {
+    // cli entry point
 
-export default async function main() {
+    const rawArgs = process.argv.slice(2);
+    const exitOnIdleFlag = "--exit-on-idle"
+    const exitOnIdle = rawArgs.includes(exitOnIdleFlag); // check if --exit-on-idle flag is passed
+    const claudeArgs = (rawArgs).filter(e => e !== exitOnIdleFlag); // remove --exit-on-idle flag if exists
+
+    await yesClaude({
+        exitOnIdle,
+        claudeArgs
+    });
+
+}
+
+export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitOnIdle?: boolean, claudeArgs?: string[] } = {}) {
+    const idleTimeout = 5e3 // 5 seconds idle timeout
+
     console.log('⭐ Starting claude, automatically responding to yes/no prompts...');
     console.log('⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.');
 
@@ -22,11 +38,17 @@ export default async function main() {
     const prefix = '' // "YESC|"
     const PREFIXLENGTH = prefix.length;
 
-    const exitOnIdleFlag = "--exit-on-idle"
 
-    const rawArgs = process.argv.slice(2);
-    const exitOnIdle = rawArgs.includes(exitOnIdleFlag); // check if --exit-on-idle flag is passed
-    const claudeArgs = (rawArgs).filter(e => e !== exitOnIdleFlag); // remove --exit-on-idle flag if exists
+    // TODO: implement this flag to continue on crash
+    // 1. if it crashes, show message 'claude crashed, restarting..'
+    // 2. spawn a 'claude --continue'
+    // 3. when new process it's ready, re-attach the into new process (in shellStdio, pipe new process stdin/stdout to )
+    // 4. if it crashes again, exit the process
+
+    const continueOnCrashFlag = "--continue-on-crash";
+
+    const shellOutputStream = new TransformStream<string, string>()
+    const outputWriter = shellOutputStream.writable.getWriter()
 
     const shell = pty.spawn('claude', claudeArgs, {
         cols: process.stdout.columns - PREFIXLENGTH,
@@ -35,14 +57,15 @@ export default async function main() {
         env: process.env,
     });
 
-    // when current tty resized, resize the pty
-    process.stdout.on('resize', () => {
-        const { columns, rows } = process.stdout;
-        shell.resize(columns - PREFIXLENGTH, rows);
-    });
-
     // when claude process exits, exit the main process with the same exit code
-    shell.onExit(({ exitCode }) => void process.exit(exitCode))
+    shell.onExit(({ exitCode }) => {
+        void process.exit(exitCode)
+    })
+    shell.onData(async (data) => {
+        // append data to the buffer, so we can process it later
+        await outputWriter.write(data);
+    })
+
     const exitShell = async () => {
         // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
         await sflow(['\r', '/exit', '\r']).forEach(async (e) => {
@@ -63,9 +86,15 @@ export default async function main() {
         ]);
     }
 
+    // when current tty resized, resize the pty
+    process.stdout.on('resize', () => {
+        const { columns, rows } = process.stdout;
+        shell.resize(columns - PREFIXLENGTH, rows);
+    });
+
     const shellStdio = {
         writable: new WritableStream<string>({ write: (data) => shell.write(data), close: () => { } }),
-        readable: new ReadableStream<string>({ start: (controller) => shell.onData((data) => controller.enqueue(data)), cancel: () => shell.kill() })
+        readable: shellOutputStream.readable
     };
 
     const idleWatcher = createIdleWatcher(async () => {
@@ -73,8 +102,8 @@ export default async function main() {
             console.log('Claude is idle, exiting...');
             await exitShell()
         }
-    }, 3000); // 3 seconds idle timeout
-
+    }, idleTimeout);
+    
     await sflow(fromReadable<Buffer>(process.stdin))
         .map((buffer) => buffer.toString())
         // .forEach(e => appendFile('.cache/io.log', "input |" + JSON.stringify(e) + '\n')) // for debugging
