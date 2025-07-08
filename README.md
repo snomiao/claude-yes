@@ -35,6 +35,7 @@ auto-claude [command] [prompts]
 
 # e.g.
 auto-claude "run all tests and commit current changes"
+bunx yes-claude "Solve TODO.md"
 
 ```
 
