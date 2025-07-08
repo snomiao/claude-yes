@@ -5,6 +5,7 @@ import * as pty from "node-pty";
 import sflow from "sflow";
 import { createIdleWatcher } from "./createIdleWatcher";
 import { removeControlCharacters } from "./removeControlCharacters";
+import { sleep } from "./utils";
 
 if (esMain(import.meta)) {
     // cli entry point
@@ -131,6 +132,3 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
         .to(fromWritable(process.stdout));
 }
 
-function sleep(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
