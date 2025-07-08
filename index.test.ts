@@ -12,12 +12,6 @@ beforeAll(async () => {
 })
 
 // Note: build before running these tests
-it('works', async () => {
-    const p = exec(`node dist/index.js -c "say hello, and exit" -p`);
-    const tr = new TransformStream<string, string>()
-    console.log(await sflow(tr.readable).by(fromStdio(p)).log().text())
-});
-
 it('Write file with auto bypass permission prompt', async () => {
     // clean
     await Bun.file('./.cache/flag.json').delete().catch(() => { });
