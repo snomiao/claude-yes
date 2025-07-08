@@ -16,7 +16,7 @@ jobs:
       - run: bun i
       # - run: bun run test # only works locally because need auth of claude code
       - run: bun run build
-      - run: npx semantic-release
+      - run: bunx semantic-release
         env:
           # reminder to setup read/write permission for this token
           # here: REPO_URL/settings/actions
