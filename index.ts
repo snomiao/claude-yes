@@ -1,5 +1,4 @@
 
-import esMain from "es-main";
 import { fromReadable, fromWritable } from "from-node-stream";
 import * as pty from "node-pty";
 import sflow from "sflow";
@@ -7,19 +6,12 @@ import { createIdleWatcher } from "./createIdleWatcher";
 import { removeControlCharacters } from "./removeControlCharacters";
 import { sleep } from "./utils";
 
-if (esMain(import.meta)) {
-    // cli entry point
 
-    const rawArgs = process.argv.slice(2);
-    const exitOnIdleFlag = "--exit-on-idle"
-    const exitOnIdle = rawArgs.includes(exitOnIdleFlag); // check if --exit-on-idle flag is passed
-    const claudeArgs = (rawArgs).filter(e => e !== exitOnIdleFlag); // remove --exit-on-idle flag if exists
+if (import.meta.main) await main();
+async function main() {
+    // this script not support bun yet, so use node js to run.
 
-    await yesClaude({
-        exitOnIdle,
-        claudeArgs
-    });
-
+    // node-pty is not supported in bun, so we use node.js to run this script
 }
 
 export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitOnIdle?: boolean, claudeArgs?: string[] } = {}) {
@@ -57,6 +49,8 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
         cwd: process.cwd(),
         env: process.env,
     });
+    // TODO handle error if claude is not installed, show msg:
+    // npm install -g @anthropic-ai/claude-code
 
     // when claude process exits, exit the main process with the same exit code
     shell.onExit(({ exitCode }) => {
@@ -104,7 +98,7 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
             await exitShell()
         }
     }, idleTimeout);
-    
+
     await sflow(fromReadable<Buffer>(process.stdin))
         .map((buffer) => buffer.toString())
         // .forEach(e => appendFile('.cache/io.log', "input |" + JSON.stringify(e) + '\n')) // for debugging

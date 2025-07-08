@@ -16,7 +16,7 @@ it('Write file with auto bypass permission prompt', async () => {
     // clean
     await Bun.file('./.cache/flag.json').delete().catch(() => { });
 
-    const p = exec(`node dist/index.js "just write {on: 1} into ./.cache/flag.json"`);
+    const p = exec(`node dist/cli.js "just write {on: 1} into ./.cache/flag.json"`);
     const tr = new TransformStream<string, string>()
     const w = tr.writable.getWriter();
 
