@@ -20,8 +20,8 @@ it('Write file with auto bypass permission prompt', async () => {
     const tr = new TransformStream<string, string>()
     const w = tr.writable.getWriter();
 
-    const exit = async () => await sflow(['\r', '/exit', '\r']).forEach(async (e) => {
-        await sleep(100)
+    const exit = async () => await sflow(['\r', '/exit', '\r', '\r']).forEach(async (e) => {
+        await sleep(200)
         await w.write(e)
     }).run();
 
