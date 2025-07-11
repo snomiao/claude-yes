@@ -28,7 +28,7 @@
   "scripts": {
     "dev": "tsx index.ts",
     "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --target=node",
-    "test": "bun test",
+    "test": "vitest",
     "prepare": "husky",
     "fmt": "prettier -w ."
   },
@@ -36,13 +36,18 @@
     "@types/bun": "^1.2.18",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
+    "enhanced-ms": "^4.1.0",
+    "execa": "^9.6.0",
     "from-node-stream": "^0.0.11",
     "husky": "^9.1.7",
+    "minimist": "^1.2.8",
     "prettier": "^3.6.2",
     "semantic-release": "^24.2.6",
     "sflow": "^1.20.2",
     "strip-ansi-control-characters": "^2.0.0",
-    "tsx": "^4.20.3"
+    "@types/minimist": "^1.2.5",
+    "tsx": "^4.20.3",
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"

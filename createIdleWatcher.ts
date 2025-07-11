@@ -9,8 +9,6 @@ export function createIdleWatcher(onIdle: () => void, idleTimeout: number): { pi
             }
             idleTimeoutId = setTimeout(() => {
                 clearTimeout(idleTimeoutId!);
-
-                // appendFile('.cache/inputs.log', `Claude idle for ${idleTimeout}ms.\n`);
                 onIdle();
             }, idleTimeout);
             lastActiveTime = new Date();

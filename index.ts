@@ -4,7 +4,7 @@ import * as pty from "node-pty";
 import sflow from "sflow";
 import { createIdleWatcher } from "./createIdleWatcher";
 import { removeControlCharacters } from "./removeControlCharacters";
-import { sleep } from "./utils";
+import { sleepms } from "./utils";
 
 
 if (import.meta.main) await main();
@@ -14,8 +14,9 @@ async function main() {
     // node-pty is not supported in bun, so we use node.js to run this script
 }
 
-export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitOnIdle?: boolean, claudeArgs?: string[] } = {}) {
-    const idleTimeout = 5e3 // 5 seconds idle timeout
+export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitOnIdle?: boolean | number, claudeArgs?: string[] } = {}) {
+    const defaultTimeout = 5e3; // 5 seconds idle timeout
+    const idleTimeout = typeof exitOnIdle === 'number' ? exitOnIdle : defaultTimeout;
 
     console.log('⭐ Starting claude, automatically responding to yes/no prompts...');
     console.log('⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.');
@@ -61,10 +62,10 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
         await outputWriter.write(data);
     })
 
-    const exitShell = async () => {
+    const exitClaudeCode = async () => {
         // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
         await sflow(['\r', '/exit', '\r']).forEach(async (e) => {
-            await sleep(100)
+            await sleepms(200)
             shell.write(e)
         }).run();
 
@@ -95,7 +96,7 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
     const idleWatcher = createIdleWatcher(async () => {
         if (exitOnIdle) {
             console.log('Claude is idle, exiting...');
-            await exitShell()
+            await exitClaudeCode()
         }
     }, idleTimeout);
 
@@ -108,13 +109,13 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
             .map(e => e.replaceAll('\r', '')) // remove carriage return
             .forEach(async e => {
                 if (e.match(/❯ 1. Yes/)) {
-                    await sleep(200)
+                    await sleepms(200)
                     shell.write("\r")
                 }
             })
             .forEach(async e => {
                 if (e.match(/❯ 1. Dark mode✔|Press Enter to continue…/)) {
-                    await sleep(200)
+                    await sleepms(200)
                     shell.write("\r")
                 }
             })
@@ -123,6 +124,8 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
         )
         .replaceAll(/.*(?:\r\n?|\r?\n)/g, (line) => prefix + line) // add prefix
         .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status
+        // .map(e => !process.stdout.isTTY ? removeControlCharacters(e) : (e)) // remove control characters if output is not a TTY
         .to(fromWritable(process.stdout));
 }
 
+export { removeControlCharacters };
