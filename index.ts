@@ -38,7 +38,6 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
     // 2. spawn a 'claude --continue'
     // 3. when new process it's ready, re-attach the into new process (in shellStdio, pipe new process stdin/stdout to )
     // 4. if it crashes again, exit the process
-
     const continueOnCrashFlag = "--continue-on-crash";
 
     const shellOutputStream = new TransformStream<string, string>()
