@@ -14,19 +14,12 @@ async function main() {
     // node-pty is not supported in bun, so we use node.js to run this script
 }
 
-export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitOnIdle?: boolean | number, claudeArgs?: string[] } = {}) {
+export default async function yesClaude({ continueOnCrash, exitOnIdle, claudeArgs = [] }: { continueOnCrash?: boolean, exitOnIdle?: boolean | number, claudeArgs?: string[] } = {}) {
     const defaultTimeout = 5e3; // 5 seconds idle timeout
     const idleTimeout = typeof exitOnIdle === 'number' ? exitOnIdle : defaultTimeout;
 
     console.log('⭐ Starting claude, automatically responding to yes/no prompts...');
     console.log('⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.');
-
-    // if (!process.stdin.isTTY) {
-    //     console.error('Error: This script requires a TTY (terminal) input. Please run it in a terminal.');
-    //     console.error('If you want to use prompts, try run:')
-    //     console.error('  yes-claude "your prompt here"');
-    //     return;
-    // }
 
     process.stdin.setRawMode?.(true) //must be called any stdout/stdin usage
     const prefix = '' // "YESC|"
@@ -38,12 +31,11 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
     // 2. spawn a 'claude --continue'
     // 3. when new process it's ready, re-attach the into new process (in shellStdio, pipe new process stdin/stdout to )
     // 4. if it crashes again, exit the process
-    const continueOnCrashFlag = "--continue-on-crash";
 
     const shellOutputStream = new TransformStream<string, string>()
     const outputWriter = shellOutputStream.writable.getWriter()
 
-    const shell = pty.spawn('claude', claudeArgs, {
+    let shell = pty.spawn('claude', claudeArgs, {
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
         cwd: process.cwd(),
@@ -52,14 +44,28 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
     // TODO handle error if claude is not installed, show msg:
     // npm install -g @anthropic-ai/claude-code
 
-    // when claude process exits, exit the main process with the same exit code
-    shell.onExit(({ exitCode }) => {
-        void process.exit(exitCode)
-    })
-    shell.onData(async (data) => {
+    async function onData(data: string) {
         // append data to the buffer, so we can process it later
         await outputWriter.write(data);
-    })
+    }
+    shell.onData(onData)
+    // when claude process exits, exit the main process with the same exit code
+    shell.onExit(function onExit({ exitCode }) {
+        if (continueOnCrash) {
+            if (exitCode !== 0) {
+                console.log('Claude crashed, restarting...');
+                shell = pty.spawn('claude', ['continue', '--continue'], {
+                    cols: process.stdout.columns - PREFIXLENGTH,
+                    rows: process.stdout.rows,
+                    cwd: process.cwd(),
+                    env: process.env,
+                });
+                shell.onData(onData)
+                shell.onExit(onExit);
+            }
+        }
+        void process.exit(exitCode);
+    });
 
     const exitClaudeCode = async () => {
         // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
@@ -123,7 +129,7 @@ export default async function yesClaude({ exitOnIdle, claudeArgs = [] }: { exitO
         )
         .replaceAll(/.*(?:\r\n?|\r?\n)/g, (line) => prefix + line) // add prefix
         .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status
-        // .map(e => !process.stdout.isTTY ? removeControlCharacters(e) : (e)) // remove control characters if output is not a TTY
+        .map(e => !process.stdout.isTTY ? removeControlCharacters(e) : (e)) // remove control characters if output is not a TTY
         .to(fromWritable(process.stdout));
 }
 
