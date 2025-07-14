@@ -1,7 +1,7 @@
 {
-  "name": "yes-claude",
+  "name": "claude-yes",
   "version": "0.0.0",
-  "homepage": "https://github.com/snomiao/yes-claude#readme",
+  "homepage": "https://github.com/snomiao/claude-yes#readme",
   "license": "MIT",
   "author": "snomiao <snomiao@gmail.com>",
   "keywords": [
@@ -19,11 +19,11 @@
     "dist"
   ],
   "bin": {
-    "yes-claude": "dist/cli.js"
+    "claude-yes": "dist/cli.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/snomiao/yes-claude.git"
+    "url": "git+https://github.com/snomiao/claude-yes.git"
   },
   "scripts": {
     "dev": "tsx index.ts",
@@ -68,6 +68,6 @@
     "doc": "docs"
   },
   "bugs": {
-    "url": "https://github.com/snomiao/yes-claude/issues"
+    "url": "https://github.com/snomiao/claude-yes/issues"
   }
 }

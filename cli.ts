@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 import ms from "enhanced-ms";
 import minimist from "minimist";
-import yesClaude from ".";
+import claudeYes from ".";
 
 // cli entry point
 const args = minimist(process.argv.slice(2), {
     string: ['exit-on-idle'],
+    boolean: ['continue-on-crash'],
     // boolean: ['exit-on-idle'],
     default: {
-        'exit-on-idle': undefined
+        'exit-on-idle': '60s',
+        'continue-on-crash': true,
     }
 });
 
-const { 'exit-on-idle': exitOnIdleArg, ...rest } = args;
+const { 'exit-on-idle': exitOnIdleArg, 'continue-on-crash': continueOnCrashArg, ...rest } = args;
 const claudeArgs = Object.entries(rest).flatMap(([key, value]) => {
     if (key === '_') return value as string[];
     if (typeof value === 'boolean') return value ? [`--${key}`] : [];
@@ -21,9 +23,7 @@ const claudeArgs = Object.entries(rest).flatMap(([key, value]) => {
 
 
 let exitOnIdle: boolean | number | undefined;
-if (exitOnIdleArg === true) {
-    exitOnIdle = true; // default timeout will be used
-} else if (typeof exitOnIdleArg === 'string') {
+if (typeof exitOnIdleArg === 'string') {
     if (exitOnIdleArg === '') {
         exitOnIdle = true; // default timeout will be used
     } else {
@@ -33,7 +33,15 @@ if (exitOnIdleArg === true) {
     exitOnIdle = undefined;
 }
 
-await yesClaude({
+
+// console.debug('Parsed args:', {
+//     exitOnIdle,
+//     continueOnCrash: continueOnCrashArg,
+//     claudeArgs,
+// });
+
+await claudeYes({
     exitOnIdle,
-    claudeArgs
+    claudeArgs,
+    continueOnCrash: continueOnCrashArg,
 });

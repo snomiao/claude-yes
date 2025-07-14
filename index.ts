@@ -14,7 +14,7 @@ async function main() {
     // node-pty is not supported in bun, so we use node.js to run this script
 }
 
-export default async function yesClaude({ continueOnCrash, exitOnIdle, claudeArgs = [] }: { continueOnCrash?: boolean, exitOnIdle?: boolean | number, claudeArgs?: string[] } = {}) {
+export default async function claudeYes({ continueOnCrash, exitOnIdle, claudeArgs = [] }: { continueOnCrash?: boolean, exitOnIdle?: boolean | number, claudeArgs?: string[] } = {}) {
     const defaultTimeout = 5e3; // 5 seconds idle timeout
     const idleTimeout = typeof exitOnIdle === 'number' ? exitOnIdle : defaultTimeout;
 

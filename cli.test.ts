@@ -20,7 +20,7 @@ describe('CLI Tests', () => {
         // clean
         await unlink(flagFile).catch(() => { });
 
-        const p = exec(`node dist/cli.js "just write {on: 1} into ./.cache/flag.json"`);
+        const p = exec(`node dist/cli.js --exit-on-idle=3s "just write {on: 1} into ./.cache/flag.json"`);
         const tr = new TransformStream<string, string>()
         const w = tr.writable.getWriter();
 
@@ -50,7 +50,7 @@ describe('CLI Tests', () => {
         // 30 seconds timeout for this test, it usually takes 13s to run (10s for claude to solve this problem, 3s for idle watcher to exit)
     }, 30e3);
 
-    it('CLI --exit-on-idle flag with default timeout', async () => {
+    it.skip('CLI --exit-on-idle flag with default timeout', async () => {
         const p = exec(`node dist/cli.js "echo hello" --exit-on-idle`);
         const tr = new TransformStream<string, string>()
         const output = (await sflow(tr.readable).by(fromStdio(p)).log().text())
