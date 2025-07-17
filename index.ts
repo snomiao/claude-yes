@@ -14,6 +14,17 @@ async function main() {
     // node-pty is not supported in bun, so we use node.js to run this script
 }
 
+/**
+ * Main function to run Claude with automatic yes/no responses
+ * @param options Configuration options
+ * @param options.continueOnCrash - If true, automatically restart Claude when it crashes:
+ *   1. Shows message 'Claude crashed, restarting..'
+ *   2. Spawns a new 'claude --continue' process
+ *   3. Re-attaches the new process to the shell stdio (pipes new process stdin/stdout)
+ *   4. If it crashes with "No conversation found to continue", exits the process
+ * @param options.exitOnIdle - Exit when Claude is idle. Boolean or timeout in milliseconds
+ * @param options.claudeArgs - Additional arguments to pass to the Claude CLI
+ */
 export default async function claudeYes({ continueOnCrash, exitOnIdle, claudeArgs = [] }: { continueOnCrash?: boolean, exitOnIdle?: boolean | number, claudeArgs?: string[] } = {}) {
     const defaultTimeout = 5e3; // 5 seconds idle timeout
     const idleTimeout = typeof exitOnIdle === 'number' ? exitOnIdle : defaultTimeout;
@@ -25,12 +36,6 @@ export default async function claudeYes({ continueOnCrash, exitOnIdle, claudeArg
     const prefix = '' // "YESC|"
     const PREFIXLENGTH = prefix.length;
     let errorNoConversation = false; // match 'No conversation found to continue'
-
-    // TODO: implement this flag to continue on crash
-    // 1. if it crashes, show message 'claude crashed, restarting..'
-    // 2. spawn a 'claude --continue'
-    // 3. when new process it's ready, re-attach the into new process (in shellStdio, pipe new process stdin/stdout to )
-    // 4. if it crashes again, exit the process
 
     const shellOutputStream = new TransformStream<string, string>()
     const outputWriter = shellOutputStream.writable.getWriter()
