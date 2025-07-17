@@ -24,7 +24,7 @@ export default async function claudeYes({ continueOnCrash, exitOnIdle, claudeArg
     process.stdin.setRawMode?.(true) //must be called any stdout/stdin usage
     const prefix = '' // "YESC|"
     const PREFIXLENGTH = prefix.length;
-
+    let errorNoConversation = false; // match 'No conversation found to continue'
 
     // TODO: implement this flag to continue on crash
     // 1. if it crashes, show message 'claude crashed, restarting..'
@@ -51,18 +51,21 @@ export default async function claudeYes({ continueOnCrash, exitOnIdle, claudeArg
     shell.onData(onData)
     // when claude process exits, exit the main process with the same exit code
     shell.onExit(function onExit({ exitCode }) {
-        if (continueOnCrash) {
-            if (exitCode !== 0) {
-                console.log('Claude crashed, restarting...');
-                shell = pty.spawn('claude', ['continue', '--continue'], {
-                    cols: process.stdout.columns - PREFIXLENGTH,
-                    rows: process.stdout.rows,
-                    cwd: process.cwd(),
-                    env: process.env,
-                });
-                shell.onData(onData)
-                shell.onExit(onExit);
+        if (continueOnCrash && exitCode !== 0) {
+            if (errorNoConversation) {
+                console.log('Claude crashed with "No conversation found to continue", exiting...');
+                void process.exit(exitCode);
             }
+            console.log('Claude crashed, restarting...');
+            shell = pty.spawn('claude', ['continue', '--continue'], {
+                cols: process.stdout.columns - PREFIXLENGTH,
+                rows: process.stdout.rows,
+                cwd: process.cwd(),
+                env: process.env,
+            });
+            shell.onData(onData)
+            shell.onExit(onExit);
+            return
         }
         void process.exit(exitCode);
     });
@@ -122,6 +125,11 @@ export default async function claudeYes({ continueOnCrash, exitOnIdle, claudeArg
                 if (e.match(/❯ 1. Dark mode✔|Press Enter to continue…/)) {
                     await sleepms(200)
                     shell.write("\r")
+                }
+            })
+            .forEach(e => {
+                if (e.match(/No conversation found to continue/)) {
+                    errorNoConversation = true; // set flag to true if error message is found
                 }
             })
             // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
