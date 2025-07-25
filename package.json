@@ -19,7 +19,7 @@
     "dist"
   ],
   "bin": {
-    "claude-yes": "dist/cli.js"
+    "claude-yes": "./cli.ts"
   },
   "repository": {
     "type": "git",
@@ -27,7 +27,7 @@
   },
   "scripts": {
     "dev": "tsx index.ts",
-    "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --target=node",
+    "build": "echo this project doesnt need build",
     "test": "vitest",
     "prepare": "husky",
     "fmt": "prettier -w ."
@@ -54,16 +54,17 @@
   },
   "type": "module",
   "exports": {
-    "import": "./dist/index.js",
+    "import": "./index.ts",
     "types": "./index.ts"
   },
   "module": "index.ts",
   "types": "./index.ts",
   "dependencies": {
+    "bun": "^1.2.19",
     "bun-pty": "^0.3.2"
   },
   "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
-  "main": "index.js",
+  "main": "./index.ts",
   "directories": {
     "doc": "docs"
   },
