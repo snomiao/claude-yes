@@ -60,7 +60,7 @@
   "module": "index.ts",
   "types": "./index.ts",
   "dependencies": {
-    "bun-pty": "^0.3.2"
+    "node-pty": "^1.0.0"
   },
   "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
   "main": "index.js",
