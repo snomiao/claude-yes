@@ -13,7 +13,7 @@ it('createIdleWatcher should trigger onIdle after timeout', async () => {
     expect(idleTriggered).toBe(true);
 }, 1000);
 
-it('createIdleWatcher should reset timeout on ping', async () => {
+it.concurrent('createIdleWatcher should reset timeout on ping', async () => {
     let idleTriggered = false;
     const watcher = createIdleWatcher(() => {
         idleTriggered = true;
@@ -28,7 +28,7 @@ it('createIdleWatcher should reset timeout on ping', async () => {
     expect(idleTriggered).toBe(true);
 }, 1000);
 
-it('createIdleWatcher should update lastActiveTime on ping', async () => {
+it.concurrent('createIdleWatcher should update lastActiveTime on ping', async () => {
     const watcher = createIdleWatcher(() => { }, 1000);
 
     const initialTime = watcher.getLastActiveTime();
