@@ -1,5 +1,5 @@
 import { fromReadable, fromWritable } from "from-node-stream";
-import * as pty from "node-pty";
+import * as pty from "bun-pty";
 import sflow from "sflow";
 import { createIdleWatcher } from "./createIdleWatcher";
 import { removeControlCharacters } from "./removeControlCharacters";
@@ -8,7 +8,8 @@ import { sleepms } from "./utils";
 if (import.meta.main) await main();
 async function main() {
   // this script not support bun yet, so use node js to run.
-  // node-pty is not supported in bun, so we use node.js to run this script
+  // Note: Attempted migration to bun-pty but reverted due to GLIBC compatibility issues (requires GLIBC 2.39)
+  // bun-pty is not compatible with this environment, using node-pty instead
 }
 
 /**
@@ -51,10 +52,11 @@ export default async function claudeYes({
   const outputWriter = shellOutputStream.writable.getWriter();
 
   let shell = pty.spawn("claude", claudeArgs, {
+    name: "xterm-color", // use xterm color mode
     cols: process.stdout.columns - PREFIXLENGTH,
     rows: process.stdout.rows,
     cwd: process.cwd(),
-    env: process.env,
+    env: process.env as Record<string, string>,
   });
   // TODO handle error if claude is not installed, show msg:
   // npm install -g @anthropic-ai/claude-code
@@ -75,10 +77,11 @@ export default async function claudeYes({
       }
       console.log("Claude crashed, restarting...");
       shell = pty.spawn("claude", ["continue", "--continue"], {
+        name: "xterm-color", // use xterm color mode
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
         cwd: process.cwd(),
-        env: process.env,
+        env: process.env as Record<string, string>,
       });
       shell.onData(onData);
       shell.onExit(onExit);
