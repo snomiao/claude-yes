@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import ms from "enhanced-ms";
 import minimist from "minimist";
 import claudeYes from ".";
