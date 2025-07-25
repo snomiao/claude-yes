@@ -1,15 +1,22 @@
 import { fromReadable, fromWritable } from "from-node-stream";
-import * as pty from "bun-pty";
 import sflow from "sflow";
 import { createIdleWatcher } from "./createIdleWatcher";
 import { removeControlCharacters } from "./removeControlCharacters";
 import { sleepms } from "./utils";
 
-if (import.meta.main) await main();
-async function main() {
-  // this script not support bun yet, so use node js to run.
-  // Note: Attempted migration to bun-pty but reverted due to GLIBC compatibility issues (requires GLIBC 2.39)
-  // bun-pty is not compatible with this environment, using node-pty instead
+// Runtime detection function
+function isBunRuntime(): boolean {
+  return typeof Bun !== "undefined";
+}
+
+// Dynamic PTY import function
+async function importPTY() {
+  const isBun = isBunRuntime();
+  if (isBun) {
+    return await import("bun-pty");
+  } else {
+    return await import("node-pty");
+  }
 }
 
 /**
@@ -37,10 +44,10 @@ export default async function claudeYes({
     typeof exitOnIdle === "number" ? exitOnIdle : defaultTimeout;
 
   console.log(
-    "⭐ Starting claude, automatically responding to yes/no prompts..."
+    "⭐ Starting claude, automatically responding to yes/no prompts...",
   );
   console.log(
-    "⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses."
+    "⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.",
   );
 
   process.stdin.setRawMode?.(true); //must be called any stdout/stdin usage
@@ -50,6 +57,9 @@ export default async function claudeYes({
 
   const shellOutputStream = new TransformStream<string, string>();
   const outputWriter = shellOutputStream.writable.getWriter();
+
+  const isBun = isBunRuntime();
+  const pty = await importPTY();
 
   let shell = pty.spawn("claude", claudeArgs, {
     name: "xterm-color", // use xterm color mode
@@ -65,13 +75,27 @@ export default async function claudeYes({
     // append data to the buffer, so we can process it later
     await outputWriter.write(data);
   }
-  shell.onData(onData);
+
+  if (isBun) {
+    shell.onData(onData);
+  } else {
+    shell.onData((data: string) => onData(data));
+  }
+
   // when claude process exits, exit the main process with the same exit code
-  shell.onExit(function onExit({ exitCode }) {
+  const onExit = isBun
+    ? function ({ exitCode }: { exitCode: number }) {
+      handleExit(exitCode);
+    }
+    : function (exitCode: number) {
+      handleExit(exitCode);
+    };
+
+  async function handleExit(exitCode: number) {
     if (continueOnCrash && exitCode !== 0) {
       if (errorNoConversation) {
         console.log(
-          'Claude crashed with "No conversation found to continue", exiting...'
+          'Claude crashed with "No conversation found to continue", exiting...',
         );
         void process.exit(exitCode);
       }
@@ -83,12 +107,20 @@ export default async function claudeYes({
         cwd: process.cwd(),
         env: process.env as Record<string, string>,
       });
-      shell.onData(onData);
-      shell.onExit(onExit);
+
+      if (isBun) {
+        shell.onData(onData);
+        shell.onExit(onExit);
+      } else {
+        shell.onData((data: string) => onData(data));
+        shell.onExit(onExit);
+      }
       return;
     }
     void process.exit(exitCode);
-  });
+  }
+
+  shell.onExit(onExit);
 
   const exitClaudeCode = async () => {
     // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
@@ -102,19 +134,25 @@ export default async function claudeYes({
     // wait for shell to exit or kill it with a timeout
     let exited = false;
     await Promise.race([
-      new Promise<void>((resolve) =>
-        shell.onExit(() => {
-          resolve();
-          exited = true;
-        })
-      ), // resolve when shell exits
+      new Promise<void>((resolve) => {
+        const exitHandler = isBun
+          ? () => {
+            resolve();
+            exited = true;
+          }
+          : () => {
+            resolve();
+            exited = true;
+          };
+        shell.onExit(exitHandler);
+      }), // resolve when shell exits
       // if shell doesn't exit in 5 seconds, kill it
       new Promise<void>((resolve) =>
         setTimeout(() => {
           if (exited) return; // if shell already exited, do nothing
           shell.kill(); // kill the shell process if it doesn't exit in time
           resolve();
-        }, 5000)
+        }, 5000),
       ), // 5 seconds timeout
     ]);
   };
@@ -128,7 +166,7 @@ export default async function claudeYes({
   const shellStdio = {
     writable: new WritableStream<string>({
       write: (data) => shell.write(data),
-      close: () => {},
+      close: () => { },
     }),
     readable: shellOutputStream.readable,
   };
@@ -161,7 +199,7 @@ export default async function claudeYes({
           }
         })
         // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
-        .run()
+        .run(),
     )
     .replaceAll(/.*(?:\r\n?|\r?\n)/g, (line) => prefix + line) // add prefix
     .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status

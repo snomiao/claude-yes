@@ -1,6 +1,7 @@
 # TODO
 
 Note:
+
 1. Split task into smaller if necessary
 2. After solve each task, commit it
 3. Update todo.md when you completed it
