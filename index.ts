@@ -1,5 +1,5 @@
 import { fromReadable, fromWritable } from "from-node-stream";
-import * as pty from "node-pty";
+import * as pty from "bun-pty";
 import sflow from "sflow";
 import { createIdleWatcher } from "./createIdleWatcher";
 import { removeControlCharacters } from "./removeControlCharacters";
@@ -52,10 +52,11 @@ export default async function claudeYes({
   const outputWriter = shellOutputStream.writable.getWriter();
 
   let shell = pty.spawn("claude", claudeArgs, {
+    name: "xterm-color", // use xterm color mode
     cols: process.stdout.columns - PREFIXLENGTH,
     rows: process.stdout.rows,
     cwd: process.cwd(),
-    env: process.env,
+    env: process.env as Record<string, string>,
   });
   // TODO handle error if claude is not installed, show msg:
   // npm install -g @anthropic-ai/claude-code
@@ -76,10 +77,11 @@ export default async function claudeYes({
       }
       console.log("Claude crashed, restarting...");
       shell = pty.spawn("claude", ["continue", "--continue"], {
+        name: "xterm-color", // use xterm color mode
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
         cwd: process.cwd(),
-        env: process.env,
+        env: process.env as Record<string, string>,
       });
       shell.onData(onData);
       shell.onExit(onExit);
