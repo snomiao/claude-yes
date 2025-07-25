@@ -8,7 +8,8 @@ import { sleepms } from "./utils";
 if (import.meta.main) await main();
 async function main() {
   // this script not support bun yet, so use node js to run.
-  // node-pty is not supported in bun, so we use node.js to run this script
+  // Note: Attempted migration to bun-pty but reverted due to GLIBC compatibility issues (requires GLIBC 2.39)
+  // bun-pty is not compatible with this environment, using node-pty instead
 }
 
 /**
