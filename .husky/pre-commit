@@ -1,1 +1,2 @@
-bun run test
+
+npx lint-staged
