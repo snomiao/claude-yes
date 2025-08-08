@@ -24,17 +24,21 @@ import { sleepms } from "./utils";
  *   4. If it crashes with "No conversation found to continue", exits the process
  * @param options.exitOnIdle - Exit when Claude is idle. Boolean or timeout in milliseconds
  * @param options.claudeArgs - Additional arguments to pass to the Claude CLI
+ * @param options.removeControlCharactersFromStdout - Remove ANSI control characters from stdout. Defaults to !process.stdout.isTTY
  */
 export default async function claudeYes({
   continueOnCrash,
   exitOnIdle,
   claudeArgs = [],
   cwd = process.cwd(),
+  // removeControlCharactersFromStdout = !process.stdout.isTTY,
+  removeControlCharactersFromStdout = false,
 }: {
   continueOnCrash?: boolean;
   exitOnIdle?: boolean | number;
   claudeArgs?: string[];
   cwd?: string;
+  removeControlCharactersFromStdout?: boolean;
 } = {}) {
   const defaultTimeout = 5e3; // 5 seconds idle timeout
   const idleTimeout =
@@ -171,7 +175,9 @@ export default async function claudeYes({
     )
     .replaceAll(/.*(?:\r\n?|\r?\n)/g, (line) => prefix + line) // add prefix
     .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status
-    // .map((e) => (!process.stdout.isTTY ? removeControlCharacters(e) : e))  // remove control characters if output is not a TTY
+    .map((e) =>
+      removeControlCharactersFromStdout ? removeControlCharacters(e) : e,
+    )
     .to(fromWritable(process.stdout));
 }
 
