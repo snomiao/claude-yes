@@ -15,7 +15,7 @@ async function main() {
 }
 
 /**
- * Main function to run Claude with automatic yes/no responses
+ * Main function to run Claude with automatic yes/no respojnses
  * @param options Configuration options
  * @param options.continueOnCrash - If true, automatically restart Claude when it crashes:
  *   1. Shows message 'Claude crashed, restarting..'
@@ -29,10 +29,12 @@ export default async function claudeYes({
   continueOnCrash,
   exitOnIdle,
   claudeArgs = [],
+  cwd = process.cwd(),
 }: {
   continueOnCrash?: boolean;
   exitOnIdle?: boolean | number;
   claudeArgs?: string[];
+  cwd?: string;
 } = {}) {
   const defaultTimeout = 5e3; // 5 seconds idle timeout
   const idleTimeout =
@@ -59,7 +61,7 @@ export default async function claudeYes({
     name: "xterm-color",
     cols: process.stdout.columns - PREFIXLENGTH,
     rows: process.stdout.rows,
-    cwd: process.cwd(),
+    cwd,
     env: process.env as Record<string, string>,
   });
   // TODO handle error if claude is not installed, show msg:
@@ -84,7 +86,7 @@ export default async function claudeYes({
         name: "xterm-color",
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
-        cwd: process.cwd(),
+        cwd,
         env: process.env as Record<string, string>,
       });
       shell.onData(onData);
