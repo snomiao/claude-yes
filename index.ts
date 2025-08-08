@@ -1,18 +1,21 @@
 import { fromReadable, fromWritable } from "from-node-stream";
-import * as pty from "node-pty";
 import sflow from "sflow";
 import { createIdleWatcher } from "./createIdleWatcher";
 import { removeControlCharacters } from "./removeControlCharacters";
 import { sleepms } from "./utils";
 
-if (import.meta.main) await main();
-async function main() {
-  // this script not support bun yet, so use node js to run.
-  // node-pty is not supported in bun, so we use node.js to run this script
-}
+// for debug only
+// if (import.meta.main) await main();
+// async function main() {
+//   await claudeYes({
+//     continueOnCrash: true,
+//     exitOnIdle: 10000,
+//     claudeArgs: ["say hello and exit"]
+//   })
+// }
 
 /**
- * Main function to run Claude with automatic yes/no responses
+ * Main function to run Claude with automatic yes/no respojnses
  * @param options Configuration options
  * @param options.continueOnCrash - If true, automatically restart Claude when it crashes:
  *   1. Shows message 'Claude crashed, restarting..'
@@ -26,20 +29,22 @@ export default async function claudeYes({
   continueOnCrash,
   exitOnIdle,
   claudeArgs = [],
+  cwd = process.cwd(),
 }: {
   continueOnCrash?: boolean;
   exitOnIdle?: boolean | number;
   claudeArgs?: string[];
+  cwd?: string;
 } = {}) {
   const defaultTimeout = 5e3; // 5 seconds idle timeout
   const idleTimeout =
     typeof exitOnIdle === "number" ? exitOnIdle : defaultTimeout;
 
   console.log(
-    "⭐ Starting claude, automatically responding to yes/no prompts..."
+    "⭐ Starting claude, automatically responding to yes/no prompts...",
   );
   console.log(
-    "⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses."
+    "⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.",
   );
 
   process.stdin.setRawMode?.(true); //must be called any stdout/stdin usage
@@ -49,12 +54,15 @@ export default async function claudeYes({
 
   const shellOutputStream = new TransformStream<string, string>();
   const outputWriter = shellOutputStream.writable.getWriter();
-
+  const pty = globalThis.Bun
+    ? await import("bun-pty")
+    : await import("node-pty");
   let shell = pty.spawn("claude", claudeArgs, {
+    name: "xterm-color",
     cols: process.stdout.columns - PREFIXLENGTH,
     rows: process.stdout.rows,
-    cwd: process.cwd(),
-    env: process.env,
+    cwd,
+    env: process.env as Record<string, string>,
   });
   // TODO handle error if claude is not installed, show msg:
   // npm install -g @anthropic-ai/claude-code
@@ -69,16 +77,17 @@ export default async function claudeYes({
     if (continueOnCrash && exitCode !== 0) {
       if (errorNoConversation) {
         console.log(
-          'Claude crashed with "No conversation found to continue", exiting...'
+          'Claude crashed with "No conversation found to continue", exiting...',
         );
         void process.exit(exitCode);
       }
       console.log("Claude crashed, restarting...");
       shell = pty.spawn("claude", ["continue", "--continue"], {
+        name: "xterm-color",
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
-        cwd: process.cwd(),
-        env: process.env,
+        cwd,
+        env: process.env as Record<string, string>,
       });
       shell.onData(onData);
       shell.onExit(onExit);
@@ -103,7 +112,7 @@ export default async function claudeYes({
         shell.onExit(() => {
           resolve();
           exited = true;
-        })
+        }),
       ), // resolve when shell exits
       // if shell doesn't exit in 5 seconds, kill it
       new Promise<void>((resolve) =>
@@ -111,7 +120,7 @@ export default async function claudeYes({
           if (exited) return; // if shell already exited, do nothing
           shell.kill(); // kill the shell process if it doesn't exit in time
           resolve();
-        }, 5000)
+        }, 5000),
       ), // 5 seconds timeout
     ]);
   };
@@ -158,7 +167,7 @@ export default async function claudeYes({
           }
         })
         // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
-        .run()
+        .run(),
     )
     .replaceAll(/.*(?:\r\n?|\r?\n)/g, (line) => prefix + line) // add prefix
     .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status

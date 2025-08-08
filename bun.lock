@@ -4,12 +4,13 @@
     "": {
       "name": "main",
       "dependencies": {
-        "@types/minimist": "^1.2.5",
+        "bun-pty": "^0.3.2",
         "node-pty": "^1.0.0",
       },
       "devDependencies": {
         "@types/bun": "^1.2.18",
         "@types/jest": "^30.0.0",
+        "@types/minimist": "^1.2.5",
         "@types/node": "^24.0.10",
         "enhanced-ms": "^4.1.0",
         "execa": "^9.6.0",
@@ -326,6 +327,8 @@
     "braces": ["braces@3.0.3", "", { "dependencies": { "fill-range": "^7.1.1" } }, "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA=="],
 
     "bson": ["bson@6.10.4", "", {}, "sha512-WIsKqkSC0ABoBJuT1LEX+2HEvNmNKKgnTAyd0fL8qzK4SH2i9NXg+t08YtdZp/V9IZ33cxe3iV4yM0qg8lMQng=="],
+
+    "bun-pty": ["bun-pty@0.3.2", "", {}, "sha512-ZDNs03VX7uUzTTFgymM9m3nWvPNYkeWWHj7+aweI3O1F/5uu8yqdQ9HhGXjbcW8UDjVzNvVFg8UaPEvaQsEjLg=="],
 
     "bun-types": ["bun-types@1.2.18", "", { "dependencies": { "@types/node": "*" }, "peerDependencies": { "@types/react": "^19" } }, "sha512-04+Eha5NP7Z0A9YgDAzMk5PHR16ZuLVa83b26kH5+cp1qZW4F6FmAURngE7INf4tKOvCE69vYvDEwoNl1tGiWw=="],
 

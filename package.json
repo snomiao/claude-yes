@@ -27,7 +27,7 @@
   },
   "scripts": {
     "dev": "tsx index.ts",
-    "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --target=node",
+    "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --external=bun-pty --target=node",
     "test": "vitest",
     "prepare": "husky",
     "fmt": "prettier -w ."
@@ -35,17 +35,18 @@
   "devDependencies": {
     "@types/bun": "^1.2.18",
     "@types/jest": "^30.0.0",
+    "@types/minimist": "^1.2.5",
     "@types/node": "^24.0.10",
     "enhanced-ms": "^4.1.0",
     "execa": "^9.6.0",
     "from-node-stream": "^0.0.11",
     "husky": "^9.1.7",
+    "lint-staged": "^16.1.4",
     "minimist": "^1.2.8",
     "prettier": "^3.6.2",
     "semantic-release": "^24.2.6",
     "sflow": "^1.20.2",
     "strip-ansi-control-characters": "^2.0.0",
-    "@types/minimist": "^1.2.5",
     "tsx": "^4.20.3",
     "vitest": "^3.2.4"
   },
@@ -60,7 +61,13 @@
   "module": "index.ts",
   "types": "./index.ts",
   "dependencies": {
+    "bun-pty": "^0.3.2",
     "node-pty": "^1.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,js,json,md}": [
+      "prettier --write"
+    ]
   },
   "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
   "main": "index.js",
