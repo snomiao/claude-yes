@@ -10,8 +10,7 @@ import { sleepms } from './utils';
 
 beforeAll(async () => {
     await execaCommand(`bun run build`)
-        .then(() => console.log('Build successful')
-        )
+        .then(() => console.log('Build successful'))
 })
 
 describe('CLI Tests', () => {
