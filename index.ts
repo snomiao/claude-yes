@@ -171,7 +171,7 @@ export default async function claudeYes({
     )
     .replaceAll(/.*(?:\r\n?|\r?\n)/g, (line) => prefix + line) // add prefix
     .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status
-    // .map((e) => (!process.stdout.isTTY ? removeControlCharacters(e) : e)) // remove control characters if output is not a TTY
+    // .map((e) => (!process.stdout.isTTY ? removeControlCharacters(e) : e))  // remove control characters if output is not a TTY
     .to(fromWritable(process.stdout));
 }
 
