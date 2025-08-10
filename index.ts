@@ -1,9 +1,9 @@
-import { fromReadable, fromWritable } from "from-node-stream";
-import sflow from "sflow";
-import { createIdleWatcher } from "./createIdleWatcher";
-import { removeControlCharacters } from "./removeControlCharacters";
-import { sleepms } from "./utils";
-import { TerminalTextRender } from "terminal-render";
+import { fromReadable, fromWritable } from 'from-node-stream';
+import sflow from 'sflow';
+import { createIdleWatcher } from './createIdleWatcher';
+import { removeControlCharacters } from './removeControlCharacters';
+import { sleepms } from './utils';
+import { TerminalTextRender } from 'terminal-render';
 // for debug only
 // if (import.meta.main) await main();
 // async function main() {
@@ -42,27 +42,27 @@ export default async function claudeYes({
 } = {}) {
   const defaultTimeout = 5e3; // 5 seconds idle timeout
   const idleTimeout =
-    typeof exitOnIdle === "number" ? exitOnIdle : defaultTimeout;
+    typeof exitOnIdle === 'number' ? exitOnIdle : defaultTimeout;
 
   console.log(
-    "⭐ Starting claude, automatically responding to yes/no prompts...",
+    '⭐ Starting claude, automatically responding to yes/no prompts...'
   );
   console.log(
-    "⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.",
+    '⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.'
   );
 
   process.stdin.setRawMode?.(true); //must be called any stdout/stdin usage
-  const prefix = ""; // "YESC|"
+  const prefix = ''; // "YESC|"
   const PREFIXLENGTH = prefix.length;
   let errorNoConversation = false; // match 'No conversation found to continue'
 
   const shellOutputStream = new TransformStream<string, string>();
   const outputWriter = shellOutputStream.writable.getWriter();
   const pty = globalThis.Bun
-    ? await import("bun-pty")
-    : await import("node-pty");
-  let shell = pty.spawn("claude", claudeArgs, {
-    name: "xterm-color",
+    ? await import('bun-pty')
+    : await import('node-pty');
+  let shell = pty.spawn('claude', claudeArgs, {
+    name: 'xterm-color',
     cols: process.stdout.columns - PREFIXLENGTH,
     rows: process.stdout.rows,
     cwd,
@@ -81,13 +81,13 @@ export default async function claudeYes({
     if (continueOnCrash && exitCode !== 0) {
       if (errorNoConversation) {
         console.log(
-          'Claude crashed with "No conversation found to continue", exiting...',
+          'Claude crashed with "No conversation found to continue", exiting...'
         );
         void process.exit(exitCode);
       }
-      console.log("Claude crashed, restarting...");
-      shell = pty.spawn("claude", ["continue", "--continue"], {
-        name: "xterm-color",
+      console.log('Claude crashed, restarting...');
+      shell = pty.spawn('claude', ['continue', '--continue'], {
+        name: 'xterm-color',
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
         cwd,
@@ -102,7 +102,7 @@ export default async function claudeYes({
 
   const exitClaudeCode = async () => {
     // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
-    await sflow(["\r", "/exit", "\r"])
+    await sflow(['\r', '/exit', '\r'])
       .forEach(async (e) => {
         await sleepms(200);
         shell.write(e);
@@ -116,7 +116,7 @@ export default async function claudeYes({
         shell.onExit(() => {
           resolve();
           exited = true;
-        }),
+        })
       ), // resolve when shell exits
       // if shell doesn't exit in 5 seconds, kill it
       new Promise<void>((resolve) =>
@@ -124,13 +124,13 @@ export default async function claudeYes({
           if (exited) return; // if shell already exited, do nothing
           shell.kill(); // kill the shell process if it doesn't exit in time
           resolve();
-        }, 5000),
+        }, 5000)
       ), // 5 seconds timeout
     ]);
   };
 
   // when current tty resized, resize the pty
-  process.stdout.on("resize", () => {
+  process.stdout.on('resize', () => {
     const { columns, rows } = process.stdout;
     shell.resize(columns - PREFIXLENGTH, rows);
   });
@@ -146,17 +146,17 @@ export default async function claudeYes({
   const ttr = new TerminalTextRender();
   const idleWatcher = createIdleWatcher(async () => {
     if (exitOnIdle) {
-      if (ttr.render().includes("esc to interrupt")) {
-        console.log("Claude is idle, but seems still working, not exiting yet");
+      if (ttr.render().includes('esc to interrupt')) {
+        console.log('Claude is idle, but seems still working, not exiting yet');
       } else {
-        console.log("Claude is idle, exiting...");
+        console.log('Claude is idle, exiting...');
         await exitClaudeCode();
       }
     }
   }, idleTimeout);
   const confirm = async () => {
     await sleepms(200);
-    shell.write("\r");
+    shell.write('\r');
   };
   await sflow(fromReadable<Buffer>(process.stdin))
     .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status
@@ -167,7 +167,7 @@ export default async function claudeYes({
     .forkTo((e) =>
       e
         .map((e) => removeControlCharacters(e as string))
-        .map((e) => e.replaceAll("\r", "")) // remove carriage return
+        .map((e) => e.replaceAll('\r', '')) // remove carriage return
         .forEach(async (e) => {
           if (e.match(/❯ 1. Yes/)) return await confirm();
           if (e.match(/❯ 1. Dark mode✔|Press Enter to continue…/))
@@ -179,11 +179,11 @@ export default async function claudeYes({
         })
 
         // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
-        .run(),
+        .run()
     )
     .replaceAll(/.*(?:\r\n?|\r?\n)/g, (line) => prefix + line) // add prefix
     .map((e) =>
-      removeControlCharactersFromStdout ? removeControlCharacters(e) : e,
+      removeControlCharactersFromStdout ? removeControlCharacters(e) : e
     )
     .to(fromWritable(process.stdout));
 
