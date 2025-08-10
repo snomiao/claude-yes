@@ -3,7 +3,7 @@ import sflow from "sflow";
 import { createIdleWatcher } from "./createIdleWatcher";
 import { removeControlCharacters } from "./removeControlCharacters";
 import { sleepms } from "./utils";
-
+import { TerminalTextRender } from "terminal-render";
 // for debug only
 // if (import.meta.main) await main();
 // async function main() {
@@ -143,10 +143,15 @@ export default async function claudeYes({
     readable: shellOutputStream.readable,
   };
 
+  const ttr = new TerminalTextRender();
   const idleWatcher = createIdleWatcher(async () => {
     if (exitOnIdle) {
-      console.log("Claude is idle, exiting...");
-      await exitClaudeCode();
+      if (ttr.render().includes("esc to interrupt")) {
+        console.log("Claude is idle, but seems still working, not exiting yet");
+      } else {
+        console.log("Claude is idle, exiting...");
+        await exitClaudeCode();
+      }
     }
   }, idleTimeout);
   const confirm = async () => {
@@ -154,7 +159,9 @@ export default async function claudeYes({
     shell.write("\r");
   };
   await sflow(fromReadable<Buffer>(process.stdin))
+    .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status
     .map((buffer) => buffer.toString())
+    .forEach((text) => ttr.write(text))
     // .forEach(e => appendFile('.cache/io.log', "input |" + JSON.stringify(e) + '\n')) // for debugging
     .by(shellStdio)
     .forkTo((e) =>
@@ -170,15 +177,17 @@ export default async function claudeYes({
             return;
           }
         })
+
         // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
         .run(),
     )
     .replaceAll(/.*(?:\r\n?|\r?\n)/g, (line) => prefix + line) // add prefix
-    .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status
     .map((e) =>
       removeControlCharactersFromStdout ? removeControlCharacters(e) : e,
     )
     .to(fromWritable(process.stdout));
+
+  return ttr.render(); // return full rendered logs
 }
 
 export { removeControlCharacters };
