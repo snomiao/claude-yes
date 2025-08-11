@@ -4,6 +4,7 @@ import { createIdleWatcher } from './createIdleWatcher';
 import { removeControlCharacters } from './removeControlCharacters';
 import { sleepms } from './utils';
 import { TerminalTextRender } from 'terminal-render';
+import { writeFile } from 'fs/promises';
 // for debug only
 // if (import.meta.main) await main();
 // async function main() {
@@ -33,16 +34,18 @@ export default async function claudeYes({
   cwd = process.cwd(),
   // removeControlCharactersFromStdout = !process.stdout.isTTY,
   removeControlCharactersFromStdout = false,
+  logFile,
 }: {
   continueOnCrash?: boolean;
   exitOnIdle?: boolean | number;
   claudeArgs?: string[];
   cwd?: string;
   removeControlCharactersFromStdout?: boolean;
+  logFile?: string;
 } = {}) {
-  const defaultTimeout = 5e3; // 5 seconds idle timeout
+  const defaultIdleTimeout = 60e3;
   const idleTimeout =
-    typeof exitOnIdle === 'number' ? exitOnIdle : defaultTimeout;
+    typeof exitOnIdle === 'number' ? exitOnIdle : defaultIdleTimeout;
 
   console.log(
     '⭐ Starting claude, automatically responding to yes/no prompts...'
@@ -194,6 +197,7 @@ export default async function claudeYes({
     )
     .to(fromWritable(process.stdout));
 
+  logFile && (await writeFile(logFile, ttr.render()));
   return ttr.render(); // return full rendered logs
 }
 

@@ -1,47 +1,57 @@
 #!/usr/bin/env node
-import ms from "enhanced-ms";
-import minimist from "minimist";
-import claudeYes from ".";
+import ms from 'enhanced-ms';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import claudeYes from '.';
 
 // cli entry point
-const args = minimist(process.argv.slice(2), {
-    string: ['exit-on-idle'],
-    boolean: ['continue-on-crash'],
-    // boolean: ['exit-on-idle'],
-    default: {
-        'exit-on-idle': '60s',
-        'continue-on-crash': true,
-    }
-});
+const argv = yargs(hideBin(process.argv))
+  .usage('Usage: $0 [options] [claude args]')
+  .option('exit-on-idle', {
+    type: 'string',
+    default: '60s',
+    description: 'Exit after being idle for specified duration',
+  })
+  .option('continue-on-crash', {
+    type: 'boolean',
+    default: true,
+    description: 'Continue running even if Claude crashes',
+  })
+  .option('log-file', {
+    type: 'string',
+    description: 'Path to log file for output logging',
+  })
+  .option('verbose', {
+    type: 'boolean',
+    default: false,
+    description: 'Enable verbose logging',
+  })
+  .parserConfiguration({
+    'unknown-options-as-args': true,
+    'halt-at-non-option': true,
+  })
+  .parseSync();
 
-const { 'exit-on-idle': exitOnIdleArg, 'continue-on-crash': continueOnCrashArg, ...rest } = args;
-const claudeArgs = Object.entries(rest).flatMap(([key, value]) => {
-    if (key === '_') return value as string[];
-    if (typeof value === 'boolean') return value ? [`--${key}`] : [];
-    return [`--${key}`, String(value)];
-});
+const {
+  exitOnIdle: exitOnIdleArg,
+  continueOnCrash: continueOnCrashArg,
+  logFile,
+  ...rest
+} = argv;
 
+const claudeArgs = argv._.map((e) => String(e));
+const exitOnIdle = argv.exitOnIdle != null ? ms(argv.exitOnIdle) : undefined;
 
-let exitOnIdle: boolean | number | undefined;
-if (typeof exitOnIdleArg === 'string') {
-    if (exitOnIdleArg === '') {
-        exitOnIdle = true; // default timeout will be used
-    } else {
-        exitOnIdle = ms(exitOnIdleArg); // parse duration string like "5s", "30s", "1m"
-    }
-} else {
-    exitOnIdle = undefined;
-}
-
-
-// console.debug('Parsed args:', {
-//     exitOnIdle,
-//     continueOnCrash: continueOnCrashArg,
-//     claudeArgs,
-// });
+argv.verbose &&
+  console.debug('[claude-yes] Parsed args:', {
+    exitOnIdle,
+    continueOnCrash: continueOnCrashArg,
+    claudeArgs,
+  });
 
 await claudeYes({
-    exitOnIdle,
-    claudeArgs,
-    continueOnCrash: continueOnCrashArg,
+  exitOnIdle,
+  claudeArgs,
+  continueOnCrash: continueOnCrashArg,
+  logFile,
 });
