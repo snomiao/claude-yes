@@ -1,3 +1,3 @@
 #!/usr/bin/env bun
-bun run build
 bunx lint-staged
+bun run build
