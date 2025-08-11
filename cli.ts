@@ -11,7 +11,6 @@ const argv = yargs(hideBin(process.argv))
     '$0 --exit-on-idle=30s --continue-on-crash "help me solve all todos in my codebase"',
     'Run Claude with a 30 seconds idle timeout and continue on crash'
   )
-
   .option('exit-on-idle', {
     type: 'string',
     default: '60s',
@@ -37,26 +36,12 @@ const argv = yargs(hideBin(process.argv))
   })
   .parseSync();
 
-const {
-  exitOnIdle: exitOnIdleArg,
-  continueOnCrash: continueOnCrashArg,
-  logFile,
-  ...rest
-} = argv;
-
-const claudeArgs = argv._.map((e) => String(e));
-const exitOnIdle = argv.exitOnIdle != null ? ms(argv.exitOnIdle) : undefined;
-
-argv.verbose &&
-  console.debug('[claude-yes] Parsed args:', {
-    exitOnIdle,
-    continueOnCrash: continueOnCrashArg,
-    claudeArgs,
-  });
-
-await claudeYes({
-  exitOnIdle,
-  claudeArgs,
-  continueOnCrash: continueOnCrashArg,
-  logFile,
+const { exitCode, logs } = await claudeYes({
+  exitOnIdle: argv.exitOnIdle != null ? ms(argv.exitOnIdle) : undefined,
+  claudeArgs: argv._.map((e) => String(e)),
+  continueOnCrash: argv.continueOnCrash,
+  logFile: argv.logFile,
+  verbose: argv.verbose,
 });
+
+process.exit(exitCode ?? 1);

@@ -5,15 +5,8 @@ import { removeControlCharacters } from './removeControlCharacters';
 import { sleepms } from './utils';
 import { TerminalTextRender } from 'terminal-render';
 import { writeFile } from 'fs/promises';
-// for debug only
-// if (import.meta.main) await main();
-// async function main() {
-//   await claudeYes({
-//     continueOnCrash: true,
-//     exitOnIdle: 10000,
-//     claudeArgs: ["say hello and exit"]
-//   })
-// }
+import path from 'path';
+import { mkdir } from 'fs/promises';
 
 /**
  * Main function to run Claude with automatic yes/no respojnses
@@ -35,18 +28,27 @@ export default async function claudeYes({
   // removeControlCharactersFromStdout = !process.stdout.isTTY,
   removeControlCharactersFromStdout = false,
   logFile,
+  verbose = false,
 }: {
   continueOnCrash?: boolean;
-  exitOnIdle?: boolean | number;
+  exitOnIdle?: number;
   claudeArgs?: string[];
   cwd?: string;
   removeControlCharactersFromStdout?: boolean;
   logFile?: string;
+  verbose?: boolean;
 } = {}) {
-  const defaultIdleTimeout = 60e3;
-  const idleTimeout =
-    typeof exitOnIdle === 'number' ? exitOnIdle : defaultIdleTimeout;
-
+  if (verbose) {
+    console.log('calling claudeYes: ', {
+      continueOnCrash,
+      exitOnIdle,
+      claudeArgs,
+      cwd,
+      removeControlCharactersFromStdout,
+      logFile,
+      verbose,
+    });
+  }
   console.log(
     '⭐ Starting claude, automatically responding to yes/no prompts...'
   );
@@ -71,6 +73,7 @@ export default async function claudeYes({
     cwd,
     env: process.env as Record<string, string>,
   });
+  let pendingExitCode = Promise.withResolvers<number | null>();
   // TODO handle error if claude is not installed, show msg:
   // npm install -g @anthropic-ai/claude-code
 
@@ -86,7 +89,7 @@ export default async function claudeYes({
         console.log(
           'Claude crashed with "No conversation found to continue", exiting...'
         );
-        void process.exit(exitCode);
+        return pendingExitCode.resolve(exitCode);
       }
       console.log('Claude crashed, restarting...');
       shell = pty.spawn('claude', ['continue', '--continue'], {
@@ -100,7 +103,7 @@ export default async function claudeYes({
       shell.onExit(onExit);
       return;
     }
-    void process.exit(exitCode);
+    return pendingExitCode.resolve(exitCode);
   });
 
   const exitClaudeCode = async () => {
@@ -147,33 +150,38 @@ export default async function claudeYes({
   };
 
   const ttr = new TerminalTextRender();
-  const idleWatcher = createIdleWatcher(async () => {
-    if (exitOnIdle) {
-      if (
-        ttr
-          .render()
-          .replace(/\s+/g, ' ')
-          .match(/esc to interrupt|to run in background/)
-      ) {
-        console.warn(
-          '[CLAUDE-YES] Claude is idle, but seems still working, not exiting yet'
-        );
-      } else {
-        console.warn('[CLAUDE-YES] Claude is idle, exiting...');
-        await exitClaudeCode();
-      }
-    }
-  }, idleTimeout);
+  const idleWatcher = !exitOnIdle
+    ? null
+    : createIdleWatcher(async () => {
+        if (
+          ttr
+            .render()
+            .replace(/\s+/g, ' ')
+            .match(/esc to interrupt|to run in background/)
+        ) {
+          console.log(
+            '[claude-yes] Claude is idle, but seems still working, not exiting yet'
+          );
+        } else {
+          console.log('[claude-yes] Claude is idle, exiting...');
+          await exitClaudeCode();
+        }
+      }, exitOnIdle);
   const confirm = async () => {
     await sleepms(200);
     shell.write('\r');
   };
-  await sflow(fromReadable<Buffer>(process.stdin))
-    .forEach(() => idleWatcher.ping()) // ping the idle watcher on output for last active time to keep track of claude status
+
+  sflow(fromReadable<Buffer>(process.stdin))
     .map((buffer) => buffer.toString())
-    .forEach((text) => ttr.write(text))
     // .forEach(e => appendFile('.cache/io.log', "input |" + JSON.stringify(e) + '\n')) // for debugging
     .by(shellStdio)
+    // handle ttr render
+    .forEach((text) => ttr.write(text))
+
+    // handle idle
+    .forEach(() => idleWatcher?.ping()) // ping the idle watcher on output for last active time to keep track of claude status
+    // auto-response
     .forkTo((e) =>
       e
         .map((e) => removeControlCharacters(e as string))
@@ -187,7 +195,6 @@ export default async function claudeYes({
             return;
           }
         })
-
         // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
         .run()
     )
@@ -197,8 +204,19 @@ export default async function claudeYes({
     )
     .to(fromWritable(process.stdout));
 
-  logFile && (await writeFile(logFile, ttr.render()));
-  return ttr.render(); // return full rendered logs
+  const exitCode = await pendingExitCode.promise; // wait for the shell to exit
+  verbose && console.log(`[claude-yes] claude exited with code ${exitCode}`);
+
+  if (logFile) {
+    verbose && console.log(`[claude-yes] Writing rendered logs to ${logFile}`);
+    const logFilePath = path.resolve(logFile);
+    await mkdir(path.dirname(logFilePath), { recursive: true }).catch(
+      () => null
+    );
+    await writeFile(logFilePath, ttr.render());
+  }
+
+  return { exitCode, logs: ttr.render() };
 }
 
 export { removeControlCharacters };
