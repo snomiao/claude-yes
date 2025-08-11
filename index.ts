@@ -146,7 +146,12 @@ export default async function claudeYes({
   const ttr = new TerminalTextRender();
   const idleWatcher = createIdleWatcher(async () => {
     if (exitOnIdle) {
-      if (ttr.render().match(/esc to interrupt|to run in background/)) {
+      if (
+        ttr
+          .render()
+          .replace(/\s+/g, ' ')
+          .match(/esc to interrupt|to run in background/)
+      ) {
         console.warn(
           '[CLAUDE-YES] Claude is idle, but seems still working, not exiting yet'
         );
