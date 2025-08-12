@@ -29,7 +29,7 @@ npm install claude-yes -g
 ## Usage
 
 ```bash
-claude-yes [command] [prompts] [--exit-on-idle]
+claude-yes [--exit-on-idle=60s] [claude-command] [claude-prompts]
 # works exactly same as `claude` command, and automatically says "Yes" to all yes/no prompts
 
 # e.g.
