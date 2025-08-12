@@ -1,9 +1,7 @@
 {
   "name": "claude-yes",
   "version": "0.0.0",
-  "homepage": "https://github.com/snomiao/claude-yes#readme",
-  "license": "MIT",
-  "author": "snomiao <snomiao@gmail.com>",
+  "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
   "keywords": [
     "claude",
     "ai",
@@ -14,23 +12,51 @@
     "anthropic",
     "auto-response"
   ],
-  "files": [
-    "*.ts",
-    "dist"
-  ],
-  "bin": {
-    "claude-yes": "dist/cli.js"
+  "homepage": "https://github.com/snomiao/claude-yes#readme",
+  "bugs": {
+    "url": "https://github.com/snomiao/claude-yes/issues"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/snomiao/claude-yes.git"
   },
+  "license": "MIT",
+  "author": "snomiao <snomiao@gmail.com>",
+  "type": "module",
+  "exports": {
+    "import": "./dist/index.js",
+    "types": "./index.ts"
+  },
+  "main": "index.js",
+  "module": "index.ts",
+  "types": "./index.ts",
+  "bin": {
+    "claude-yes": "dist/cli.js"
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "files": [
+    "*.ts",
+    "dist"
+  ],
   "scripts": {
+    "build": "bun build index.ts cli.ts --outdir=dist --packages=external --target=node --sourcemap",
     "dev": "tsx index.ts",
-    "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --external=bun-pty --target=node",
-    "test": "vitest",
+    "fmt": "prettier -w .",
     "prepare": "husky",
-    "fmt": "prettier -w ."
+    "test": "vitest"
+  },
+  "lint-staged": {
+    "*.{ts,js,json,md}": [
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "bun-pty": "^0.3.2",
+    "node-pty": "^1.0.0",
+    "terminal-render": "^1.1.0",
+    "yargs": "^18.0.0"
   },
   "devDependencies": {
     "@types/bun": "^1.2.18",
@@ -51,31 +77,5 @@
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
-  },
-  "type": "module",
-  "exports": {
-    "import": "./dist/index.js",
-    "types": "./index.ts"
-  },
-  "module": "index.ts",
-  "types": "./index.ts",
-  "dependencies": {
-    "bun-pty": "^0.3.2",
-    "node-pty": "^1.0.0",
-    "terminal-render": "^1.1.0",
-    "yargs": "^18.0.0"
-  },
-  "lint-staged": {
-    "*.{ts,js,json,md}": [
-      "prettier --write"
-    ]
-  },
-  "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
-  "bugs": {
-    "url": "https://github.com/snomiao/claude-yes/issues"
   }
 }

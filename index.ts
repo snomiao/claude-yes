@@ -21,21 +21,22 @@ import { mkdir } from 'fs/promises';
  * @param options.removeControlCharactersFromStdout - Remove ANSI control characters from stdout. Defaults to !process.stdout.isTTY
  */
 export default async function claudeYes({
-  continueOnCrash,
-  exitOnIdle,
   claudeArgs = [],
+  continueOnCrash,
   cwd = process.cwd(),
-  // removeControlCharactersFromStdout = !process.stdout.isTTY,
-  removeControlCharactersFromStdout = false,
+  env = process.env as Record<string, string>,
+  exitOnIdle,
   logFile,
+  removeControlCharactersFromStdout = false, // = !process.stdout.isTTY,
   verbose = false,
 }: {
-  continueOnCrash?: boolean;
-  exitOnIdle?: number;
   claudeArgs?: string[];
+  continueOnCrash?: boolean;
   cwd?: string;
-  removeControlCharactersFromStdout?: boolean;
+  env?: Record<string, string>;
+  exitOnIdle?: number;
   logFile?: string;
+  removeControlCharactersFromStdout?: boolean;
   verbose?: boolean;
 } = {}) {
   if (verbose) {
@@ -63,7 +64,10 @@ export default async function claudeYes({
 
   const shellOutputStream = new TransformStream<string, string>();
   const outputWriter = shellOutputStream.writable.getWriter();
-  const pty = globalThis.Bun
+  // const pty = await import('node-pty');
+
+  // recommened to use bun pty in windows
+  const pty = process.versions.bun
     ? await import('bun-pty')
     : await import('node-pty');
   let shell = pty.spawn('claude', claudeArgs, {
@@ -71,7 +75,7 @@ export default async function claudeYes({
     cols: process.stdout.columns - PREFIXLENGTH,
     rows: process.stdout.rows,
     cwd,
-    env: process.env as Record<string, string>,
+    env,
   });
   let pendingExitCode = Promise.withResolvers<number | null>();
   // TODO handle error if claude is not installed, show msg:
@@ -92,12 +96,12 @@ export default async function claudeYes({
         return pendingExitCode.resolve(exitCode);
       }
       console.log('Claude crashed, restarting...');
-      shell = pty.spawn('claude', ['continue', '--continue'], {
+      shell = pty.spawn('claude', ['--continue', 'continue'], {
         name: 'xterm-color',
         cols: process.stdout.columns - PREFIXLENGTH,
         rows: process.stdout.rows,
         cwd,
-        env: process.env as Record<string, string>,
+        env,
       });
       shell.onData(onData);
       shell.onExit(onExit);
