@@ -41,7 +41,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build index.ts cli.ts --outdir=dist --packages=external --target=node --sourcemap",
+    "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --external=bun-pty --target=node --sourcemap",
     "dev": "tsx index.ts",
     "fmt": "prettier -w .",
     "prepare": "husky",
@@ -63,6 +63,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
     "@types/yargs": "^17.0.33",
+    "sflow": "^1.20.2",
     "enhanced-ms": "^4.1.0",
     "execa": "^9.6.0",
     "from-node-stream": "^0.0.11",
@@ -70,7 +71,6 @@
     "lint-staged": "^16.1.4",
     "prettier": "^3.6.2",
     "semantic-release": "^24.2.6",
-    "sflow": "^1.20.2",
     "strip-ansi-control-characters": "^2.0.0",
     "tsx": "^4.20.3",
     "vitest": "^3.2.4"
