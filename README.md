@@ -10,7 +10,7 @@ A wrapper tool that automates interactions with the Claude CLI by automatically 
 - Automatically responds to common prompts like "Yes, proceed" and "Yes"
 - So, this will Let claude run until your task done, and wait for your next prompt.
 
-## Installation
+## Prerequirements
 
 First, install Claude Code globally:
 
@@ -28,17 +28,18 @@ npm install claude-yes -g
 
 ## Usage
 
+### claude-yes cli
+
 ```bash
-claude-yes [command] [prompts] [--exit-on-idle]
+claude-yes [--exit-on-idle=60s] [claude-command] [claude-prompts]
 # works exactly same as `claude` command, and automatically says "Yes" to all yes/no prompts
 
 # e.g.
 claude-yes "run all tests and commit current changes"
 bunx claude-yes "Solve TODO.md"
 
-# Auto-exit when Claude becomes idle (useful for automation)
-claude-yes "run all tests and commit current changes" --exit-on-idle
-
+# Auto-exit when Claude becomes idle (useful for automation scripts)
+claude-yes --exit-on-idle=60s "run all tests and commit current changes"
 ```
 
 The tool will:
@@ -46,6 +47,8 @@ The tool will:
 1. run Claude Code
 2. Whenever claude stucked on yes/no prompts, Automatically say YES, YES, YES, YES, YES to claude
 3. When using `--exit-on-idle` flag, automatically exit when Claude becomes idle for 3 seconds (useful for automation scripts)
+
+<!-- TODO: add usage As lib: call await claudeYes() and it returns render result -->
 
 ## Options
 
@@ -65,8 +68,6 @@ The tool will automatically send "\r" when it detects this pattern.
 ## Dependencies
 
 - `node-pty` - For spawning and managing the Claude CLI process
-- `sflow` - For stream processing and data flow management
-- `from-node-stream` - For converting Node.js streams to web streams
 
 ## Inspiration
 
