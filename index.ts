@@ -209,7 +209,7 @@ export default async function claudeYes({
     .to(fromWritable(process.stdout));
 
   const exitCode = await pendingExitCode.promise; // wait for the shell to exit
-  verbose && console.log(`[claude-yes] claude exited with code ${exitCode}`);
+  console.log(`[claude-yes] claude exited with code ${exitCode}`);
 
   if (logFile) {
     verbose && console.log(`[claude-yes] Writing rendered logs to ${logFile}`);
