@@ -25,7 +25,7 @@ export default async function claudeYes({
   continueOnCrash,
   cwd,
   env,
-  exitOnIdle,
+  exitOnIdle = 60e3,
   logFile,
   removeControlCharactersFromStdout = false, // = !process.stdout.isTTY,
   verbose = false,
@@ -80,6 +80,8 @@ export default async function claudeYes({
   });
   let shell = pty.spawn('claude', claudeArgs, getPtyOptions());
   let pendingExitCode = Promise.withResolvers<number | null>();
+  let pendingExitCodeValue = null;
+
   // TODO handle error if claude is not installed, show msg:
   // npm install -g @anthropic-ai/claude-code
 
@@ -87,8 +89,8 @@ export default async function claudeYes({
     // append data to the buffer, so we can process it later
     await outputWriter.write(data);
   }
+
   shell.onData(onData);
-  // when claude process exits, exit the main process with the same exit code
   shell.onExit(function onExit({ exitCode }) {
     const claudeCrashed = exitCode !== 0;
     if (claudeCrashed && continueOnCrash) {
@@ -96,7 +98,7 @@ export default async function claudeYes({
         console.log(
           'Claude crashed with "No conversation found to continue", exiting...'
         );
-        return pendingExitCode.resolve(exitCode);
+        return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
       }
       console.log('Claude crashed, restarting...');
 
@@ -105,10 +107,11 @@ export default async function claudeYes({
       shell.onExit(onExit);
       return;
     }
-    return pendingExitCode.resolve(exitCode);
+    return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
   });
 
   const exitClaudeCode = async () => {
+    continueOnCrash = false;
     // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
     await sflow(['\r', '/exit', '\r'])
       .forEach(async () => await sleepms(200))
@@ -118,12 +121,7 @@ export default async function claudeYes({
     // wait for shell to exit or kill it with a timeout
     let exited = false;
     await Promise.race([
-      new Promise<void>((resolve) =>
-        shell.onExit(() => {
-          resolve();
-          exited = true;
-        })
-      ), // resolve when shell exits
+      pendingExitCode.promise.then(() => (exited = true)), // resolve when shell exits
       // if shell doesn't exit in 5 seconds, kill it
       new Promise<void>((resolve) =>
         setTimeout(() => {
@@ -140,14 +138,6 @@ export default async function claudeYes({
     const { columns, rows } = process.stdout;
     shell.resize(columns - PREFIXLENGTH, rows);
   });
-
-  const shellStdio = {
-    writable: new WritableStream<string>({
-      write: (data) => shell.write(data),
-      close: () => {},
-    }),
-    readable: shellOutputStream.readable,
-  };
 
   const ttr = new TerminalTextRender();
   const idleWatcher = !exitOnIdle
@@ -175,7 +165,13 @@ export default async function claudeYes({
   sflow(fromReadable<Buffer>(process.stdin))
     .map((buffer) => buffer.toString())
     // .forEach(e => appendFile('.cache/io.log', "input |" + JSON.stringify(e) + '\n')) // for debugging
-    .by(shellStdio)
+    // pipe
+    .by({
+      writable: new WritableStream<string>({
+        write: (data) => shell.write(data),
+      }),
+      readable: shellOutputStream.readable,
+    })
     // handle ttr render
     .forEach((text) => ttr.write(text))
 

@@ -14,7 +14,8 @@ const argv = yargs(hideBin(process.argv))
   .option('exit-on-idle', {
     type: 'string',
     default: '60s',
-    description: 'Exit after being idle for specified duration',
+    description:
+      'Exit after being idle for specified duration, default 1min, set to 0 to disable this behaviour',
   })
   .option('continue-on-crash', {
     type: 'boolean',
