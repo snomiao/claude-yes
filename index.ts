@@ -23,8 +23,8 @@ import { mkdir } from 'fs/promises';
 export default async function claudeYes({
   claudeArgs = [],
   continueOnCrash,
-  cwd = process.cwd(),
-  env = process.env as Record<string, string>,
+  cwd,
+  env,
   exitOnIdle,
   logFile,
   removeControlCharactersFromStdout = false, // = !process.stdout.isTTY,
@@ -70,13 +70,15 @@ export default async function claudeYes({
   const pty = process.versions.bun
     ? await import('bun-pty')
     : await import('node-pty');
-  let shell = pty.spawn('claude', claudeArgs, {
+
+  const getPtyOptions = () => ({
     name: 'xterm-color',
     cols: process.stdout.columns - PREFIXLENGTH,
     rows: process.stdout.rows,
-    cwd,
-    env,
+    cwd: cwd ?? process.cwd(),
+    env: env ?? (process.env as Record<string, string>),
   });
+  let shell = pty.spawn('claude', claudeArgs, getPtyOptions());
   let pendingExitCode = Promise.withResolvers<number | null>();
   // TODO handle error if claude is not installed, show msg:
   // npm install -g @anthropic-ai/claude-code
@@ -88,7 +90,8 @@ export default async function claudeYes({
   shell.onData(onData);
   // when claude process exits, exit the main process with the same exit code
   shell.onExit(function onExit({ exitCode }) {
-    if (continueOnCrash && exitCode !== 0) {
+    const claudeCrashed = exitCode !== 0;
+    if (claudeCrashed && continueOnCrash) {
       if (errorNoConversation) {
         console.log(
           'Claude crashed with "No conversation found to continue", exiting...'
@@ -96,13 +99,8 @@ export default async function claudeYes({
         return pendingExitCode.resolve(exitCode);
       }
       console.log('Claude crashed, restarting...');
-      shell = pty.spawn('claude', ['--continue', 'continue'], {
-        name: 'xterm-color',
-        cols: process.stdout.columns - PREFIXLENGTH,
-        rows: process.stdout.rows,
-        cwd,
-        env,
-      });
+
+      shell = pty.spawn('claude', ['--continue', 'continue'], getPtyOptions());
       shell.onData(onData);
       shell.onExit(onExit);
       return;
@@ -113,10 +111,8 @@ export default async function claudeYes({
   const exitClaudeCode = async () => {
     // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
     await sflow(['\r', '/exit', '\r'])
-      .forEach(async (e) => {
-        await sleepms(200);
-        shell.write(e);
-      })
+      .forEach(async () => await sleepms(200))
+      .forEach(async (e) => shell.write(e))
       .run();
 
     // wait for shell to exit or kill it with a timeout
@@ -209,7 +205,7 @@ export default async function claudeYes({
     .to(fromWritable(process.stdout));
 
   const exitCode = await pendingExitCode.promise; // wait for the shell to exit
-  verbose && console.log(`[claude-yes] claude exited with code ${exitCode}`);
+  console.log(`[claude-yes] claude exited with code ${exitCode}`);
 
   if (logFile) {
     verbose && console.log(`[claude-yes] Writing rendered logs to ${logFile}`);
