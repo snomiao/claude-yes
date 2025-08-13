@@ -54,11 +54,11 @@
   },
   "dependencies": {
     "bun-pty": "^0.3.2",
-    "node-pty": "^1.0.0",
-    "terminal-render": "^1.1.0",
-    "yargs": "^18.0.0"
+    "node-pty": "^1.0.0"
   },
   "devDependencies": {
+    "terminal-render": "^1.1.0",
+    "yargs": "^18.0.0",
     "@types/bun": "^1.2.18",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
