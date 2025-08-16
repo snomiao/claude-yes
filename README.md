@@ -41,6 +41,9 @@ bunx claude-yes "Solve TODO.md"
 
 # Auto-exit when Claude becomes idle (useful for automation scripts)
 claude-yes --exit-on-idle=60s "run all tests and commit current changes"
+
+# Alternative: use with claude-code-execute
+claude-code-execute claude-yes "your task here"
 ```
 
 The tool will:
