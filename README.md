@@ -8,7 +8,8 @@ A wrapper tool that automates interactions with the Claude CLI by automatically 
 
 - Same as `claude` command
 - Automatically responds to common prompts like "Yes, proceed" and "Yes"
-- So, this will Let claude run until your task done, and wait for your next prompt.
+- So, this will Let claude keep run until your task done, and wait for your next prompt.
+- You can still Queue More Prompts or Cancel executing task by `ESC` or `Ctrl+C`
 
 ## Prerequirements
 
