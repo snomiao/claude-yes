@@ -7,6 +7,7 @@ import { TerminalTextRender } from 'terminal-render';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { mkdir } from 'fs/promises';
+import { ReadyManager } from './ReadyManager';
 
 /**
  * Main function to run Claude with automatic yes/no respojnses
@@ -61,6 +62,7 @@ export default async function claudeYes({
   const prefix = ''; // "YESC|"
   const PREFIXLENGTH = prefix.length;
   let errorNoConversation = false; // match 'No conversation found to continue'
+  const shellReady = new ReadyManager();
 
   const shellOutputStream = new TransformStream<string, string>();
   const outputWriter = shellOutputStream.writable.getWriter();
@@ -88,10 +90,12 @@ export default async function claudeYes({
   async function onData(data: string) {
     // append data to the buffer, so we can process it later
     await outputWriter.write(data);
+    shellReady.ready(); // shell has output, also means ready for stdin
   }
 
   shell.onData(onData);
   shell.onExit(function onExit({ exitCode }) {
+    shellReady.unready(); // start buffer stdin
     const claudeCrashed = exitCode !== 0;
     if (claudeCrashed && continueOnCrash) {
       if (errorNoConversation) {
@@ -139,12 +143,12 @@ export default async function claudeYes({
     shell.resize(columns - PREFIXLENGTH, rows);
   });
 
-  const ttr = new TerminalTextRender();
+  const render = new TerminalTextRender();
   const idleWatcher = !exitOnIdle
     ? null
     : createIdleWatcher(async () => {
         if (
-          ttr
+          render
             .render()
             .replace(/\s+/g, ' ')
             .match(/esc to interrupt|to run in background/)
@@ -168,12 +172,15 @@ export default async function claudeYes({
     // pipe
     .by({
       writable: new WritableStream<string>({
-        write: (data) => shell.write(data),
+        write: async (data) => {
+          await shellReady.wait();
+          shell.write(data);
+        },
       }),
       readable: shellOutputStream.readable,
     })
-    // handle ttr render
-    .forEach((text) => ttr.write(text))
+    // handle terminal render
+    .forEach((text) => render.write(text))
 
     // handle idle
     .forEach(() => idleWatcher?.ping()) // ping the idle watcher on output for last active time to keep track of claude status
@@ -209,10 +216,10 @@ export default async function claudeYes({
     await mkdir(path.dirname(logFilePath), { recursive: true }).catch(
       () => null
     );
-    await writeFile(logFilePath, ttr.render());
+    await writeFile(logFilePath, render.render());
   }
 
-  return { exitCode, logs: ttr.render() };
+  return { exitCode, logs: render.render() };
 }
 
 export { removeControlCharacters };
