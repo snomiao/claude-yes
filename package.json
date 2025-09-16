@@ -74,7 +74,9 @@
   },
   "peerDependencies": {
     "typescript": "^5.8.3",
-    "bun-pty": "^0.3.2",
     "node-pty": "^1.0.0"
+  },
+  "dependencies": {
+    "bun-pty": "^0.3.2"
   }
 }

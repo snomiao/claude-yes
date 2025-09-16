@@ -70,8 +70,12 @@ export default async function claudeYes({
 
   // recommened to use bun pty in windows
   const pty = process.versions.bun
-    ? await import('bun-pty')
-    : await import('node-pty');
+    ? await import('bun-pty').catch(() => {
+        throw new Error('Please install bun-pty');
+      })
+    : await import('node-pty').catch(() => {
+        throw new Error('Please install node-pty');
+      });
 
   const getPtyOptions = () => ({
     name: 'xterm-color',
