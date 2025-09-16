@@ -27,7 +27,7 @@
     "import": "./dist/index.js",
     "types": "./index.ts"
   },
-  "main": "index.js",
+  "main": "dist/index.js",
   "module": "index.ts",
   "types": "./index.ts",
   "bin": {
