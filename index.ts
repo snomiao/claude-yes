@@ -62,7 +62,7 @@ export default async function claudeYes({
   const prefix = ''; // "YESC|"
   const PREFIXLENGTH = prefix.length;
   let errorNoConversation = false; // match 'No conversation found to continue'
-  const shellReady = new ReadyManager();
+  const stdinReady = new ReadyManager();
 
   const shellOutputStream = new TransformStream<string, string>();
   const outputWriter = shellOutputStream.writable.getWriter();
@@ -94,12 +94,11 @@ export default async function claudeYes({
   async function onData(data: string) {
     // append data to the buffer, so we can process it later
     await outputWriter.write(data);
-    shellReady.ready(); // shell has output, also means ready for stdin
   }
 
   shell.onData(onData);
   shell.onExit(function onExit({ exitCode }) {
-    shellReady.unready(); // start buffer stdin
+    stdinReady.unready(); // start buffer stdin
     const claudeCrashed = exitCode !== 0;
     if (claudeCrashed && continueOnCrash) {
       if (errorNoConversation) {
@@ -177,7 +176,7 @@ export default async function claudeYes({
     .by({
       writable: new WritableStream<string>({
         write: async (data) => {
-          await shellReady.wait();
+          await stdinReady.wait();
           shell.write(data);
         },
       }),
@@ -194,6 +193,7 @@ export default async function claudeYes({
         .map((e) => removeControlCharacters(e as string))
         .map((e) => e.replaceAll('\r', '')) // remove carriage return
         .forEach(async (e) => {
+          if (e.match(/^> /)) return await stdinReady.ready();
           if (e.match(/❯ 1. Yes/)) return await confirm();
           if (e.match(/❯ 1. Dark mode✔|Press Enter to continue…/))
             return await confirm();
