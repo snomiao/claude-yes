@@ -24,11 +24,10 @@
   "author": "snomiao <snomiao@gmail.com>",
   "type": "module",
   "exports": {
-    "import": "./dist/index.js",
+    "bun": "./dist/bun/index.js",
+    "node": "./dist/node/index.js",
     "types": "./index.ts"
   },
-  "main": "dist/index.js",
-  "module": "index.ts",
   "types": "./index.ts",
   "bin": {
     "claude-yes": "dist/cli.js"
@@ -41,7 +40,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --external=bun-pty --target=node --sourcemap",
+    "build": "bun run build:cli && bun run build:bun && bun run build:node",
+    "build:cli": "bun build cli.ts --outfile=dist/cli.js --package=external --no-bundle --target=bun",
+    "build:bun": "bun build index.ts --outdir=dist/bun/index.js --external=bun-pty --target=bun --sourcemap",
+    "build:node": "bun build index.ts --outdir=dist/node/index.js --external=node-pty --target=node --sourcemap",
+    "build:rs": "cargo build --release",
     "dev": "tsx index.ts",
     "fmt": "prettier -w .",
     "prepare": "husky",

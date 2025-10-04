@@ -1,0 +1,17 @@
+{
+  "name": "claude-yes-e2e-tests",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "End-to-end tests for claude-yes",
+  "scripts": {
+    "test": "node run-tests.js",
+    "test:rust": "node vite-dev-test.js rust",
+    "test:typescript": "node vite-dev-test.js typescript",
+    "test:vite": "npm run test:rust && npm run test:typescript",
+    "setup": "cd vite-project && npm install"
+  },
+  "dependencies": {
+    "node-fetch": "^3.0.0"
+  },
+  "devDependencies": {}
+}

@@ -1,0 +1,33 @@
+[package]
+name = "claude-yes"
+version = "0.1.0"
+edition = "2021"
+authors = ["snomiao <snomiao@gmail.com>"]
+description = "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses"
+license = "MIT"
+repository = "https://github.com/snomiao/claude-yes"
+keywords = ["claude", "ai", "automation", "cli", "wrapper"]
+categories = ["command-line-utilities", "automation"]
+
+[[bin]]
+name = "claude-yes"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1.41", features = ["full"] }
+clap = { version = "4.5", features = ["derive", "cargo"] }
+portable-pty = "0.8"
+anyhow = "1.0"
+crossterm = { version = "0.28", features = ["event-stream"] }
+regex = "1.11"
+chrono = "0.4"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+futures = "0.3"
+async-stream = "0.3"
+strip-ansi-escapes = "0.2"
+humantime = "2.1"
+bytes = "1.8"
+
+[dev-dependencies]
+tempfile = "3.14"
