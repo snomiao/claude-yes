@@ -6,7 +6,7 @@ import { sleepms } from './utils';
 // 2025-08-11 ok
 it.skip('CLI --exit-on-idle flag with custom timeout', async () => {
   const p = exec(
-    `bunx tsx ./cli.ts --verbose --logFile=./cli-idle.log --exit-on-idle=3s "say hello and wait"`
+    `bunx tsx ./cli.ts --verbose --logFile=./cli-idle.log --exit-on-idle=3s "say hello and wait"`,
   );
   const tr = new TransformStream<string, string>();
   const output = await sflow(tr.readable).by(fromStdio(p)).log().text();
