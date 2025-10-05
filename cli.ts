@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import enhancedMs from 'enhanced-ms';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import claudeYes from '.';
@@ -22,7 +23,8 @@ const argv = yargs(hideBin(process.argv))
   })
   .option('cli', {
     type: 'string',
-    description: 'Claude CLI command, e.g. "claude", "gemini", "codex", default is "claude"',
+    description:
+      'Claude CLI command, e.g. "claude", "gemini", "codex", default is "claude"',
   })
   .option('prompt', {
     type: 'string',
@@ -46,18 +48,19 @@ const argv = yargs(hideBin(process.argv))
 
 // detect cli name for cli, while package.json have multiple bin link: {"claude-yes": "cli.js", "codex-yes": "cli.js", "gemini-yes": "cli.js"}
 if (!argv.cli) {
-	const cliName = process.argv[1]?.split('/').pop()?.split('-')[0];
-  console.log('Detected cli name:', cliName);
-	argv.cli = cliName || 'claude';
+  const cliName = process.argv[1]?.split('/').pop()?.split('-')[0];
+  argv.cli = cliName || 'claude';
 }
 
+console.clear();
 const { exitCode, logs } = await claudeYes({
   cli: argv.cli,
   prompt: argv.prompt,
-  exitOnIdle: argv.exitOnIdle,
+  exitOnIdle: argv.exitOnIdle ? enhancedMs(argv.exitOnIdle) : undefined,
   cliArgs: argv._.map((e) => String(e)),
   continueOnCrash: argv.continueOnCrash,
   logFile: argv.logFile,
   verbose: argv.verbose,
 });
+
 process.exit(exitCode ?? 1);
