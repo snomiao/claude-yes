@@ -1,8 +1,8 @@
-import { execaCommand } from 'execa';
-import { fromStdio } from 'from-node-stream';
 import { exec } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { readFile, unlink } from 'node:fs/promises';
+import { execaCommand } from 'execa';
+import { fromStdio } from 'from-node-stream';
 import sflow from 'sflow';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createIdleWatcher } from './createIdleWatcher';
@@ -17,7 +17,7 @@ it('Write file with auto bypass prompts', async () => {
   }
 
   const p = exec(
-    `bunx tsx ./cli.ts --logFile=./cli-rendered.log --exit-on-idle=3s "just write {on: 1} into ./.cache/flag.json and wait"`
+    `bunx tsx ./cli.ts --logFile=./cli-rendered.log --exit-on-idle=3s "just write {on: 1} into ./.cache/flag.json and wait"`,
   );
   const pExitCode = new Promise<number | null>((r) => p.once('exit', r));
 

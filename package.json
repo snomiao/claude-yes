@@ -43,16 +43,17 @@
   "scripts": {
     "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --external=bun-pty --target=node --sourcemap",
     "dev": "tsx index.ts",
-    "fmt": "prettier -w .",
+    "fmt": "bunx @biomejs/biome check --fix",
     "prepare": "husky",
     "test": "vitest"
   },
   "lint-staged": {
     "*.{ts,js,json,md}": [
-      "prettier --write"
+      "bunx @biomejs/biome check --fix"
     ]
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.5",
     "@types/bun": "^1.2.18",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
@@ -62,7 +63,6 @@
     "from-node-stream": "^0.0.11",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.4",
-    "prettier": "^3.6.2",
     "rambda": "^10.3.2",
     "semantic-release": "^24.2.6",
     "sflow": "^1.20.2",

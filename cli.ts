@@ -9,7 +9,7 @@ const argv = yargs(hideBin(process.argv))
   .usage('Usage: $0 [options] [--] [claude args]')
   .example(
     '$0 --exit-on-idle=30s --continue-on-crash "help me solve all todos in my codebase"',
-    'Run Claude with a 30 seconds idle timeout and continue on crash'
+    'Run Claude with a 30 seconds idle timeout and continue on crash',
   )
   .option('exit-on-idle', {
     type: 'string',

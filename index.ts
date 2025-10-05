@@ -1,13 +1,12 @@
 import { fromReadable, fromWritable } from 'from-node-stream';
+import { mkdir, writeFile } from 'fs/promises';
+import path from 'path';
 import sflow from 'sflow';
+import { TerminalTextRender } from 'terminal-render';
 import { createIdleWatcher } from './createIdleWatcher';
+import { ReadyManager } from './ReadyManager';
 import { removeControlCharacters } from './removeControlCharacters';
 import { sleepms } from './utils';
-import { TerminalTextRender } from 'terminal-render';
-import { writeFile } from 'fs/promises';
-import path from 'path';
-import { mkdir } from 'fs/promises';
-import { ReadyManager } from './ReadyManager';
 
 /**
  * Main function to run Claude with automatic yes/no respojnses
@@ -52,10 +51,10 @@ export default async function claudeYes({
     });
   }
   console.log(
-    '⭐ Starting claude, automatically responding to yes/no prompts...'
+    '⭐ Starting claude, automatically responding to yes/no prompts...',
   );
   console.log(
-    '⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.'
+    '⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.',
   );
 
   process.stdin.setRawMode?.(true); //must be called any stdout/stdin usage
@@ -103,7 +102,7 @@ export default async function claudeYes({
     if (claudeCrashed && continueOnCrash) {
       if (errorNoConversation) {
         console.log(
-          'Claude crashed with "No conversation found to continue", exiting...'
+          'Claude crashed with "No conversation found to continue", exiting...',
         );
         return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
       }
@@ -135,7 +134,7 @@ export default async function claudeYes({
           if (exited) return; // if shell already exited, do nothing
           shell.kill(); // kill the shell process if it doesn't exit in time
           resolve();
-        }, 5000)
+        }, 5000),
       ), // 5 seconds timeout
     ]);
   };
@@ -157,7 +156,7 @@ export default async function claudeYes({
             .match(/esc to interrupt|to run in background/)
         ) {
           console.log(
-            '[claude-yes] Claude is idle, but seems still working, not exiting yet'
+            '[claude-yes] Claude is idle, but seems still working, not exiting yet',
           );
         } else {
           console.log('[claude-yes] Claude is idle, exiting...');
@@ -203,11 +202,11 @@ export default async function claudeYes({
           }
         })
         // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
-        .run()
+        .run(),
     )
     .replaceAll(/.*(?:\r\n?|\r?\n)/g, (line) => prefix + line) // add prefix
     .map((e) =>
-      removeControlCharactersFromStdout ? removeControlCharacters(e) : e
+      removeControlCharactersFromStdout ? removeControlCharacters(e) : e,
     )
     .to(fromWritable(process.stdout));
 
@@ -218,7 +217,7 @@ export default async function claudeYes({
     verbose && console.log(`[claude-yes] Writing rendered logs to ${logFile}`);
     const logFilePath = path.resolve(logFile);
     await mkdir(path.dirname(logFilePath), { recursive: true }).catch(
-      () => null
+      () => null,
     );
     await writeFile(logFilePath, render.render());
   }

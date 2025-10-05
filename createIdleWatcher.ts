@@ -1,6 +1,6 @@
 export function createIdleWatcher(
   onIdle: () => void,
-  idleTimeout: number
+  idleTimeout: number,
 ): { ping: () => void; getLastActiveTime: () => Date } {
   let lastActiveTime = new Date();
   let idleTimeoutId: NodeJS.Timeout | null = null;
