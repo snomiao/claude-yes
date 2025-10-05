@@ -1,82 +1,82 @@
 {
-  "name": "claude-yes",
-  "version": "0.0.0",
-  "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
-  "keywords": [
-    "claude",
-    "ai",
-    "automation",
-    "cli",
-    "wrapper",
-    "assistant",
-    "anthropic",
-    "auto-response"
-  ],
-  "homepage": "https://github.com/snomiao/claude-yes#readme",
-  "bugs": {
-    "url": "https://github.com/snomiao/claude-yes/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/snomiao/claude-yes.git"
-  },
-  "license": "MIT",
-  "author": "snomiao <snomiao@gmail.com>",
-  "type": "module",
-  "exports": {
-    "import": "./dist/index.js",
-    "types": "./index.ts"
-  },
-  "main": "dist/index.js",
-  "module": "index.ts",
-  "types": "./index.ts",
-  "bin": {
-    "claude-yes": "dist/cli.js"
-  },
-  "directories": {
-    "doc": "docs"
-  },
-  "files": [
-    "*.ts",
-    "dist"
-  ],
-  "scripts": {
-    "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --external=bun-pty --target=node --sourcemap",
-    "dev": "tsx index.ts",
-    "fmt": "prettier -w .",
-    "prepare": "husky",
-    "test": "vitest"
-  },
-  "lint-staged": {
-    "*.{ts,js,json,md}": [
-      "prettier --write"
-    ]
-  },
-  "devDependencies": {
-    "@types/bun": "^1.2.18",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^24.0.10",
-    "@types/yargs": "^17.0.33",
-    "enhanced-ms": "^4.1.0",
-    "execa": "^9.6.0",
-    "from-node-stream": "^0.0.11",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.1.4",
-    "prettier": "^3.6.2",
-    "rambda": "^10.3.2",
-    "semantic-release": "^24.2.6",
-    "sflow": "^1.20.2",
-    "strip-ansi-control-characters": "^2.0.0",
-    "terminal-render": "^1.1.0",
-    "tsx": "^4.20.3",
-    "vitest": "^3.2.4",
-    "yargs": "^18.0.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5.8.3",
-    "node-pty": "^1.0.0"
-  },
-  "dependencies": {
-    "bun-pty": "^0.3.2"
-  }
+	"name": "claude-yes",
+	"version": "0.0.0",
+	"description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
+	"keywords": [
+		"claude",
+		"ai",
+		"automation",
+		"cli",
+		"wrapper",
+		"assistant",
+		"anthropic",
+		"auto-response"
+	],
+	"homepage": "https://github.com/snomiao/claude-yes#readme",
+	"bugs": {
+		"url": "https://github.com/snomiao/claude-yes/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/snomiao/claude-yes.git"
+	},
+	"license": "MIT",
+	"author": "snomiao <snomiao@gmail.com>",
+	"type": "module",
+	"exports": {
+		"import": "./dist/index.js",
+		"types": "./index.ts"
+	},
+	"main": "dist/index.js",
+	"module": "index.ts",
+	"types": "./index.ts",
+	"bin": {
+		"claude-yes": "dist/cli.js"
+	},
+	"directories": {
+		"doc": "docs"
+	},
+	"files": [
+		"*.ts",
+		"dist"
+	],
+	"scripts": {
+		"build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --external=bun-pty --target=node --sourcemap",
+		"dev": "tsx index.ts",
+		"fmt": "bunx @biomejs/biome check --fix",
+		"prepare": "husky",
+		"test": "vitest"
+	},
+	"lint-staged": {
+		"*.{ts,js,json,md}": [
+			"bunx @biomejs/biome check --fix"
+		]
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.2.5",
+		"@types/bun": "^1.2.18",
+		"@types/jest": "^30.0.0",
+		"@types/node": "^24.0.10",
+		"@types/yargs": "^17.0.33",
+		"enhanced-ms": "^4.1.0",
+		"execa": "^9.6.0",
+		"from-node-stream": "^0.0.11",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.1.4",
+		"rambda": "^10.3.2",
+		"semantic-release": "^24.2.6",
+		"sflow": "^1.20.2",
+		"strip-ansi-control-characters": "^2.0.0",
+		"terminal-render": "^1.1.0",
+		"tsx": "^4.20.3",
+		"vitest": "^3.2.4",
+		"yargs": "^18.0.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5.8.3",
+		"node-pty": "^1.0.0"
+	},
+	"dependencies": {
+		"bun-pty": "^0.3.2"
+	}
 }
