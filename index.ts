@@ -291,8 +291,8 @@ export default async function claudeYes({
     await idleWaiter.wait(waitms);
     const et = Date.now();
     process.stdout.write(`\ridleWaiter.wait(${waitms}) took ${et - st}ms\r`);
-    idleWaiter.ping();
-    shell.write('\n');
+
+    shell.write('\r');
   }
 
   async function sendMessage(message: string) {
