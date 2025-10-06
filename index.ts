@@ -21,7 +21,8 @@ export const CLI_CONFIGURES: Record<
 > = {
   grok: {
     install: 'npm install -g @vibe-kit/grok-cli',
-    ready: [/^ +│ ❯ /],
+    ready: [/^  │ ❯ /],
+    enter: [/^   1. Yes/],
   },
   claude: {
     install: 'npm install -g @anthropic-ai/claude-code',
