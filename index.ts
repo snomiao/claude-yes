@@ -226,17 +226,20 @@ export default async function claudeYes({
       readable: shellOutputStream.readable,
     })
     .forEach(() => idleWaiter.ping())
-    .forEach((text) => terminalRender.write(text))
-    .forEach((txt) => {
+    .forEach((text) => {
+      terminalRender.write(text);
+      // todo: .onStatus((msg)=> shell.write(msg))
+      if (process.stdin.isTTY) return; // only handle it when stdin is not tty
+      if (text.includes('\u001b[6n')) return; // only asked
+
+      // todo: use terminalRender API to get cursor position when new version is available
       // xterm replies CSI row; column R if asked cursor position
       // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=citation%20needed%5D-,xterm%20replies,-CSI%20row%C2%A0%3B
-      if (process.stdin.isTTY) return; // only handle it when stdin is not tty
-      if (txt.includes('\u001b[6n')) return; // only asked
+      // when agent asking position, respond with row; col
       const rendered = terminalRender.render();
-      // when asking position, respond with row; col
       const row = rendered.split('\n').length + 1;
       const col = (rendered.split('\n').slice(-1)[0]?.length || 0) + 1;
-      //  shell.write(`\u001b[${row};${col}R`);
+      shell.write(`\u001b[${row};${col}R`);
     })
 
     // auto-response
@@ -248,6 +251,7 @@ export default async function claudeYes({
         .forEach(async (e) => {
           if (cli !== 'copilot') return;
           if (e.match(/ │ ❯ 1. Yes, proceed/)) return await sendEnter();
+          if (e.match(/❯ 1. Yes/)) return await sendEnter();
           if (e.match(/^  > /)) return stdinReady.ready();
         })
         .forEach(async (e) => {
