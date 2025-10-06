@@ -246,6 +246,11 @@ export default async function claudeYes({
         .map((e) => e.replaceAll('\r', '')) // remove carriage return
         .lines({ EOL: 'NONE' })
         .forEach(async (e) => {
+          if (cli !== 'copilot') return;
+          if (e.match(/ │ ❯ 1. Yes, proceed/)) return await sendEnter();
+          if (e.match(/^  > /)) return stdinReady.ready();
+        })
+        .forEach(async (e) => {
           if (cli !== 'claude') return;
 
           if (e.match(/^> /)) return stdinReady.ready();
