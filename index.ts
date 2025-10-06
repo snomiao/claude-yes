@@ -212,14 +212,14 @@ export default async function claudeYes({
   // Message streaming
   sflow(fromReadable<Buffer>(process.stdin))
     .map((buffer) => buffer.toString())
-    .map((e) => e.replaceAll('\x1a', '')) // remove ctrl+z from user's input
+    // .map((e) => e.replaceAll('\x1a', '')) // remove ctrl+z from user's input (seems bug)
     // .forEach(e => appendFile('.cache/io.log', "input |" + JSON.stringify(e) + '\n')) // for debugging
     // pipe
     .by({
       writable: new WritableStream<string>({
         write: async (data) => {
-          // await stdinReady.wait();
-          await idleWaiter.wait(200); // wait for idle for 200ms to avoid messing up claude's input
+          await stdinReady.wait();
+          // await idleWaiter.wait(20); // wait for idle for 200ms to avoid messing up claude's input
           shell.write(data);
         },
       }),
