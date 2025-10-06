@@ -11,15 +11,21 @@ import { removeControlCharacters } from './removeControlCharacters';
 export const CLI_CONFIGURES: Record<
   string,
   {
+    install?: string; // hint user for install command if not installed
     binary?: string; // actual binary name if different from cli
-    ready?: RegExp; // regex matcher for stdin ready, or line index for gemini
+    ready?: RegExp[]; // regex matcher for stdin ready, or line index for gemini
     enter?: RegExp[]; // array of regex to match for sending Enter
     fatal?: RegExp[]; // array of regex to match for fatal errors
     ensureArgs?: (args: string[]) => string[]; // function to ensure certain args are present
   }
 > = {
+  grok: {
+    install: 'npm install -g @vibe-kit/grok-cli',
+    ready: [/^ +│ ❯ /],
+  },
   claude: {
-    ready: /^> /, // regex matcher for stdin ready,
+    install: 'npm install -g @anthropic-ai/claude-code',
+    ready: [/^> /], // regex matcher for stdin ready,
     enter: [/❯ 1. Yes/, /❯ 1. Dark mode✔/, /Press Enter to continue…/],
     fatal: [
       /No conversation found to continue/,
@@ -27,13 +33,15 @@ export const CLI_CONFIGURES: Record<
     ],
   },
   gemini: {
+    install: 'npm install -g @google/gemini-cli',
     // match the agent prompt after initial lines; handled by index logic using line index
-    ready: /Type your message/, // used with line index check
+    ready: [/Type your message/], // used with line index check
     enter: [/│ ● 1. Yes, allow once/],
     fatal: [],
   },
   codex: {
-    ready: /⏎ send/,
+    install: 'npm install -g @openai/codex-cli',
+    ready: [/⏎ send/],
     enter: [/ > 1. Approve/, /> 1. Yes, allow Codex to work in this folder/],
     fatal: [/Error: The cursor position could not be read within/],
     // add to codex --search by default when not provided by the user
@@ -43,14 +51,16 @@ export const CLI_CONFIGURES: Record<
     },
   },
   copilot: {
-    ready: /^  > /,
+    install: 'npm install -g @github/copilot',
+    ready: [/^  > /],
     enter: [/ │ ❯ 1. Yes, proceed/, /❯ 1. Yes/],
     fatal: [],
   },
   cursor: {
+    install: 'open https://cursor.com/ja/docs/cli/installation',
     // map logical "cursor" cli name to actual binary name
     binary: 'cursor-agent',
-    ready: /\/ commands/,
+    ready: [/\/ commands/],
     enter: [/→ Run \(once\) \(y\) \(enter\)/, /▶ \[a\] Trust this workspace/],
     fatal: [],
   },
@@ -157,7 +167,17 @@ export default async function claudeYes({
   cliArgs = cliConf.ensureArgs?.(cliArgs) ?? cliArgs;
   const cliCommand = cliConf?.binary || cli;
 
-  let shell = pty.spawn(cliCommand, cliArgs, getPtyOptions());
+  let shell = tryCatch(
+    () => pty.spawn(cliCommand, cliArgs, getPtyOptions()),
+    (error: unknown) => {
+      console.error(`Fatal: Failed to start ${cliCommand}.`);
+      if (cliConf?.install)
+        console.error(
+          `If you did not installed it yet, Please install it first: ${cliConf.install}`,
+        );
+      throw error;
+    },
+  );
   const pendingExitCode = Promise.withResolvers<number | null>();
   let pendingExitCodeValue = null;
 
@@ -269,34 +289,18 @@ export default async function claudeYes({
             CLI_CONFIGURES[cli as keyof typeof CLI_CONFIGURES] || null;
           if (!conf) return;
 
-          try {
-            // ready matcher: if matched, mark stdin ready
-            if (conf.ready) {
-              // special-case gemini to avoid initial prompt noise: only after many lines
-              if (cli === 'gemini' && conf.ready instanceof RegExp) {
-                if (e.match(conf.ready) && i > 80) return stdinReady.ready();
-              } else if (e.match(conf.ready)) {
-                return stdinReady.ready();
-              }
-            }
-
-            // enter matchers: send Enter when any enter regex matches
-            if (conf.enter && Array.isArray(conf.enter)) {
-              for (const rx of conf.enter) {
-                if (e.match(rx)) return await sendEnter();
-              }
-            }
-
-            // fatal matchers: set isFatal flag when matched
-            if (conf.fatal && Array.isArray(conf.fatal)) {
-              for (const rx of conf.fatal) {
-                if (e.match(rx)) return (isFatal = true);
-              }
-            }
-          } catch (err) {
-            // defensive: if e.match throws (e.g., not a string), ignore
-            return;
+          // ready matcher: if matched, mark stdin ready
+          if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
+            if (cli === 'gemini' && i <= 80) return; // gemini initial noise, only after many lines
+            stdinReady.ready();
           }
+
+          // enter matchers: send Enter when any enter regex matches
+          if (conf.enter?.some((rx: RegExp) => e.match(rx)))
+            await sendEnter(300); // send Enter after 300ms idle wait
+
+          // fatal matchers: set isFatal flag when matched
+          if (conf.fatal?.some((rx: RegExp) => e.match(rx))) isFatal = true;
         })
         // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
         .run(),
@@ -388,3 +392,11 @@ export default async function claudeYes({
 }
 
 export { removeControlCharacters };
+
+function tryCatch<T, R>(fn: () => T, catchFn: (error: unknown) => R): T | R {
+  try {
+    return fn();
+  } catch (error) {
+    return catchFn(error);
+  }
+}
