@@ -253,11 +253,12 @@ export default async function claudeYes({
         .lines({ EOL: 'NONE' })
         // Generic auto-response handler driven by CLI_CONFIGURES
         .forEach(async (e, i) => {
-          const conf = (CLI_CONFIGURES as Record<string, any>)[cli] || {};
+          const conf =
+            CLI_CONFIGURES[cli as keyof typeof CLI_CONFIGURES] || null;
           if (!conf) return;
 
-          // ready matcher: if matched, mark stdin ready
           try {
+            // ready matcher: if matched, mark stdin ready
             if (conf.ready) {
               // special-case gemini to avoid initial prompt noise: only after many lines
               if (cli === 'gemini' && conf.ready instanceof RegExp) {
