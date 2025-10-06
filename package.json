@@ -1,6 +1,6 @@
 {
   "name": "claude-yes",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
   "keywords": [
     "claude",
@@ -31,10 +31,11 @@
   "module": "index.ts",
   "types": "./index.ts",
   "bin": {
-    "claude-yes": "dist/cli-claude.js",
-    "codex-yes": "dist/cli-codex.js",
-    "gemini-yes": "dist/cli-gemini.js",
-    "cursor-yes": "dist/cli-cursor.js"
+    "claude-yes": "dist/claude-yes.js",
+    "codex-yes": "dist/codex-yes.js",
+    "gemini-yes": "dist/gemini-yes.js",
+    "cursor-yes": "dist/cursor-yes.js",
+    "copilot-yes": "dist/copilot-yes.js"
   },
   "directories": {
     "doc": "docs"
@@ -44,11 +45,12 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --external=bun-pty --target=node --sourcemap",
+    "build": "bun build index.ts cli.ts --packages=external --outdir=dist --target=node --sourcemap",
     "postbuild": "bun ./postbuild.ts",
     "dev": "tsx index.ts",
     "fmt": "bunx @biomejs/biome check --fix",
-    "prepare": "husky",
+    "prepack": "bun run build",
+    "prepare": "bunx husky",
     "test": "vitest"
   },
   "lint-staged": {
