@@ -1,7 +1,7 @@
 {
   "name": "claude-yes",
   "version": "0.0.0",
-  "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
+  "description": "A wrapper tool that automates interactions with various AI CLI tools by automatically handling common prompts and responses.",
   "keywords": [
     "claude",
     "ai",

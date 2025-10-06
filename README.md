@@ -42,6 +42,11 @@ Learn more: https://www.anthropic.com/claude-code
 ```
 
 ### Cursor
+### Grok
+```bash
+npm install -g @vibe-kit/grok-cli
+```
+Learn more: https://github.com/vibe-kit/grok-cli
 ```bash
 # Install Cursor agent CLI
 # Check Cursor's documentation for installation instructions
@@ -81,6 +86,8 @@ claude-yes --cli=codex "refactor this function"
 claude-yes --cli=copilot "generate unit tests"
 
 # Use Cursor
+# Use Grok
+claude-yes --cli=grok "help me with this code"
 claude-yes --cli=cursor "optimize performance"
 ```
 
@@ -103,6 +110,7 @@ claude-code-execute claude-yes "your task here"
 | Codex | `codex` | Microsoft's Codex CLI |
 | Copilot | `copilot` | GitHub Copilot CLI |
 | Cursor | `cursor` | Cursor agent CLI |
+| Grok | `grok` | Vibe Kit\'s Grok CLI |
 
 The tool will:
 

@@ -386,7 +386,9 @@ export default async function claudeYes({
 
   function getTerminalDimensions() {
     return {
-      cols: Math.max(process.stdout.columns, 80),
+      // TODO: enforce minimum cols/rows to avoid layout issues
+      // cols: Math.max(process.stdout.columns, 80),
+      cols: process.stdout.columns,
       rows: process.stdout.rows,
     };
   }
