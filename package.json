@@ -1,6 +1,6 @@
 {
   "name": "claude-yes",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
   "keywords": [
     "claude",
