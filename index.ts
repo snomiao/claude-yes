@@ -10,22 +10,22 @@ import { removeControlCharacters } from './removeControlCharacters';
 
 export const CLI_CONFIGURES = {
   claude: {
-    ready: '', // regex matcher for stdin ready,
-    enter: [
-      // regexs
+    ready: /^> /, // regex matcher for stdin ready,
+    enter: [/❯ 1. Yes/, /❯ 1. Dark mode✔/, /Press Enter to continue…/],
+    fatal: [
+      /No conversation found to continue/,
+      /⎿ {2}Claude usage limit reached\./,
     ],
   },
   gemini: {
-    ready: '', // regex matcher for stdin ready,
-    enter: [
-      // regexs
-    ],
+    // match the agent prompt after initial lines; handled by index logic using line index
+    ready: /Type your message/, // used with line index check
+    enter: [/│ ● 1. Yes, allow once/],
   },
   codex: {
-    ready: '', // regex matcher for stdin ready,
-    enter: [
-      //regexs
-    ],
+    ready: /⏎ send/,
+    enter: [/ > 1. Approve/, /> 1. Yes, allow Codex to work in this folder/],
+    fatal: [/Error: The cursor position could not be read within/],
     // add to codex --search by default when not provided by the user
     ensureArgs: (args: string[]) => {
       if (!args.includes('--search')) return ['--search', ...args];
@@ -33,11 +33,14 @@ export const CLI_CONFIGURES = {
     },
   },
   copilot: {
-    // todo
+    ready: /^  > /,
+    enter: [/ │ ❯ 1. Yes, proceed/, /❯ 1. Yes/],
   },
   cursor: {
     // map logical "cursor" cli name to actual binary name
     binary: 'cursor-agent',
+    ready: /\/ commands/,
+    enter: [/→ Run \(once\) \(y\) \(enter\)/, /▶ \[a\] Trust this workspace/],
   },
 };
 /**
@@ -248,49 +251,42 @@ export default async function claudeYes({
         .map((e) => removeControlCharacters(e))
         .map((e) => e.replaceAll('\r', '')) // remove carriage return
         .lines({ EOL: 'NONE' })
-        .forEach(async (e) => {
-          if (cli !== 'copilot') return;
-          if (e.match(/ │ ❯ 1. Yes, proceed/)) return await sendEnter();
-          if (e.match(/❯ 1. Yes/)) return await sendEnter();
-          if (e.match(/^  > /)) return stdinReady.ready();
-        })
-        .forEach(async (e) => {
-          if (cli !== 'claude') return;
-
-          if (e.match(/^> /)) return stdinReady.ready();
-          if (e.match(/❯ 1. Yes/)) return await sendEnter();
-          if (e.match(/❯ 1. Dark mode✔|Press Enter to continue…/))
-            return await sendEnter();
-          if (e.match(/No conversation found to continue/))
-            return (isFatal = true); // set flag to true if error message is found;
-          if (e.match(/⎿ {2}Claude usage limit reached./))
-            return (isFatal = true); // set flag to true if error message is found;
-          // reached limit, exiting...
-        })
+        // Generic auto-response handler driven by CLI_CONFIGURES
         .forEach(async (e, i) => {
-          if (cli !== 'gemini') return;
-          if (e.match(/ > {3}Type your message/) && i > 80) {
-            // wait until 80 lines to avoid the initial prompt
-            return stdinReady.ready();
-          }
-          if (e.match(/│ ● 1. Yes, allow once/)) return await sendEnter();
-        })
-        .forEach(async (e) => {
-          if (cli === 'codex') {
-            if (e.match(/ > 1. Approve/)) return await sendEnter();
-            if (e.match(/Error: The cursor position could not be read within/))
-              return (isFatal = true);
-            if (e.match(/> 1. Yes, allow Codex to work in this folder/))
-              return await sendEnter();
-            if (e.match(/⏎ send/)) return stdinReady.ready();
+          const conf = (CLI_CONFIGURES as Record<string, any>)[cli] || {};
+          if (!conf) return;
+
+          // ready matcher: if matched, mark stdin ready
+          try {
+            if (conf.ready) {
+              // special-case gemini to avoid initial prompt noise: only after many lines
+              if (cli === 'gemini' && conf.ready instanceof RegExp) {
+                if (e.match(conf.ready) && i > 80) return stdinReady.ready();
+              } else if (e.match(conf.ready)) {
+                return stdinReady.ready();
+              }
+            }
+
+            // enter matchers: send Enter when any enter regex matches
+            if (conf.enter && Array.isArray(conf.enter)) {
+              for (const rx of conf.enter) {
+                if (e.match(rx)) return await sendEnter();
+              }
+            } else if (conf.enter && conf.enter instanceof RegExp) {
+              if (e.match(conf.enter)) return await sendEnter();
+            }
+
+            // fatal matchers: set isFatal flag when matched
+            if (conf.fatal && Array.isArray(conf.fatal)) {
+              for (const rx of conf.fatal) {
+                if (e.match(rx)) return (isFatal = true);
+              }
+            } else if (conf.fatal && conf.fatal instanceof RegExp) {
+              if (e.match(conf.fatal)) return (isFatal = true);
+            }
+          } catch (err) {
+            // defensive: if e.match throws (e.g., not a string), ignore
             return;
-          }
-          if (cli === 'cursor') {
-            if (e.match(/\/ commands/)) return stdinReady.ready();
-            if (e.match(/→ Run \(once\) \(y\) \(enter\)/))
-              return await sendEnter();
-            if (e.match(/▶ \[a\] Trust this workspace/))
-              return await sendEnter();
           }
         })
         // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
