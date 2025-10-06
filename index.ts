@@ -30,7 +30,7 @@ export const CLI_CONFIGURES: Record<
     enter: [/❯ 1. Yes/, /❯ 1. Dark mode✔/, /Press Enter to continue…/],
     fatal: [
       /No conversation found to continue/,
-      /⎿ {2}Claude usage limit reached\./,
+      /⎿  Claude usage limit reached\./,
     ],
   },
   gemini: {
@@ -63,7 +63,7 @@ export const CLI_CONFIGURES: Record<
     binary: 'cursor-agent',
     ready: [/\/ commands/],
     enter: [/→ Run \(once\) \(y\) \(enter\)/, /▶ \[a\] Trust this workspace/],
-    fatal: [],
+    fatal: [/^  Error: You've hit your usage limit/],
   },
 };
 /**
@@ -142,7 +142,7 @@ export default async function claudeYes({
   // );
 
   process.stdin.setRawMode?.(true); // must be called any stdout/stdin usage
-  let isFatal = false; // match 'No conversation found to continue'
+  let isFatal = false; // when true, do not restart on crash, and exit agent
   const stdinReady = new ReadyManager();
 
   const shellOutputStream = new TransformStream<string, string>();
@@ -203,11 +203,9 @@ export default async function claudeYes({
         );
       }
       if (isFatal) {
-        console.log(
-          `${cli} crashed with "No conversation found to continue", exiting...`,
-        );
         return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
       }
+
       console.log(`${cli} crashed, restarting...`);
 
       shell = pty.spawn(cli, continueArg, getPtyOptions());
@@ -301,7 +299,10 @@ export default async function claudeYes({
             await sendEnter(300); // send Enter after 300ms idle wait
 
           // fatal matchers: set isFatal flag when matched
-          if (conf.fatal?.some((rx: RegExp) => e.match(rx))) isFatal = true;
+          if (conf.fatal?.some((rx: RegExp) => e.match(rx))) {
+            isFatal = true;
+            await exitAgent();
+          }
         })
         // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
         .run(),
