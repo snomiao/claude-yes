@@ -8,7 +8,16 @@ import { IdleWaiter } from './idleWaiter';
 import { ReadyManager } from './ReadyManager';
 import { removeControlCharacters } from './removeControlCharacters';
 
-export const CLI_CONFIGURES = {
+export const CLI_CONFIGURES: Record<
+  string,
+  {
+    binary?: string; // actual binary name if different from cli
+    ready?: RegExp; // regex matcher for stdin ready, or line index for gemini
+    enter?: RegExp[]; // array of regex to match for sending Enter
+    fatal?: RegExp[]; // array of regex to match for fatal errors
+    ensureArgs?: (args: string[]) => string[]; // function to ensure certain args are present
+  }
+> = {
   claude: {
     ready: /^> /, // regex matcher for stdin ready,
     enter: [/❯ 1. Yes/, /❯ 1. Dark mode✔/, /Press Enter to continue…/],
