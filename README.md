@@ -87,6 +87,24 @@ claude-yes --cli=copilot "generate unit tests"
 
 # Use Cursor
 # Use Grok
+**Direct Commands:**
+
+```bash
+# Use Codex directly
+codex-yes "refactor this function"
+
+# Use Grok directly
+grok-yes "help me with this code"
+
+# Use Copilot directly
+copilot-yes "generate unit tests"
+
+# Use Cursor directly
+cursor-yes "optimize performance"
+
+# Use Gemini directly
+gemini-yes "debug this code"
+```
 claude-yes --cli=grok "help me with this code"
 claude-yes --cli=cursor "optimize performance"
 ```
