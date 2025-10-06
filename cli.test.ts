@@ -5,7 +5,7 @@ import { execaCommand } from 'execa';
 import { fromStdio } from 'from-node-stream';
 import sflow from 'sflow';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createIdleWatcher } from './createIdleWatcher';
+import { IdleWaiter } from './idleWaiter';
 import { sleepms } from './utils';
 
 it('Write file with auto bypass prompts', async () => {
@@ -34,12 +34,13 @@ it('Write file with auto bypass prompts', async () => {
 
   // ping function to exit claude when idle
 
-  const { ping } = createIdleWatcher(() => exit(), 3000);
+  const idleWaiter = new IdleWaiter();
+  idleWaiter.wait(3000).then(() => exit());
 
   const output = await sflow(tr.readable)
     .by(fromStdio(p))
     .log()
-    .forEach(() => ping())
+    .forEach(() => idleWaiter.ping())
     .text();
 
   // expect the file exists
