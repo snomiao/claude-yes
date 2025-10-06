@@ -23,7 +23,7 @@
         "semantic-release": "^24.2.6",
         "sflow": "^1.20.2",
         "strip-ansi-control-characters": "^2.0.0",
-        "terminal-render": "^1.1.0",
+        "terminal-render": "^1.2.0",
         "tsx": "^4.20.3",
         "vitest": "^3.2.4",
         "yargs": "^18.0.0",
@@ -923,7 +923,7 @@
 
     "tempy": ["tempy@3.1.0", "", { "dependencies": { "is-stream": "^3.0.0", "temp-dir": "^3.0.0", "type-fest": "^2.12.2", "unique-string": "^3.0.0" } }, "sha512-7jDLIdD2Zp0bDe5r3D2qtkd1QOCacylBuL7oa4udvN6v2pqr4+LcCr67C8DR1zkpaZ8XosF5m1yQSabKAW6f2g=="],
 
-    "terminal-render": ["terminal-render@1.1.0", "", { "dependencies": { "from-node-stream": "^0.1.0", "yargs": "^18.0.0" } }, "sha512-88lNBt93HdQwVC9Hd4iZrLp2JAnq1j9yOpXEK1PQCsIXbCIN1PfiDt43St60vvKhq2oKBF4FWrGt5dAGjs90Xw=="],
+    "terminal-render": ["terminal-render@1.2.0", "", { "dependencies": { "from-node-stream": "^0.1.0", "yargs": "^18.0.0" } }, "sha512-JBPvmJZ4pURhaplDVWHYGwUgG2nu3E2yNU+PYoY2q7Zl//IhHju4YU4NaEaZMTywBZetxrIaBJ5uBNeYdFUQXQ=="],
 
     "thenify": ["thenify@3.3.1", "", { "dependencies": { "any-promise": "^1.0.0" } }, "sha512-RVZSIV5IG10Hk3enotrhvz0T9em6cyHBLkH/YAZuKqd8hRkKhSfCGIcP2KUY0EPxndzANBmNllzWPwak+bheSw=="],
 
