@@ -21,6 +21,7 @@ export const CLI_CONFIGURES = {
     // match the agent prompt after initial lines; handled by index logic using line index
     ready: /Type your message/, // used with line index check
     enter: [/│ ● 1. Yes, allow once/],
+    fatal: [],
   },
   codex: {
     ready: /⏎ send/,
@@ -35,12 +36,14 @@ export const CLI_CONFIGURES = {
   copilot: {
     ready: /^  > /,
     enter: [/ │ ❯ 1. Yes, proceed/, /❯ 1. Yes/],
+    fatal: [],
   },
   cursor: {
     // map logical "cursor" cli name to actual binary name
     binary: 'cursor-agent',
     ready: /\/ commands/,
     enter: [/→ Run \(once\) \(y\) \(enter\)/, /▶ \[a\] Trust this workspace/],
+    fatal: [],
   },
 };
 /**
@@ -273,8 +276,6 @@ export default async function claudeYes({
               for (const rx of conf.enter) {
                 if (e.match(rx)) return await sendEnter();
               }
-            } else if (conf.enter && conf.enter instanceof RegExp) {
-              if (e.match(conf.enter)) return await sendEnter();
             }
 
             // fatal matchers: set isFatal flag when matched
@@ -282,8 +283,6 @@ export default async function claudeYes({
               for (const rx of conf.fatal) {
                 if (e.match(rx)) return (isFatal = true);
               }
-            } else if (conf.fatal && conf.fatal instanceof RegExp) {
-              if (e.match(conf.fatal)) return (isFatal = true);
             }
           } catch (err) {
             // defensive: if e.match throws (e.g., not a string), ignore
