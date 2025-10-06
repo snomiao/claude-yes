@@ -24,7 +24,7 @@ const argv = yargs(hideBin(process.argv))
   .option('cli', {
     type: 'string',
     description:
-      'Claude CLI command, e.g. "claude", "gemini", "codex", default is "claude"',
+      'Claude CLI command, e.g. "claude,gemini,codex,cursor,copilot", default is "claude"',
   })
   .option('prompt', {
     type: 'string',
@@ -52,12 +52,32 @@ if (!argv.cli) {
   argv.cli = cliName || 'claude';
 }
 
+// Support: everything after a literal `--` is a prompt string. Example:
+//   claude-yes --exit-on-idle=30s -- "help me refactor this"
+// In that example the prompt will be `help me refactor this` and won't be
+// passed as args to the underlying CLI binary.
+const rawArgs = process.argv.slice(2);
+const dashIndex = rawArgs.indexOf('--');
+let promptFromDash: string | undefined = undefined;
+let cliArgsForSpawn: string[] = [];
+if (dashIndex !== -1) {
+  // join everything after `--` into a single prompt string
+  const after = rawArgs.slice(dashIndex + 1);
+  promptFromDash = after.join(' ');
+  // use everything before `--` as the cli args
+  cliArgsForSpawn = rawArgs.slice(0, dashIndex).map(String);
+} else {
+  // fallback to yargs parsed positional args when `--` is not used
+  cliArgsForSpawn = argv._.map((e) => String(e));
+}
+
 console.clear();
 const { exitCode, logs } = await claudeYes({
   cli: argv.cli,
-  prompt: argv.prompt,
+  // prefer explicit --prompt / -p; otherwise use the text after `--` if present
+  prompt: argv.prompt || promptFromDash,
   exitOnIdle: argv.exitOnIdle ? enhancedMs(argv.exitOnIdle) : undefined,
-  cliArgs: argv._.map((e) => String(e)),
+  cliArgs: cliArgsForSpawn,
   continueOnCrash: argv.continueOnCrash,
   logFile: argv.logFile,
   verbose: argv.verbose,

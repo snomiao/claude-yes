@@ -8,6 +8,38 @@ import { IdleWaiter } from './idleWaiter';
 import { ReadyManager } from './ReadyManager';
 import { removeControlCharacters } from './removeControlCharacters';
 
+export const CLI_CONFIGURES = {
+  claude: {
+    ready: '', // regex matcher for stdin ready,
+    enter: [
+      // regexs
+    ],
+  },
+  gemini: {
+    ready: '', // regex matcher for stdin ready,
+    enter: [
+      // regexs
+    ],
+  },
+  codex: {
+    ready: '', // regex matcher for stdin ready,
+    enter: [
+      //regexs
+    ],
+    // add to codex --search by default when not provided by the user
+    ensureArgs: (args: string[]) => {
+      if (!args.includes('--search')) return ['--search', ...args];
+      return args;
+    },
+  },
+  copilot: {
+    // todo
+  },
+  cursor: {
+    // map logical "cursor" cli name to actual binary name
+    binary: 'cursor-agent',
+  },
+};
 /**
  * Main function to run Claude with automatic yes/no responses
  * @param options Configuration options
@@ -47,7 +79,7 @@ export default async function claudeYes({
   removeControlCharactersFromStdout = false, // = !process.stdout.isTTY,
   verbose = false,
 }: {
-  cli?: 'claude' | 'gemini' | 'codex' | string;
+  cli?: (string & {}) | keyof typeof CLI_CONFIGURES;
   cliArgs?: string[];
   prompt?: string;
   continueOnCrash?: boolean;
@@ -105,10 +137,10 @@ export default async function claudeYes({
     env: env ?? (process.env as Record<string, string>),
   });
 
-  // add --search to codex if not present
-  if (cli === 'codex' && cliArgs.includes('--search') === false)
-    cliArgs.unshift('--search');
-  const cliCommand = { cursor: 'cursor-agent' }[cli] || cli;
+  // Apply CLI specific configurations (moved to CLI_CONFIGURES)
+  const cliConf = (CLI_CONFIGURES as Record<string, any>)[cli] || {};
+  cliArgs = cliConf.ensureArgs?.(cliArgs) ?? cliArgs;
+  const cliCommand = cliConf?.binary || cli;
 
   let shell = pty.spawn(cliCommand, cliArgs, getPtyOptions());
   const pendingExitCode = Promise.withResolvers<number | null>();
