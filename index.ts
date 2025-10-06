@@ -7,10 +7,9 @@ import { TerminalTextRender } from 'terminal-render';
 import { IdleWaiter } from './idleWaiter';
 import { ReadyManager } from './ReadyManager';
 import { removeControlCharacters } from './removeControlCharacters';
-import { sleepms } from './utils';
 
 /**
- * Main function to run Claude with automatic yes/no respojnses
+ * Main function to run Claude with automatic yes/no responses
  * @param options Configuration options
  * @param options.continueOnCrash - If true, automatically restart Claude when it crashes:
  *   1. Shows message 'Claude crashed, restarting..'
@@ -64,6 +63,7 @@ export default async function claudeYes({
     claude: '--continue'.split(' '),
     gemini: [], // not possible yet
   };
+
   // if (verbose) {
   //   console.log('calling claudeYes: ', {
   //     cli,
@@ -100,8 +100,7 @@ export default async function claudeYes({
 
   const getPtyOptions = () => ({
     name: 'xterm-color',
-    cols: process.stdout.columns,
-    rows: process.stdout.rows,
+    ...getTerminalDimensions(),
     cwd: cwd ?? process.cwd(),
     env: env ?? (process.env as Record<string, string>),
   });
@@ -109,8 +108,9 @@ export default async function claudeYes({
   // add --search to codex if not present
   if (cli === 'codex' && cliArgs.includes('--search') === false)
     cliArgs.unshift('--search');
+  const cliCommand = { cursor: 'cursor-agent' }[cli] || cli;
 
-  let shell = pty.spawn(cli, cliArgs, getPtyOptions());
+  let shell = pty.spawn(cliCommand, cliArgs, getPtyOptions());
   const pendingExitCode = Promise.withResolvers<number | null>();
   let pendingExitCodeValue = null;
 
@@ -152,8 +152,8 @@ export default async function claudeYes({
 
   // when current tty resized, resize the pty
   process.stdout.on('resize', () => {
-    const { columns, rows } = process.stdout;
-    shell.resize(columns, rows);
+    const { cols, rows } = getTerminalDimensions(); // minimum 80 columns to avoid layout issues
+    shell.resize(cols, rows); // minimum 80 columns to avoid layout issues
   });
 
   const terminalRender = new TerminalTextRender();
@@ -235,13 +235,22 @@ export default async function claudeYes({
           if (e.match(/│ ● 1. Yes, allow once/)) return await sendEnter();
         })
         .forEach(async (e) => {
-          if (cli !== 'codex') return;
-          if (e.match(/ > 1. Approve/)) return await sendEnter();
-          if (e.match(/Error: The cursor position could not be read within/))
-            return (isFatal = true);
-          if (e.match(/> 1. Yes, allow Codex to work in this folder/))
-            return await sendEnter();
-          if (e.match(/⏎ send/)) return stdinReady.ready();
+          if (cli === 'codex') {
+            if (e.match(/ > 1. Approve/)) return await sendEnter();
+            if (e.match(/Error: The cursor position could not be read within/))
+              return (isFatal = true);
+            if (e.match(/> 1. Yes, allow Codex to work in this folder/))
+              return await sendEnter();
+            if (e.match(/⏎ send/)) return stdinReady.ready();
+            return;
+          }
+          if (cli === 'cursor') {
+            if (e.match(/\/ commands/)) return stdinReady.ready();
+            if (e.match(/→ Run \(once\) \(y\) \(enter\)/))
+              return await sendEnter();
+            if (e.match(/▶ \[a\] Trust this workspace/))
+              return await sendEnter();
+          }
         })
         // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
         .run(),
@@ -322,6 +331,13 @@ export default async function claudeYes({
         }, 5000),
       ), // 5 seconds timeout
     ]);
+  }
+
+  function getTerminalDimensions() {
+    return {
+      cols: Math.max(process.stdout.columns, 80),
+      rows: process.stdout.rows,
+    };
   }
 }
 

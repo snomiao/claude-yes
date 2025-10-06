@@ -5,6 +5,7 @@
       "name": "main",
       "dependencies": {
         "bun-pty": "^0.3.2",
+        "p-map": "^7.0.3",
         "phpdie": "^1.7.0",
       },
       "devDependencies": {

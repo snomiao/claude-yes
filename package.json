@@ -31,7 +31,10 @@
   "module": "index.ts",
   "types": "./index.ts",
   "bin": {
-    "claude-yes": "dist/cli.js"
+    "claude-yes": "dist/cli-claude.js",
+    "codex-yes": "dist/cli-codex.js",
+    "gemini-yes": "dist/cli-gemini.js",
+    "cursor-yes": "dist/cli-cursor.js"
   },
   "directories": {
     "doc": "docs"
@@ -42,6 +45,7 @@
   ],
   "scripts": {
     "build": "bun build index.ts cli.ts --outdir=dist --external=node-pty --external=bun-pty --target=node --sourcemap",
+    "postbuild": "bun ./postbuild.ts",
     "dev": "tsx index.ts",
     "fmt": "bunx @biomejs/biome check --fix",
     "prepare": "husky",
@@ -78,6 +82,7 @@
   },
   "dependencies": {
     "bun-pty": "^0.3.2",
+    "p-map": "^7.0.3",
     "phpdie": "^1.7.0"
   }
 }
