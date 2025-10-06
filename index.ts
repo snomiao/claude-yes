@@ -314,22 +314,7 @@ export default async function claudeYes({
     .then(() => null); // run it immediately without await
 
   // wait for cli ready and send prompt if provided
-  if (prompt)
-    (async () => {
-      // console.log(`[${cli}-yes] Ready to send prompt to ${cli}: ${prompt}`);
-      // idleWaiter.ping();
-      // console.log(
-      //   'await idleWaiter.wait(1000); // wait a bit for claude to start'
-      // );
-      // await idleWaiter.wait(1000); // wait a bit for claude to start
-      // console.log('await stdinReady.wait();');
-      // await stdinReady.wait();
-      // console.log(`[${cli}-yes] Waiting for ${cli} to be ready...`);
-      // console.log('await idleWaiter.wait(200);');
-      // await idleWaiter.wait(200);
-      // console.log(`[${cli}-yes] Sending prompt to ${cli}: ${prompt}`);
-      await sendMessage(prompt);
-    })();
+  if (prompt) await sendMessage(prompt);
 
   const exitCode = await pendingExitCode.promise; // wait for the shell to exit
   console.log(`[${cli}-yes] ${cli} exited with code ${exitCode}`);
