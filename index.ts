@@ -1,5 +1,5 @@
 import { fromReadable, fromWritable } from 'from-node-stream';
-import { mkdir, writeFile } from 'fs/promises';
+import { appendFile, mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import DIE from 'phpdie';
 import sflow from 'sflow';
@@ -44,8 +44,8 @@ export const CLI_CONFIGURES: Record<
     install: 'npm install -g @openai/codex-cli',
     ready: [/⏎ send/],
     enter: [
-      /^▌ > 1. Approve and run now/,
-      /^> 1. Yes, allow Codex to work in this folder/,
+      /^▌ \> 1\. Approve and run now/,
+      /^\> 1\. Yes, allow Codex to work in this folder/,
     ],
     fatal: [/Error: The cursor position could not be read within/],
     // add to codex --search by default when not provided by the user
@@ -306,8 +306,9 @@ export default async function claudeYes({
           }
 
           // enter matchers: send Enter when any enter regex matches
-          if (conf.enter?.some((rx: RegExp) => e.match(rx)))
+          if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
             await sendEnter(300); // send Enter after 300ms idle wait
+          }
 
           // fatal matchers: set isFatal flag when matched
           if (conf.fatal?.some((rx: RegExp) => e.match(rx))) {
@@ -315,7 +316,9 @@ export default async function claudeYes({
             await exitAgent();
           }
         })
-        // .forEach(e => appendFile('.cache/io.log', "output|" + JSON.stringify(e) + '\n')) // for debugging
+        .forEach((e) =>
+          appendFile('.cache/io.log', 'output|' + JSON.stringify(e) + '\n'),
+        ) // for debugging
         .run(),
     )
     .map((e) =>
