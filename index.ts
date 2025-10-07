@@ -243,7 +243,12 @@ export default async function claudeYes({
       await exitAgent();
     });
 
+  console.log(
+    `[${cli}-yes] Started ${cli} with args: ${[cliCommand, ...cliArgs].join(' ')}`,
+  );
   // Message streaming
+  shell.write(`\u001b[${1};${1}R`); // reply cli when getting cursor position
+
   sflow(fromReadable<Buffer>(process.stdin))
     .map((buffer) => buffer.toString())
     // .map((e) => e.replaceAll('\x1a', '')) // remove ctrl+z from user's input (seems bug)
@@ -264,16 +269,19 @@ export default async function claudeYes({
       terminalRender.write(text);
       // todo: .onStatus((msg)=> shell.write(msg))
       if (process.stdin.isTTY) return; // only handle it when stdin is not tty
-      if (text.includes('\u001b[6n')) return; // only asked
-
+      if (text.includes('\u001b[6n')) return; // only asked for cursor position
       // todo: use terminalRender API to get cursor position when new version is available
       // xterm replies CSI row; column R if asked cursor position
       // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=citation%20needed%5D-,xterm%20replies,-CSI%20row%C2%A0%3B
       // when agent asking position, respond with row; col
-      const rendered = terminalRender.render();
-      const row = rendered.split('\n').length + 1;
-      const col = (rendered.split('\n').slice(-1)[0]?.length || 0) + 1;
-      shell.write(`\u001b[${row};${col}R`);
+      // const rendered = terminalRender.render();
+      const { col, row } = terminalRender.getCursorPosition();
+      console.log(
+        `[${cli}-yes] Responding cursor position: row=${row}, col=${col}`,
+      );
+      shell.write(`\u001b[${row};${col}R`); // reply cli when getting cursor position
+      // const row = rendered.split('\n').length + 1;
+      // const col = (rendered.split('\n').slice(-1)[0]?.length || 0) + 1;
     })
 
     // auto-response
