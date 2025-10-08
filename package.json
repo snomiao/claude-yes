@@ -46,7 +46,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build index.ts cli.ts --packages=external --outdir=dist --target=node --sourcemap",
+    "build": "bun build index.ts cli.ts --outdir=dist --target=node --sourcemap --external=bun-pty --external=node-pty",
     "postbuild": "bun ./postbuild.ts",
     "dev": "tsx index.ts",
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
