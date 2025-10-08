@@ -1,3 +1,5 @@
 #!/usr/bin/env sh
 set -e
 bunx lint-staged --allow-empty
+bun run build
+bun run test

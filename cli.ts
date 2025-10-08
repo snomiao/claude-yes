@@ -42,6 +42,12 @@ const argv = yargs(hideBin(process.argv))
     description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
     alias: 'e',
   })
+  .option('disable-lock', {
+    type: 'boolean',
+    description:
+      'Disable the running lock feature that prevents concurrent agents in the same directory/repo',
+    default: false,
+  })
   .help()
   .version()
   .parserConfiguration({
@@ -85,6 +91,7 @@ const { exitCode, logs } = await claudeYes({
   continueOnCrash: argv.continueOnCrash,
   logFile: argv.logFile,
   verbose: argv.verbose,
+  disableLock: argv.disableLock,
 });
 
 process.exit(exitCode ?? 1);

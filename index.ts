@@ -8,6 +8,12 @@ import tsaComposer from 'tsa-composer';
 import { IdleWaiter } from './idleWaiter';
 import { ReadyManager } from './ReadyManager';
 import { removeControlCharacters } from './removeControlCharacters';
+import {
+  acquireLock,
+  releaseLock,
+  shouldUseLock,
+  updateCurrentTaskStatus,
+} from './runningLock';
 
 // const yesLog = tsaComposer()(async function yesLog(msg: string) {
 //   // await rm('agent-yes.log').catch(() => null); // ignore error if file doesn't exist
@@ -63,7 +69,7 @@ export const CLI_CONFIGURES: Record<
   },
   copilot: {
     install: 'npm install -g @github/copilot',
-    ready: [/^  > /],
+    ready: [/^ +> /, /Ctrl\+c Exit/],
     enter: [/ │ ❯ 1. Yes, proceed/, /❯ 1. Yes/],
     fatal: [],
   },
@@ -87,6 +93,7 @@ export const CLI_CONFIGURES: Record<
  * @param options.exitOnIdle - Exit when agent-cli is idle. Boolean or timeout in milliseconds, recommended 5000 - 60000, default is false
  * @param options.cliArgs - Additional arguments to pass to the agent-cli CLI
  * @param options.removeControlCharactersFromStdout - Remove ANSI control characters from stdout. Defaults to !process.stdout.isTTY
+ * @param options.disableLock - Disable the running lock feature that prevents concurrent agents in the same directory/repo
  *
  * @example
  * ```typescript
@@ -100,6 +107,7 @@ export const CLI_CONFIGURES: Record<
  *   exitOnIdle: 30000, // exit after 30 seconds of idle
  *   continueOnCrash: true, // restart if claude crashes, default is true
  *   logFile: 'claude.log', // save logs to file
+ *   disableLock: false, // disable running lock (default is false)
  * });
  * ```
  */
@@ -114,6 +122,7 @@ export default async function claudeYes({
   logFile,
   removeControlCharactersFromStdout = false, // = !process.stdout.isTTY,
   verbose = false,
+  disableLock = false,
 }: {
   cli?: (string & {}) | keyof typeof CLI_CONFIGURES;
   cliArgs?: string[];
@@ -125,12 +134,40 @@ export default async function claudeYes({
   logFile?: string;
   removeControlCharactersFromStdout?: boolean;
   verbose?: boolean;
+  disableLock?: boolean;
 } = {}) {
   const continueArgs = {
     codex: 'resume --last'.split(' '),
     claude: '--continue'.split(' '),
     gemini: [], // not possible yet
   };
+
+  // Acquire lock before starting agent (if in git repo or same cwd and lock is not disabled)
+  const workingDir = cwd ?? process.cwd();
+  if (!disableLock && shouldUseLock(workingDir)) {
+    await acquireLock(workingDir, prompt ?? 'Interactive session');
+  }
+
+  // Register cleanup handlers for lock release
+  const cleanupLock = async () => {
+    if (!disableLock && shouldUseLock(workingDir)) {
+      await releaseLock().catch(() => null); // Ignore errors during cleanup
+    }
+  };
+
+  process.on('exit', () => {
+    if (!disableLock) {
+      releaseLock().catch(() => null);
+    }
+  });
+  process.on('SIGINT', async () => {
+    await cleanupLock();
+    process.exit(130);
+  });
+  process.on('SIGTERM', async () => {
+    await cleanupLock();
+    process.exit(143);
+  });
 
   process.stdin.setRawMode?.(true); // must be called any stdout/stdin usage
   let isFatal = false; // when true, do not restart on crash, and exit agent
@@ -326,6 +363,14 @@ export default async function claudeYes({
 
   const exitCode = await pendingExitCode.promise; // wait for the shell to exit
   console.log(`[${cli}-yes] ${cli} exited with code ${exitCode}`);
+
+  // Update task status and release lock
+  if (!disableLock && shouldUseLock(workingDir)) {
+    await updateCurrentTaskStatus(
+      exitCode === 0 ? 'completed' : 'failed',
+    ).catch(() => null);
+    await releaseLock().catch(() => null);
+  }
 
   if (logFile) {
     verbose && console.log(`[${cli}-yes] Writing rendered logs to ${logFile}`);
