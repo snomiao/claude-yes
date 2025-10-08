@@ -282,8 +282,8 @@ export default async function claudeYes({
         .map((e) => removeControlCharacters(e))
         .map((e) => e.replaceAll('\r', '')) // remove carriage return
         .by((s) => {
-          if (cli === 'codex') return s;
-          return s.lines({ EOL: 'NONE' });
+          if (cli === 'codex') return s; // codex use cursor-move csi code insteadof \n to move lines, so the output have no \n at all, this hack prevents stuck on unended line
+          return s.lines({ EOL: 'NONE' }); // other clis use ink, which is rerendering the block based on \n lines
         })
         .forEach((e) => yesLog`output|${e}`) // for debugging
         // Generic auto-response handler driven by CLI_CONFIGURES
