@@ -62,7 +62,8 @@
   "dependencies": {
     "bun-pty": "^0.3.2",
     "p-map": "^7.0.3",
-    "phpdie": "^1.7.0"
+    "phpdie": "^1.7.0",
+    "tsa-composer": "^3.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",

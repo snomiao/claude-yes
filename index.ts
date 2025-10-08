@@ -1,9 +1,10 @@
 import { fromReadable, fromWritable } from 'from-node-stream';
-import { appendFile, mkdir, writeFile } from 'fs/promises';
+import { appendFile, mkdir, rm, writeFile } from 'fs/promises';
 import path from 'path';
 import DIE from 'phpdie';
 import sflow from 'sflow';
 import { TerminalTextRender } from 'terminal-render';
+import tsaComposer from 'tsa-composer';
 import { IdleWaiter } from './idleWaiter';
 import { ReadyManager } from './ReadyManager';
 import { removeControlCharacters } from './removeControlCharacters';
@@ -26,7 +27,8 @@ export const CLI_CONFIGURES: Record<
   },
   claude: {
     install: 'npm install -g @anthropic-ai/claude-code',
-    ready: [/^> /], // regex matcher for stdin ready,
+    // ready: [/^> /], // regex matcher for stdin ready
+    ready: [/\? for shortcuts/], // regex matcher for stdin ready
     enter: [/❯ 1. Yes/, /❯ 1. Dark mode✔/, /Press Enter to continue…/],
     fatal: [
       /No conversation found to continue/,
@@ -44,8 +46,8 @@ export const CLI_CONFIGURES: Record<
     install: 'npm install -g @openai/codex-cli',
     ready: [/⏎ send/],
     enter: [
-      /\b▌ \> 1\. Approve and run now/,
-      /\b\> 1\. Yes, allow Codex to work in this folder/,
+      /> 1. Yes, allow Codex to work in this folder/,
+      /▌ > 1. Approve and run now/,
     ],
     fatal: [/Error: The cursor position could not be read within/],
     // add to codex --search by default when not provided by the user
@@ -70,15 +72,15 @@ export const CLI_CONFIGURES: Record<
   },
 };
 /**
- * Main function to run Claude with automatic yes/no responses
+ * Main function to run agent-cli with automatic yes/no responses
  * @param options Configuration options
- * @param options.continueOnCrash - If true, automatically restart Claude when it crashes:
- *   1. Shows message 'Claude crashed, restarting..'
- *   2. Spawns a new 'claude --continue' process
+ * @param options.continueOnCrash - If true, automatically restart agent-cli when it crashes:
+ *   1. Shows message 'agent-cli crashed, restarting..'
+ *   2. Spawns a new 'agent-cli --continue' process
  *   3. Re-attaches the new process to the shell stdio (pipes new process stdin/stdout)
  *   4. If it crashes with "No conversation found to continue", exits the process
- * @param options.exitOnIdle - Exit when Claude is idle. Boolean or timeout in milliseconds, recommended 5000 - 60000, default is false
- * @param options.claudeArgs - Additional arguments to pass to the Claude CLI
+ * @param options.exitOnIdle - Exit when agent-cli is idle. Boolean or timeout in milliseconds, recommended 5000 - 60000, default is false
+ * @param options.cliArgs - Additional arguments to pass to the agent-cli CLI
  * @param options.removeControlCharactersFromStdout - Remove ANSI control characters from stdout. Defaults to !process.stdout.isTTY
  *
  * @example
@@ -119,30 +121,15 @@ export default async function claudeYes({
   removeControlCharactersFromStdout?: boolean;
   verbose?: boolean;
 } = {}) {
+  await rm('agent-yes.log').catch(() => null); // ignore error if file doesn't exist
+  const yesLog = tsaComposer()(async function yesLog(msg: string) {
+    await appendFile('agent-yes.log', `${msg}\n`).catch(() => null);
+  });
   const continueArgs = {
     codex: 'resume --last'.split(' '),
     claude: '--continue'.split(' '),
     gemini: [], // not possible yet
   };
-
-  // if (verbose) {
-  //   console.log('calling claudeYes: ', {
-  //     cli,
-  //     continueOnCrash,
-  //     exitOnIdle,
-  //     cliArgs,
-  //     cwd,
-  //     removeControlCharactersFromStdout,
-  //     logFile,
-  //     verbose,
-  //   });
-  // }
-  // console.log(
-  //   `⭐ Starting ${cli}, automatically responding to yes/no prompts...`
-  // );
-  // console.log(
-  //   '⚠️ Important Security Warning: Only run this on trusted repositories. This tool automatically responds to prompts and can execute commands without user confirmation. Be aware of potential prompt injection attacks where malicious code or instructions could be embedded in files or user inputs to manipulate the automated responses.'
-  // );
 
   process.stdin.setRawMode?.(true); // must be called any stdout/stdin usage
   let isFatal = false; // when true, do not restart on crash, and exit agent
@@ -246,11 +233,10 @@ export default async function claudeYes({
       await exitAgent();
     });
 
-  console.log(
-    `[${cli}-yes] Started ${cli} with args: ${[cliCommand, ...cliArgs].join(' ')}`,
-  );
+  // console.log(
+  //   `[${cli}-yes] Started ${cli} with args: ${[cliCommand, ...cliArgs].join(" ")}`
+  // );
   // Message streaming
-  shell.write(`\u001b[${1};${1}R`); // reply cli when getting cursor position
 
   sflow(fromReadable<Buffer>(process.stdin))
     .map((buffer) => buffer.toString())
@@ -272,7 +258,7 @@ export default async function claudeYes({
       terminalRender.write(text);
       // todo: .onStatus((msg)=> shell.write(msg))
       if (process.stdin.isTTY) return; // only handle it when stdin is not tty
-      if (text.includes('\u001b[6n')) return; // only asked for cursor position
+      if (!text.includes('\u001b[6n')) return; // only asked for cursor position
       // todo: use terminalRender API to get cursor position when new version is available
       // xterm replies CSI row; column R if asked cursor position
       // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=citation%20needed%5D-,xterm%20replies,-CSI%20row%C2%A0%3B
@@ -292,10 +278,8 @@ export default async function claudeYes({
       e
         .map((e) => removeControlCharacters(e))
         .map((e) => e.replaceAll('\r', '')) // remove carriage return
-        // .lines({ EOL: 'NONE' })
-        .forEach((e) =>
-          appendFile('io.log', 'output|' + JSON.stringify(e) + '\n'),
-        ) // for debugging
+        .lines({ EOL: 'NONE' })
+        .forEach((e) => yesLog`output|${e}`) // for debugging
         // Generic auto-response handler driven by CLI_CONFIGURES
         .forEach(async (e, i) => {
           const conf =
@@ -304,17 +288,21 @@ export default async function claudeYes({
 
           // ready matcher: if matched, mark stdin ready
           if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
+            await yesLog`ready |${e}`;
             if (cli === 'gemini' && i <= 80) return; // gemini initial noise, only after many lines
             stdinReady.ready();
           }
 
           // enter matchers: send Enter when any enter regex matches
           if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
+            await yesLog`enter |${e}`;
             await sendEnter(300); // send Enter after 300ms idle wait
+            return;
           }
 
           // fatal matchers: set isFatal flag when matched
           if (conf.fatal?.some((rx: RegExp) => e.match(rx))) {
+            await yesLog`fatal |${e}`;
             isFatal = true;
             await exitAgent();
           }
@@ -328,6 +316,7 @@ export default async function claudeYes({
     .then(() => null); // run it immediately without await
 
   // wait for cli ready and send prompt if provided
+  if (cli === 'codex') shell.write(`\u001b[1;1R`); // send cursor position response when stdin is not tty
   if (prompt) await sendMessage(prompt);
 
   const exitCode = await pendingExitCode.promise; // wait for the shell to exit
@@ -347,10 +336,10 @@ export default async function claudeYes({
   async function sendEnter(waitms = 1000) {
     // wait for idle for a bit to let agent cli finish rendering
     const st = Date.now();
-
     await idleWaiter.wait(waitms);
     const et = Date.now();
-    process.stdout.write(`\ridleWaiter.wait(${waitms}) took ${et - st}ms\r`);
+    // process.stdout.write(`\ridleWaiter.wait(${waitms}) took ${et - st}ms\r`);
+    await yesLog`sendEn| idleWaiter.wait(${String(waitms)}) took ${String(et - st)}ms`;
 
     shell.write('\r');
   }
@@ -358,6 +347,7 @@ export default async function claudeYes({
   async function sendMessage(message: string) {
     await stdinReady.wait();
     // show in-place message: write msg and move cursor back start
+    await yesLog`send  |${message}`;
     shell.write(message);
     idleWaiter.ping(); // just sent a message, wait for echo
     await sendEnter();
@@ -385,10 +375,11 @@ export default async function claudeYes({
   }
 
   function getTerminalDimensions() {
+    if (!process.stdout.isTTY) return { cols: 80, rows: 30 }; // default size when not tty
     return {
       // TODO: enforce minimum cols/rows to avoid layout issues
       // cols: Math.max(process.stdout.columns, 80),
-      cols: process.stdout.columns,
+      cols: Math.min(Math.max(20, process.stdout.columns), 80),
       rows: process.stdout.rows,
     };
   }
