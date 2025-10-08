@@ -47,7 +47,7 @@ export const CLI_CONFIGURES: Record<
     ready: [/⏎ send/],
     enter: [
       /> 1. Yes, allow Codex to work in this folder/,
-      /▌ > 1. Approve and run now/,
+      /> 1. Approve and run now/,
     ],
     fatal: [/Error: The cursor position could not be read within/],
     // add to codex --search by default when not provided by the user
@@ -281,7 +281,10 @@ export default async function claudeYes({
       e
         .map((e) => removeControlCharacters(e))
         .map((e) => e.replaceAll('\r', '')) // remove carriage return
-        .lines({ EOL: 'NONE' })
+        .by((s) => {
+          if (cli === 'codex') return s;
+          return s.lines({ EOL: 'NONE' });
+        })
         .forEach((e) => yesLog`output|${e}`) // for debugging
         // Generic auto-response handler driven by CLI_CONFIGURES
         .forEach(async (e, i) => {
