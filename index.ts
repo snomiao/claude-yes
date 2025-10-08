@@ -9,6 +9,11 @@ import { IdleWaiter } from './idleWaiter';
 import { ReadyManager } from './ReadyManager';
 import { removeControlCharacters } from './removeControlCharacters';
 
+// const yesLog = tsaComposer()(async function yesLog(msg: string) {
+//   // await rm('agent-yes.log').catch(() => null); // ignore error if file doesn't exist
+//   await appendFile("agent-yes.log", `${msg}\n`).catch(() => null);
+// });
+
 export const CLI_CONFIGURES: Record<
   string,
   {
@@ -121,10 +126,6 @@ export default async function claudeYes({
   removeControlCharactersFromStdout?: boolean;
   verbose?: boolean;
 } = {}) {
-  await rm('agent-yes.log').catch(() => null); // ignore error if file doesn't exist
-  const yesLog = tsaComposer()(async function yesLog(msg: string) {
-    await appendFile('agent-yes.log', `${msg}\n`).catch(() => null);
-  });
   const continueArgs = {
     codex: 'resume --last'.split(' '),
     claude: '--continue'.split(' '),
@@ -285,7 +286,7 @@ export default async function claudeYes({
           if (cli === 'codex') return s; // codex use cursor-move csi code insteadof \n to move lines, so the output have no \n at all, this hack prevents stuck on unended line
           return s.lines({ EOL: 'NONE' }); // other clis use ink, which is rerendering the block based on \n lines
         })
-        .forEach((e) => yesLog`output|${e}`) // for debugging
+        // .forEach((e) => yesLog`output|${e}`) // for debugging
         // Generic auto-response handler driven by CLI_CONFIGURES
         .forEach(async (e, i) => {
           const conf =
@@ -294,21 +295,21 @@ export default async function claudeYes({
 
           // ready matcher: if matched, mark stdin ready
           if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
-            await yesLog`ready |${e}`;
+            // await yesLog`ready |${e}`;
             if (cli === 'gemini' && i <= 80) return; // gemini initial noise, only after many lines
             stdinReady.ready();
           }
 
           // enter matchers: send Enter when any enter regex matches
           if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
-            await yesLog`enter |${e}`;
+            // await yesLog`enter |${e}`;
             await sendEnter(300); // send Enter after 300ms idle wait
             return;
           }
 
           // fatal matchers: set isFatal flag when matched
           if (conf.fatal?.some((rx: RegExp) => e.match(rx))) {
-            await yesLog`fatal |${e}`;
+            // await yesLog`fatal |${e}`;
             isFatal = true;
             await exitAgent();
           }
@@ -345,7 +346,7 @@ export default async function claudeYes({
     await idleWaiter.wait(waitms);
     const et = Date.now();
     // process.stdout.write(`\ridleWaiter.wait(${waitms}) took ${et - st}ms\r`);
-    await yesLog`sendEn| idleWaiter.wait(${String(waitms)}) took ${String(et - st)}ms`;
+    // await yesLog`sendEn| idleWaiter.wait(${String(waitms)}) took ${String(et - st)}ms`;
 
     shell.write('\r');
   }
@@ -353,7 +354,7 @@ export default async function claudeYes({
   async function sendMessage(message: string) {
     await stdinReady.wait();
     // show in-place message: write msg and move cursor back start
-    await yesLog`send  |${message}`;
+    // await yesLog`send  |${message}`;
     shell.write(message);
     nextStdout.unready();
     idleWaiter.ping(); // just sent a message, wait for echo
