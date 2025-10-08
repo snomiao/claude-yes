@@ -44,8 +44,8 @@ export const CLI_CONFIGURES: Record<
     install: 'npm install -g @openai/codex-cli',
     ready: [/⏎ send/],
     enter: [
-      /^▌ \> 1\. Approve and run now/,
-      /^\> 1\. Yes, allow Codex to work in this folder/,
+      /\b▌ \> 1\. Approve and run now/,
+      /\b\> 1\. Yes, allow Codex to work in this folder/,
     ],
     fatal: [/Error: The cursor position could not be read within/],
     // add to codex --search by default when not provided by the user
