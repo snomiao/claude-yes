@@ -291,8 +291,8 @@ export default async function claudeYes({
     .forkTo((e) =>
       e
         .map((e) => removeControlCharacters(e))
-        // .map((e) => e.replaceAll('\r', '')) // remove carriage return
-        .lines({ EOL: 'NONE' })
+        .map((e) => e.replaceAll('\r', '')) // remove carriage return
+        // .lines({ EOL: 'NONE' })
         .forEach((e) =>
           appendFile('io.log', 'output|' + JSON.stringify(e) + '\n'),
         ) // for debugging
