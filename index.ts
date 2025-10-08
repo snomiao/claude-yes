@@ -269,10 +269,8 @@ export default async function claudeYes({
       // when agent asking position, respond with row; col
       // const rendered = terminalRender.render();
       const { col, row } = terminalRender.getCursorPosition();
-      console.log(
-        `[${cli}-yes] Responding cursor position: row=${row}, col=${col}`,
-      );
       shell.write(`\u001b[${row};${col}R`); // reply cli when getting cursor position
+      // await yesLog(`cursor|respond position: row=${row}, col=${col}`);
       // const row = rendered.split('\n').length + 1;
       // const col = (rendered.split('\n').slice(-1)[0]?.length || 0) + 1;
     })

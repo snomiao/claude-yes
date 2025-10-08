@@ -16,6 +16,7 @@ const argv = yargs(hideBin(process.argv))
     default: true,
     description:
       'spawn Claude with --continue if it crashes, only works for claude',
+    alias: 'c',
   })
   .option('log-file', {
     type: 'string',
@@ -24,7 +25,7 @@ const argv = yargs(hideBin(process.argv))
   .option('cli', {
     type: 'string',
     description:
-      'Claude CLI command, e.g. "claude,gemini,codex,cursor,copilot", default is "claude"',
+      'CLI command to run. Supports: claude, gemini, codex, copilot, cursor, grok. Defaults to the CLI inferred from the executable name or "claude".',
   })
   .option('prompt', {
     type: 'string',
@@ -39,7 +40,10 @@ const argv = yargs(hideBin(process.argv))
   .option('exit-on-idle', {
     type: 'string',
     description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
+    alias: 'e',
   })
+  .help()
+  .version()
   .parserConfiguration({
     'unknown-options-as-args': true,
     'halt-at-non-option': true,
