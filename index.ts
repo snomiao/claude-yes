@@ -134,6 +134,7 @@ export default async function claudeYes({
   process.stdin.setRawMode?.(true); // must be called any stdout/stdin usage
   let isFatal = false; // when true, do not restart on crash, and exit agent
   const stdinReady = new ReadyManager();
+  const nextStdout = new ReadyManager();
 
   const shellOutputStream = new TransformStream<string, string>();
   const outputWriter = shellOutputStream.writable.getWriter();
@@ -176,12 +177,14 @@ export default async function claudeYes({
   // npm install -g @anthropic-ai/claude-code
 
   async function onData(data: string) {
+    nextStdout.ready();
     // append data to the buffer, so we can process it later
     await outputWriter.write(data);
   }
 
   shell.onData(onData);
   shell.onExit(function onExit({ exitCode }) {
+    nextStdout.ready();
     stdinReady.unready(); // start buffer stdin
     const agentCrashed = exitCode !== 0;
     const continueArg = (continueArgs as Record<string, string[]>)[cli];
@@ -349,7 +352,9 @@ export default async function claudeYes({
     // show in-place message: write msg and move cursor back start
     await yesLog`send  |${message}`;
     shell.write(message);
+    nextStdout.unready();
     idleWaiter.ping(); // just sent a message, wait for echo
+    await nextStdout.wait();
     await sendEnter();
   }
 
