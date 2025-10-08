@@ -291,7 +291,10 @@ export default async function claudeYes({
     .forkTo((e) =>
       e
         .map((e) => removeControlCharacters(e))
-        .map((e) => e.replaceAll('\r', '')) // remove carriage return
+        .forEach((e) =>
+          appendFile('io.log', 'output|' + JSON.stringify(e) + '\n'),
+        ) // for debugging
+        // .map((e) => e.replaceAll('\r', '')) // remove carriage return
         .lines({ EOL: 'NONE' })
         // Generic auto-response handler driven by CLI_CONFIGURES
         .forEach(async (e, i) => {
@@ -316,9 +319,6 @@ export default async function claudeYes({
             await exitAgent();
           }
         })
-        .forEach((e) =>
-          appendFile('.cache/io.log', 'output|' + JSON.stringify(e) + '\n'),
-        ) // for debugging
         .run(),
     )
     .map((e) =>
