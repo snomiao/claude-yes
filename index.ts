@@ -14,7 +14,6 @@ import {
   shouldUseLock,
   updateCurrentTaskStatus,
 } from './runningLock';
-
 // const yesLog = tsaComposer()(async function yesLog(msg: string) {
 //   // await rm('agent-yes.log').catch(() => null); // ignore error if file doesn't exist
 //   await appendFile("agent-yes.log", `${msg}\n`).catch(() => null);
@@ -115,7 +114,7 @@ export default async function claudeYes({
   cli = 'claude',
   cliArgs = [],
   prompt,
-  continueOnCrash,
+  // continueOnCrash,
   cwd,
   env,
   exitOnIdle,
@@ -127,7 +126,7 @@ export default async function claudeYes({
   cli?: (string & {}) | keyof typeof CLI_CONFIGURES;
   cliArgs?: string[];
   prompt?: string;
-  continueOnCrash?: boolean;
+  // continueOnCrash?: boolean;
   cwd?: string;
   env?: Record<string, string>;
   exitOnIdle?: number;
@@ -227,23 +226,23 @@ export default async function claudeYes({
     const agentCrashed = exitCode !== 0;
     const continueArg = (continueArgs as Record<string, string[]>)[cli];
 
-    if (agentCrashed && continueOnCrash && continueArg) {
-      if (!continueArg) {
-        return console.warn(
-          `continueOnCrash is only supported for ${Object.keys(continueArgs).join(', ')} currently, not ${cli}`,
-        );
-      }
-      if (isFatal) {
-        return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
-      }
+    // if (agentCrashed && continueOnCrash && continueArg) {
+    //   if (!continueArg) {
+    //     return console.warn(
+    //       `continueOnCrash is only supported for ${Object.keys(continueArgs).join(", ")} currently, not ${cli}`
+    //     );
+    //   }
+    //   if (isFatal) {
+    //     return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
+    //   }
 
-      console.log(`${cli} crashed, restarting...`);
+    //   console.log(`${cli} crashed, restarting...`);
 
-      shell = pty.spawn(cli, continueArg, getPtyOptions());
-      shell.onData(onData);
-      shell.onExit(onExit);
-      return;
-    }
+    //   shell = pty.spawn(cli, continueArg, getPtyOptions());
+    //   shell.onData(onData);
+    //   shell.onExit(onExit);
+    //   return;
+    // }
     return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
   });
 
@@ -406,7 +405,7 @@ export default async function claudeYes({
   }
 
   async function exitAgent() {
-    continueOnCrash = false;
+    // continueOnCrash = false;
     // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
     await sendMessage('/exit');
 
