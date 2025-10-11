@@ -1,4 +1,4 @@
-# Yes! Claude
+# Cli Yes! Claude/Gemini/Cursor/Copilot/Qwen
 
 A wrapper tool that automates interactions with various AI CLI tools by automatically handling common prompts and responses. Originally designed for Claude CLI, now supports multiple AI coding assistants.
 
@@ -55,7 +55,7 @@ Learn more: https://github.com/vibe-kit/grok-cli
 Then install this project:
 
 ```bash
-npm install claude-yes -g
+npm install cli-yes -g
 ```
 
 ## Usage
@@ -63,50 +63,36 @@ npm install claude-yes -g
 ### Command Line Interface
 
 ```bash
-claude-yes [--cli=<tool>] [--exit-on-idle=60s] [tool-command] [prompts]
+claude-yes [--exit-on-idle=60s] [tool-command] [prompts]
 ```
 
 #### Examples
 
 **Claude (default):**
 ```bash
-claude-yes "run all tests and commit current changes"
+claude-yes -- run all tests and commit current changes
 bunx claude-yes "Solve TODO.md"
 ```
 
 **Other AI tools:**
 ```bash
-# Use Gemini
-claude-yes --cli=gemini "help me debug this code"
-
-# Use Codex  
-claude-yes --cli=codex "refactor this function"
-
-# Use Copilot
-claude-yes --cli=copilot "generate unit tests"
-
-# Use Cursor
-# Use Grok
-**Direct Commands:**
-
-```bash
 # Use Codex directly
-codex-yes "refactor this function"
+codex-yes -- refactor this function
 
 # Use Grok directly
-grok-yes "help me with this code"
+grok-yes -- help me with this code
 
 # Use Copilot directly
-copilot-yes "generate unit tests"
+copilot-yes -- generate unit tests
 
 # Use Cursor directly
-cursor-yes "optimize performance"
+cursor-yes -- optimize performance
 
 # Use Gemini directly
-gemini-yes "debug this code"
-```
-claude-yes --cli=grok "help me with this code"
-claude-yes --cli=cursor "optimize performance"
+gemini-yes -- debug this code
+
+claude-yes "help me with this code"
+claude-yes "optimize performance"
 ```
 
 **Auto-exit when idle (useful for automation):**
@@ -121,14 +107,15 @@ claude-code-execute claude-yes "your task here"
 
 ### Supported CLI Tools
 
-| Tool | CLI Name | Description |
-|------|----------|-------------|
-| Claude | `claude` | Anthropic's Claude Code (default) |
-| Gemini | `gemini` | Google's Gemini CLI |
-| Codex | `codex` | Microsoft's Codex CLI |
-| Copilot | `copilot` | GitHub Copilot CLI |
-| Cursor | `cursor` | Cursor agent CLI |
-| Grok | `grok` | Vibe Kit\'s Grok CLI |
+| Tool | CLI Name | Description | Installation/Update |
+|------|----------|-------------|---------------------|
+| Claude | `claude` | Anthropic's Claude Code (default) | `npm install -g @anthropic/claude-code@latest` |
+| Gemini | `gemini` | Google's Gemini CLI | `npm install -g @google-ai/gemini@latest` |
+| Codex | `codex` | Microsoft's Codex CLI | `npm install -g @microsoft/codex-cli@latest` |
+| Copilot | `copilot` | GitHub Copilot CLI | `npm install -g @github-copilot/cli@latest` |
+| Cursor | `cursor` | Cursor agent CLI | `npm install -g @cursor-ai/cursor@latest` |
+| Grok | `grok` | Vibe Kit's Grok CLI | `npm install -g @vibe-kit/grok@latest` |
+| Qwen | `qwen` | Alibaba's Qwen Code CLI | `npm install -g @qwen-code/qwen-code@latest` |
 
 The tool will:
 
@@ -136,6 +123,116 @@ The tool will:
 2. Automatically respond "Yes" to common yes/no prompts
 3. Handle tool-specific patterns and responses
 4. When using `--exit-on-idle` flag, automatically exit when the tool becomes idle
+
+## CLI Tools Comparison
+
+### Pros & Cons Analysis
+
+#### Claude Code CLI (Anthropic)
+**Pros:**
+- Industry-leading performance on SWE-bench (72.5%) and Terminal-bench (43.2%)
+- Advanced checkpointing feature for code state management
+- Deep terminal integration with Unix philosophy support
+- Enterprise-ready with AWS/GCP deployment options
+- Excellent at complex refactoring and debugging tasks
+
+**Cons:**
+- Higher cost compared to alternatives ($5+ per session)
+- Terminal-based interface may not suit all developers
+- Closed ecosystem with limited community plugins
+- Requires API subscription for full features
+
+#### Gemini CLI (Google)
+**Pros:**
+- Free tier with generous limits (60 requests/min, 1,000/day)
+- Fully open source (Apache 2.0 license)
+- 1 million token context window
+- MCP integration for extensibility
+- GitHub Actions integration at no cost
+
+**Cons:**
+- Currently in preview with potential stability issues
+- Shared quotas between CLI and Code Assist
+- May produce factually incorrect outputs
+- Limited to English language support
+
+#### Codex CLI (OpenAI/Microsoft)
+**Pros:**
+- Cloud-based scalability for team collaboration
+- Powers GitHub Copilot ecosystem
+- Supports multimodal input (images, diagrams)
+- Strong GitHub integration
+- Flexible API for custom implementations
+
+**Cons:**
+- Requires more setup and technical knowledge
+- Internet dependency for all operations
+- Less mature/polished than competitors
+- Higher computational requirements
+
+#### Copilot CLI (GitHub)
+**Pros:**
+- Seamless GitHub integration
+- Terminal-native development experience
+- Wide language and model support
+- Command explanation and suggestion features
+- Enterprise policy controls available
+
+**Cons:**
+- Requires active subscription
+- English-only support
+- May struggle with complex/uncommon commands
+- Organization admin approval needed for business users
+
+#### Cursor CLI
+**Pros:**
+- Superior performance in setup and deployment
+- Multi-model support from various providers
+- Excellent context awareness with RAG system
+- Enterprise features for CI/CD integration
+- Can run multiple agents in parallel
+
+**Cons:**
+- Steeper learning curve
+- UI/UX can be clunky with cramped interface
+- Manual context management required
+- Screen real estate limitations
+
+#### Grok CLI (xAI/Vibe Kit)
+**Pros:**
+- Open source and free for basic use
+- Cost-effective premium tier ($30/month)
+- Real-time data access via X integration
+- Strong community support
+- Cross-platform compatibility
+
+**Cons:**
+- Requires API key for advanced features
+- Internet dependency for AI features
+- Additional setup and authentication needed
+- Newer with less mature ecosystem
+
+#### Qwen Code CLI (Alibaba)
+**Pros:**
+- Fully open source (Apache 2.0)
+- Exceptional benchmark performance (87.9 on MultiPL-E)
+- 256K-1M token context support
+- No subscription required
+- Enterprise-ready with full infrastructure control
+
+**Cons:**
+- Newer entrant with developing ecosystem
+- Geopolitical considerations for adoption
+- Less established tooling and integrations
+- Regional trust and security concerns
+
+### Choosing the Right Tool
+
+- **For Solo Developers:** Claude Code (complex tasks) or Grok CLI (cost-conscious)
+- **For Teams:** Codex CLI (cloud collaboration) or Cursor CLI (parallel agents)
+- **For Enterprises:** Claude Code (performance) or Qwen Code (self-hosted)
+- **For Budget-Conscious:** Gemini CLI (free tier) or Qwen Code (open source)
+- **For GitHub Users:** Copilot CLI (native integration)
 
 <!-- TODO: add usage As lib: call await claudeYes() and it returns render result -->
 

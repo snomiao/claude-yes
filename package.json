@@ -1,9 +1,15 @@
 {
-  "name": "claude-yes",
+  "name": "cli-yes",
   "version": "0.0.0",
   "description": "A wrapper tool that automates interactions with various AI CLI tools by automatically handling common prompts and responses.",
   "keywords": [
     "claude",
+    "qwen",
+    "gemini",
+    "codex",
+    "copilot",
+    "cursor",
+    "grok",
     "ai",
     "automation",
     "cli",
@@ -32,11 +38,13 @@
   "types": "./ts/index.ts",
   "bin": {
     "claude-yes": "dist/claude-yes.js",
+    "cli-yes": "dist/cli.js",
     "codex-yes": "dist/codex-yes.js",
     "copilot-yes": "dist/copilot-yes.js",
     "cursor-yes": "dist/cursor-yes.js",
     "gemini-yes": "dist/gemini-yes.js",
-    "grok-yes": "dist/grok-yes.js"
+    "grok-yes": "dist/grok-yes.js",
+    "qwen-yes": "dist/qwen-yes.js"
   },
   "directories": {
     "doc": "docs"
@@ -57,6 +65,25 @@
   "lint-staged": {
     "*.{ts,js,json,md}": [
       "bunx @biomejs/biome check --fix"
+    ]
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/changelog",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      [
+        "@semantic-release/exec",
+        {
+          "publishCmd": "npm pkg set name=claude-yes"
+        }
+      ],
+      "@semantic-release/npm",
+      "@semantic-release/github"
     ]
   },
   "dependencies": {

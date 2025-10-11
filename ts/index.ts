@@ -5,6 +5,7 @@ import DIE from 'phpdie';
 import sflow from 'sflow';
 import { TerminalTextRender } from 'terminal-render';
 import tsaComposer from 'tsa-composer';
+import { CLI_CONFIG as CLI_CONFIG } from './config';
 import { IdleWaiter } from './idleWaiter';
 import { ReadyManager } from './ReadyManager';
 import { removeControlCharacters } from './removeControlCharacters';
@@ -14,73 +15,22 @@ import {
   shouldUseLock,
   updateCurrentTaskStatus,
 } from './runningLock';
-// const yesLog = tsaComposer()(async function yesLog(msg: string) {
-//   // await rm('agent-yes.log').catch(() => null); // ignore error if file doesn't exist
-//   await appendFile("agent-yes.log", `${msg}\n`).catch(() => null);
-// });
+import { tryCatch } from './tryCatch';
 
-export const CLI_CONFIGURES: Record<
-  string,
-  {
-    install?: string; // hint user for install command if not installed
-    binary?: string; // actual binary name if different from cli
-    ready?: RegExp[]; // regex matcher for stdin ready, or line index for gemini
-    enter?: RegExp[]; // array of regex to match for sending Enter
-    fatal?: RegExp[]; // array of regex to match for fatal errors
-    ensureArgs?: (args: string[]) => string[]; // function to ensure certain args are present
-  }
-> = {
-  grok: {
-    install: 'npm install -g @vibe-kit/grok-cli',
-    ready: [/^  │ ❯ /],
-    enter: [/^   1. Yes/],
-  },
-  claude: {
-    install: 'npm install -g @anthropic-ai/claude-code',
-    // ready: [/^> /], // regex matcher for stdin ready
-    ready: [/\? for shortcuts/], // regex matcher for stdin ready
-    enter: [/❯ 1. Yes/, /❯ 1. Dark mode✔/, /Press Enter to continue…/],
-    fatal: [
-      /No conversation found to continue/,
-      /⎿  Claude usage limit reached\./,
-    ],
-  },
-  gemini: {
-    install: 'npm install -g @google/gemini-cli',
-    // match the agent prompt after initial lines; handled by index logic using line index
-    ready: [/Type your message/], // used with line index check
-    enter: [/│ ● 1. Yes, allow once/],
-    fatal: [],
-  },
-  codex: {
-    install: 'npm install -g @openai/codex-cli',
-    ready: [/⏎ send/],
-    enter: [
-      /> 1. Yes, allow Codex to work in this folder/,
-      /> 1. Approve and run now/,
-    ],
-    fatal: [/Error: The cursor position could not be read within/],
-    // add to codex --search by default when not provided by the user
-    ensureArgs: (args: string[]) => {
-      if (!args.includes('--search')) return ['--search', ...args];
-      return args;
-    },
-  },
-  copilot: {
-    install: 'npm install -g @github/copilot',
-    ready: [/^ +> /, /Ctrl\+c Exit/],
-    enter: [/ │ ❯ 1. Yes, proceed/, /❯ 1. Yes/],
-    fatal: [],
-  },
-  cursor: {
-    install: 'open https://cursor.com/ja/docs/cli/installation',
-    // map logical "cursor" cli name to actual binary name
-    binary: 'cursor-agent',
-    ready: [/\/ commands/],
-    enter: [/→ Run \(once\) \(y\) \(enter\)/, /▶ \[a\] Trust this workspace/],
-    fatal: [/^  Error: You've hit your usage limit/],
-  },
+export type AgentCliConfig = {
+  install?: string; // hint user for install command if not installed
+  version?: string; // hint user for version command to check if installed
+  binary?: string; // actual binary name if different from cli, e.g. cursor -> cursor-agent
+  ready?: RegExp[]; // regex matcher for stdin ready, or line index for gemini
+  enter?: RegExp[]; // array of regex to match for sending Enter
+  fatal?: RegExp[]; // array of regex to match for fatal errors
+  restoreArgs?: string[]; // arguments to continue the session when crashed
+  ensureArgs?: (args: string[]) => string[]; // function to ensure certain args are present
 };
+
+export type SUPPORTED_CLIS = keyof typeof CLI_CONFIG;
+export const SUPPORTED_CLIS = Object.keys(CLI_CONFIG) as SUPPORTED_CLIS[];
+
 /**
  * Main function to run agent-cli with automatic yes/no responses
  * @param options Configuration options
@@ -96,25 +46,24 @@ export const CLI_CONFIGURES: Record<
  *
  * @example
  * ```typescript
- * import claudeYes from 'claude-yes';
- * await claudeYes({
+ * import cliYes from 'cli-yes';
+ * await cliYes({
  *   prompt: 'help me solve all todos in my codebase',
  *
  *   // optional
- *   cli: 'claude',
- *   cliArgs: ['--verbose'], // additional args to pass to claude
+ *   cliArgs: ['--verbose'], // additional args to pass to agent-cli
  *   exitOnIdle: 30000, // exit after 30 seconds of idle
- *   continueOnCrash: true, // restart if claude crashes, default is true
+ *   robust: true, // auto restart with --continue if claude crashes, default is true
  *   logFile: 'claude.log', // save logs to file
  *   disableLock: false, // disable running lock (default is false)
  * });
  * ```
  */
-export default async function claudeYes({
-  cli = 'claude',
+export default async function cliYes({
+  cli,
   cliArgs = [],
   prompt,
-  // continueOnCrash,
+  robust = true,
   cwd,
   env,
   exitOnIdle,
@@ -123,10 +72,10 @@ export default async function claudeYes({
   verbose = false,
   disableLock = false,
 }: {
-  cli?: (string & {}) | keyof typeof CLI_CONFIGURES;
+  cli: SUPPORTED_CLIS;
   cliArgs?: string[];
   prompt?: string;
-  // continueOnCrash?: boolean;
+  robust?: boolean;
   cwd?: string;
   env?: Record<string, string>;
   exitOnIdle?: number;
@@ -134,12 +83,9 @@ export default async function claudeYes({
   removeControlCharactersFromStdout?: boolean;
   verbose?: boolean;
   disableLock?: boolean;
-} = {}) {
-  const continueArgs = {
-    codex: 'resume --last'.split(' '),
-    claude: '--continue'.split(' '),
-    gemini: [], // not possible yet
-  };
+}) {
+  if (!cli) throw new Error(`cli is required`);
+  const conf = CLI_CONFIG[cli] || DIE(`Unsupported cli tool: ${cli}`);
 
   // Acquire lock before starting agent (if in git repo or same cwd and lock is not disabled)
   const workingDir = cwd ?? process.cwd();
@@ -155,9 +101,7 @@ export default async function claudeYes({
   };
 
   process.on('exit', () => {
-    if (!disableLock) {
-      releaseLock().catch(() => null);
-    }
+    if (!disableLock) releaseLock().catch(() => null);
   });
   process.on('SIGINT', async () => {
     await cleanupLock();
@@ -192,7 +136,7 @@ export default async function claudeYes({
   });
 
   // Apply CLI specific configurations (moved to CLI_CONFIGURES)
-  const cliConf = (CLI_CONFIGURES as Record<string, any>)[cli] || {};
+  const cliConf = (CLI_CONFIG as Record<string, any>)[cli] || {};
   cliArgs = cliConf.ensureArgs?.(cliArgs) ?? cliArgs;
   const cliCommand = cliConf?.binary || cli;
 
@@ -224,25 +168,27 @@ export default async function claudeYes({
     nextStdout.ready();
     stdinReady.unready(); // start buffer stdin
     const agentCrashed = exitCode !== 0;
-    const continueArg = (continueArgs as Record<string, string[]>)[cli];
 
-    // if (agentCrashed && continueOnCrash && continueArg) {
-    //   if (!continueArg) {
-    //     return console.warn(
-    //       `continueOnCrash is only supported for ${Object.keys(continueArgs).join(", ")} currently, not ${cli}`
-    //     );
-    //   }
-    //   if (isFatal) {
-    //     return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
-    //   }
+    if (agentCrashed && robust && conf?.restoreArgs) {
+      if (!conf.restoreArgs) {
+        return console.warn(
+          `robust is only supported for ${Object.entries(CLI_CONFIG)
+            .filter(([_, v]) => v.restoreArgs)
+            .map(([k]) => k)
+            .join(', ')} currently, not ${cli}`,
+        );
+      }
+      if (isFatal) {
+        return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
+      }
 
-    //   console.log(`${cli} crashed, restarting...`);
+      console.log(`${cli} crashed, restarting...`);
 
-    //   shell = pty.spawn(cli, continueArg, getPtyOptions());
-    //   shell.onData(onData);
-    //   shell.onExit(onExit);
-    //   return;
-    // }
+      shell = pty.spawn(cli, conf.restoreArgs, getPtyOptions());
+      shell.onData(onData);
+      shell.onExit(onExit);
+      return;
+    }
     return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
   });
 
@@ -323,10 +269,6 @@ export default async function claudeYes({
         // .forEach((e) => yesLog`output|${e}`) // for debugging
         // Generic auto-response handler driven by CLI_CONFIGURES
         .forEach(async (e, i) => {
-          const conf =
-            CLI_CONFIGURES[cli as keyof typeof CLI_CONFIGURES] || null;
-          if (!conf) return;
-
           // ready matcher: if matched, mark stdin ready
           if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
             // await yesLog`ready |${e}`;
@@ -405,7 +347,8 @@ export default async function claudeYes({
   }
 
   async function exitAgent() {
-    // continueOnCrash = false;
+    robust = false; // disable robust to avoid auto restart
+
     // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
     await sendMessage('/exit');
 
@@ -437,11 +380,3 @@ export default async function claudeYes({
 }
 
 export { removeControlCharacters };
-
-function tryCatch<T, R>(fn: () => T, catchFn: (error: unknown) => R): T | R {
-  try {
-    return fn();
-  } catch (error) {
-    return catchFn(error);
-  }
-}
