@@ -221,13 +221,57 @@ async function waitForUnlock(
   currentTask: Task,
 ): Promise<void> {
   const blockingTask = blockingTasks[0];
+  if (!blockingTask) return;
   console.log(`⏳ Queueing for unlock of: ${blockingTask.task}`);
+  console.log(`   Press 'b' to bypass queue, 'k' to kill previous instance`);
 
   // Add current task as 'queued'
   await addTask({ ...currentTask, status: 'queued' });
 
+  // Set up keyboard input handling
+  const stdin = process.stdin;
+  const wasRaw = stdin.isRaw;
+  stdin.setRawMode?.(true);
+  stdin.resume();
+
+  let bypassed = false;
+  let killed = false;
+
+  const keyHandler = (key: Buffer) => {
+    const char = key.toString();
+    if (char === 'b' || char === 'B') {
+      console.log('\n⚡ Bypassing queue...');
+      bypassed = true;
+    } else if (char === 'k' || char === 'K') {
+      console.log('\n🔪 Killing previous instance...');
+      killed = true;
+    }
+  };
+
+  stdin.on('data', keyHandler);
+
   let dots = 0;
   while (true) {
+    if (bypassed) {
+      // Force bypass - update status to running immediately
+      await updateTaskStatus(currentTask.pid, 'running');
+      console.log('✓ Queue bypassed, starting task...');
+      break;
+    }
+
+    if (killed && blockingTask) {
+      // Kill the blocking task's process
+      try {
+        process.kill(blockingTask.pid, 'SIGTERM');
+        console.log(`✓ Killed process ${blockingTask.pid}`);
+        // Wait a bit for the process to be killed
+        await sleep(1000);
+      } catch (err) {
+        console.log(`⚠️  Could not kill process ${blockingTask.pid}: ${err}`);
+      }
+      killed = false; // Reset flag after attempting kill
+    }
+
     await sleep(POLL_INTERVAL);
 
     const lockCheck = await checkLock(currentTask.cwd, currentTask.task);
@@ -245,6 +289,11 @@ async function waitForUnlock(
       `\r⏳ Queueing${'.'.repeat(dots)}${' '.repeat(3 - dots)}`,
     );
   }
+
+  // Clean up keyboard handler
+  stdin.off('data', keyHandler);
+  stdin.setRawMode?.(wasRaw);
+  if (!wasRaw) stdin.pause();
 }
 
 /**

@@ -25,11 +25,11 @@
   "type": "module",
   "exports": {
     "import": "./dist/index.js",
-    "types": "./index.ts"
+    "types": "./ts/index.ts"
   },
   "main": "dist/index.js",
-  "module": "index.ts",
-  "types": "./index.ts",
+  "module": "ts/index.ts",
+  "types": "./ts/index.ts",
   "bin": {
     "claude-yes": "dist/claude-yes.js",
     "codex-yes": "dist/codex-yes.js",
@@ -42,13 +42,13 @@
     "doc": "docs"
   },
   "files": [
-    "*.ts",
+    "ts/*.ts",
     "dist"
   ],
   "scripts": {
-    "build": "bun build index.ts cli.ts --outdir=dist --target=node --sourcemap --external=bun-pty --external=node-pty",
-    "postbuild": "bun ./postbuild.ts",
-    "dev": "tsx index.ts",
+    "build": "bun build ts/index.ts ts/cli.ts --outdir=dist --target=node --sourcemap --external=bun-pty --external=node-pty",
+    "postbuild": "bun ./ts/postbuild.ts",
+    "dev": "tsx ts/index.ts",
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
     "prepack": "bun run build",
     "prepare": "bunx husky",

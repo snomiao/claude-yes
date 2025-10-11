@@ -51,30 +51,31 @@ const argv = yargs(hideBin(process.argv))
   })
   .parseSync();
 
+console.log(argv);
+
 // detect cli name for cli, while package.json have multiple bin link: {"claude-yes": "cli.js", "codex-yes": "cli.js", "gemini-yes": "cli.js"}
 const cliName = process.argv[1]?.split('/').pop()?.split('-')[0];
+
+const rawArgs = process.argv.slice(2);
+const cliArgIndex = rawArgs.indexOf(String(argv._[0]));
+const dashIndex = rawArgs.indexOf('--');
 
 // Support: everything after a literal `--` is a prompt string. Example:
 //   claude-yes --exit-on-idle=30s -- "help me refactor this"
 // In that example the prompt will be `help me refactor this` and won't be
 // passed as args to the underlying CLI binary.
-const rawArgs = process.argv.slice(2);
-const dashIndex = rawArgs.indexOf('--');
-let promptFromDash: string | undefined = undefined;
-let cliArgsForSpawn: string[] = [];
-if (dashIndex !== -1) {
-  // join everything after `--` into a single prompt string
-  const after = rawArgs.slice(dashIndex + 1);
-  promptFromDash = after.join(' ');
-  // use everything before `--` as the cli args
-  cliArgsForSpawn = rawArgs.slice(0, dashIndex).map(String);
-} else {
-  // fallback to yargs parsed positional args when `--` is not used
-  cliArgsForSpawn = argv._.map((e) => String(e));
-}
 
+const cliArgsForSpawn = rawArgs.slice(
+  cliArgIndex === -1 ? 0 : cliArgIndex,
+  dashIndex === -1 ? undefined : dashIndex,
+); // default to all args
+const promptFromDash: string | undefined = rawArgs
+  .slice(dashIndex + 1)
+  .join(' ');
+
+console.log({ rawArgs, cliArgsForSpawn, promptFromDash });
 console.clear();
-const { exitCode, logs } = await claudeYes({
+const { exitCode } = await claudeYes({
   cli: cliName,
   // prefer explicit --prompt / -p; otherwise use the text after `--` if present
   prompt: argv.prompt || promptFromDash,

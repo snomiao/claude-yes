@@ -1,8 +1,8 @@
 #! /usr/bin/env bun
 import { execaCommand } from 'execa';
 import { copyFile } from 'fs/promises';
+import * as pkg from '../package.json';
 import { CLI_CONFIGURES } from '.';
-import * as pkg from './package.json';
 
 const src = 'dist/cli.js';
 await Promise.all(
@@ -11,5 +11,6 @@ await Promise.all(
     if (!pkg.bin?.[cli as keyof typeof pkg.bin])
       await execaCommand(`npm pkg set bin.${cli}-yes=${dst}`);
     await copyFile(src, dst);
+    console.log(`Created ${dst}`);
   }),
 );
