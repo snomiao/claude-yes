@@ -1,52 +1,56 @@
 #!/usr/bin/env node
 import enhancedMs from 'enhanced-ms';
+import path from 'path';
+import DIE from 'phpdie';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import cliYes, { SUPPORTED_CLIS } from '.';
-import { CLI_CONFIG } from './config';
+import cliYes, { CLIS_CONFIG, type CliYesConfig, SUPPORTED_CLIS } from '.';
 
 // cli entry point
-const cliName = ((e?: string) => (e === 'cli' ? undefined : e))(
-  process.argv[1]?.split('/').pop()?.split('-')[0],
-);
+const cliName = ((e?: string) => {
+  // Handle test environment where script is run as cli.ts
+  if (e === 'cli' || e === 'cli.ts') return undefined;
+  return e;
+})(process.argv[1]?.split('/').pop()?.split('-')[0]);
 
 const argv = yargs(hideBin(process.argv))
-  .usage('Usage: $0 [cli] [options] [agent-cli args] [--] [prompts...]')
+  .usage('Usage: $0 [cli] [cli-yes args] [agent-cli args] [--] [prompts...]')
   .example(
     '$0 claude --idle=30s -- solve all todos in my codebase, commit one by one',
     'Run Claude with a 30 seconds idle timeout, and the prompt is everything after `--`',
   )
-  // .option('continue-on-crash', {
-  //   type: 'boolean',
-  //   default: true,
-  //   description:
-  //     'spawn Claude with --continue if it crashes, only works for claude',
-  //   alias: 'c',
-  // })
-  .option('log-file', {
+  .option('robust', {
+    type: 'boolean',
+    default: true,
+    description:
+      're-spawn Claude with --continue if it crashes, only works for claude yet',
+    alias: 'r',
+  })
+  .option('logFile', {
     type: 'string',
-    description: 'Log file to write to',
+    description: 'Rendered log file to write to.',
   })
   .option('prompt', {
     type: 'string',
-    description: 'Prompt to send to Claude',
+    description: 'Prompt to send to Claude (also can be passed after --)',
     alias: 'p',
   })
   .option('verbose', {
     type: 'boolean',
-    description: 'Enable verbose logging',
+    description: 'Enable verbose logging, will emit ./agent-yes.log',
     default: false,
   })
   .option('exit-on-idle', {
     type: 'string',
     description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
+    deprecated: 'use --exit instead',
     alias: 'e',
   })
-  .option('disable-lock', {
+  .option('queue', {
     type: 'boolean',
     description:
-      'Disable the running lock feature that prevents concurrent agents in the same directory/repo',
-    default: false,
+      'Queue Agent when spawning multiple agents in the same directory/repo, can be disabled with --no-queue',
+    default: true,
   })
   .positional('cli', {
     describe: 'The AI CLI to run, e.g., claude, codex, copilot, cursor, gemini',
@@ -75,22 +79,29 @@ const dashIndex = undefinedNotIndex(rawArgs.indexOf('--'));
 // passed as args to the underlying CLI binary.
 
 const cliArgsForSpawn = rawArgs.slice(cliArgIndex ?? 0, dashIndex ?? undefined); // default to all args
-const prompt: string | undefined = rawArgs
+const dashPrompt: string | undefined = rawArgs
   .slice((dashIndex ?? cliArgIndex ?? 0) + 1)
   .join(' ');
 
-console.clear();
-console.info({ ...argv, cliArgsForSpawn, dashPrompts: prompt });
+// console.clear();
+if (argv.verbose) {
+  process.env.VERBOSE = 'true'; // enable verbose logging in yesLog.ts
+  console.log({ ...argv, cliArgsForSpawn, prompt: dashPrompt });
+}
+
 const { exitCode } = await cliYes({
-  cli: cliName as SUPPORTED_CLIS,
+  cli: (cliName ||
+    argv.cli ||
+    argv._[0]?.toString()?.replace?.(/-yes$/, '') ||
+    DIE('missing cli def')) as SUPPORTED_CLIS,
   // prefer explicit --prompt / -p; otherwise use the text after `--` if present
-  prompt: [argv.prompt, prompt].join(' ').trim() || undefined,
+  prompt: [argv.prompt, dashPrompt].join(' ').trim() || undefined,
   exitOnIdle: argv.exitOnIdle ? enhancedMs(argv.exitOnIdle) : undefined,
   cliArgs: cliArgsForSpawn,
-  // continueOnCrash: argv.continueOnCrash,
+  robust: argv.robust,
   logFile: argv.logFile,
   verbose: argv.verbose,
-  disableLock: argv.disableLock,
+  queue: argv.queue,
 });
 
 process.exit(exitCode ?? 1);
