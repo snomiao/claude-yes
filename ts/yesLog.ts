@@ -9,7 +9,7 @@ let initial = true;
  * Each message is appended as a new line
  * The log file is cleared on the first call
  *
- * for debug
+ * use only for debug, enabled when process.env.VERBOSE is set
  */
 export const yesLog = tsaComposer()(
   catcher(

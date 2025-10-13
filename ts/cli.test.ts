@@ -16,7 +16,7 @@ it.skip('Write file with auto bypass prompts', async () => {
   }
 
   const p = exec(
-    `bunx tsx ./ts/cli.ts claude --logFile=./cli-rendered.log --exit-on-idle=3s -- "just write {on: 1} into ./.cache/flag.json and wait"`,
+    `bunx tsx ./ts/cli.ts claude --logFile=./cli-rendered.log --idle=3s -- "just write {on: 1} into ./.cache/flag.json and wait"`,
   );
   const pExitCode = new Promise<number | null>((r) => p.once('exit', r));
 

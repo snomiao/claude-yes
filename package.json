@@ -88,9 +88,10 @@
   },
   "dependencies": {
     "bun-pty": "^0.3.2",
+    "cpu-wait": "^0.0.10",
     "p-map": "^7.0.3",
     "phpdie": "^1.7.0",
-    "tsa-composer": "^3.0.0"
+    "tsa-composer": "^3.0.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",

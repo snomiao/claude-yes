@@ -387,7 +387,20 @@ export default async function cliYes({
     const et = Date.now();
     // process.stdout.write(`\ridleWaiter.wait(${waitms}) took ${et - st}ms\r`);
     await yesLog`sendEn| idleWaiter.wait(${String(waitms)}) took ${String(et - st)}ms`;
+    nextStdout.unready();
     shell.write('\r');
+    // retry once if not received any output in 1 second after sending Enter
+    await Promise.race([
+      nextStdout.wait(),
+      new Promise<void>((resolve) =>
+        setTimeout(() => {
+          if (!nextStdout.ready) {
+            shell.write('\r');
+          }
+          resolve();
+        }, 1000),
+      ),
+    ]);
   }
 
   async function sendMessage(message: string) {

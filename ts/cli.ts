@@ -43,8 +43,13 @@ const argv = yargs(hideBin(process.argv))
   .option('exit-on-idle', {
     type: 'string',
     description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
-    deprecated: 'use --exit instead',
+    deprecated: 'use --idle instead',
     alias: 'e',
+  })
+  .option('idle', {
+    type: 'string',
+    description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
+    alias: 'i',
   })
   .option('queue', {
     type: 'boolean',
@@ -68,10 +73,10 @@ const argv = yargs(hideBin(process.argv))
   .parseSync();
 
 // detect cli name for cli, while package.json have multiple bin link: {"claude-yes": "cli.js", "codex-yes": "cli.js", "gemini-yes": "cli.js"}
-const undefinedNotIndex = (e: number) => (0 <= e ? e : undefined);
+const optionalIndex = (e: number) => (0 <= e ? e : undefined);
 const rawArgs = process.argv.slice(2);
-const cliArgIndex = undefinedNotIndex(rawArgs.indexOf(String(argv._[0])));
-const dashIndex = undefinedNotIndex(rawArgs.indexOf('--'));
+const cliArgIndex = optionalIndex(rawArgs.indexOf(String(argv._[0])));
+const dashIndex = optionalIndex(rawArgs.indexOf('--'));
 
 // Support: everything after a literal `--` is a prompt string. Example:
 //   claude-yes --exit-on-idle=30s -- "help me refactor this"
@@ -90,18 +95,27 @@ if (argv.verbose) {
 }
 
 const { exitCode } = await cliYes({
+  // cli name, detect from argv[1] if not provided
   cli: (cliName ||
     argv.cli ||
     argv._[0]?.toString()?.replace?.(/-yes$/, '') ||
     DIE('missing cli def')) as SUPPORTED_CLIS,
+  cliArgs: cliArgsForSpawn,
+
   // prefer explicit --prompt / -p; otherwise use the text after `--` if present
   prompt: [argv.prompt, dashPrompt].join(' ').trim() || undefined,
-  exitOnIdle: argv.exitOnIdle ? enhancedMs(argv.exitOnIdle) : undefined,
-  cliArgs: cliArgsForSpawn,
+
+  exitOnIdle: Number(
+    (argv.exitOnIdle || argv.idle)?.replace(/.*/, (e) =>
+      String(enhancedMs(e)),
+    ) || 0,
+  ),
+
+  // other options
+  queue: argv.queue,
   robust: argv.robust,
   logFile: argv.logFile,
   verbose: argv.verbose,
-  queue: argv.queue,
 });
 
 process.exit(exitCode ?? 1);
