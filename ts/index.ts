@@ -170,6 +170,7 @@ export default async function cliYes({
   cliArgs = cliConf.defaultArgs
     ? [...cliConf.defaultArgs, ...cliArgs]
     : cliArgs;
+
   if (prompt && cliConf.promptArg) {
     if (cliConf.promptArg === 'first-arg') {
       cliArgs = [prompt, ...cliArgs];

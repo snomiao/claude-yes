@@ -24,6 +24,7 @@ export default defineCliYesConfig({
         /No conversation found to continue/,
         /⎿  Claude usage limit reached\./,
       ],
+      defaultArgs: ['--model=sonnet'], // default to sonnet, to prevent opus model overload
     },
     gemini: {
       install: 'npm install -g @google/gemini-cli',
