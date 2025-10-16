@@ -30,10 +30,12 @@ fn test_write_file_with_auto_bypass_prompts() {
 
     let output = Command::new(binary_path)
         .args(&[
-            "--log-file", log_file,
-            "--exit-on-idle", "3s",
+            "--log-file",
+            log_file,
+            "--exit-on-idle",
+            "3s",
             "--",
-            "just write {\"on\": 1} into ./.cache/flag.json and wait"
+            "just write {\"on\": 1} into ./.cache/flag.json and wait",
         ])
         .output()
         .expect("Failed to start claude-yes");
@@ -52,16 +54,20 @@ fn test_write_file_with_auto_bypass_prompts() {
     assert!(Path::new(flag_file).exists(), "Flag file was not created");
 
     // Verify the content of the flag file
-    let content = fs::read_to_string(flag_file)
-        .expect("Failed to read flag file");
-    assert!(content.contains("\"on\""), "Flag file does not contain expected content");
-    assert!(content.contains("1"), "Flag file does not contain expected value");
+    let content = fs::read_to_string(flag_file).expect("Failed to read flag file");
+    assert!(
+        content.contains("\"on\""),
+        "Flag file does not contain expected content"
+    );
+    assert!(
+        content.contains("1"),
+        "Flag file does not contain expected value"
+    );
 
     // Verify log file was created
     assert!(Path::new(log_file).exists(), "Log file was not created");
 
-    let log_content = fs::read_to_string(log_file)
-        .expect("Failed to read log file");
+    let log_content = fs::read_to_string(log_file).expect("Failed to read log file");
     assert!(!log_content.is_empty(), "Log file is empty");
 
     // Final cleanup
@@ -83,9 +89,18 @@ fn test_simple_echo_with_auto_response() {
         .expect("Failed to execute claude-yes");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("claude-yes"), "Help output doesn't contain program name");
-    assert!(stdout.contains("--exit-on-idle"), "Help output doesn't contain exit-on-idle option");
-    assert!(stdout.contains("--log-file"), "Help output doesn't contain log-file option");
+    assert!(
+        stdout.contains("claude-yes"),
+        "Help output doesn't contain program name"
+    );
+    assert!(
+        stdout.contains("--exit-on-idle"),
+        "Help output doesn't contain exit-on-idle option"
+    );
+    assert!(
+        stdout.contains("--log-file"),
+        "Help output doesn't contain log-file option"
+    );
 }
 
 #[test]
@@ -102,7 +117,10 @@ fn test_version_output() {
         .expect("Failed to execute claude-yes");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("claude-yes"), "Version output doesn't contain program name");
+    assert!(
+        stdout.contains("claude-yes"),
+        "Version output doesn't contain program name"
+    );
 }
 
 #[test]
@@ -120,5 +138,8 @@ fn test_invalid_idle_timeout() {
 
     assert!(!output.status.success(), "Should fail with invalid timeout");
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(!stderr.is_empty(), "Should have error message for invalid timeout");
+    assert!(
+        !stderr.is_empty(),
+        "Should have error message for invalid timeout"
+    );
 }

@@ -36,9 +36,9 @@ impl ClaudeWrapper {
         let terminal_render = Arc::new(Mutex::new(TerminalRender::new()));
         let ready_manager = Arc::new(ReadyManager::new());
 
-        let idle_watcher = config.exit_on_idle.map(|timeout| {
-            Arc::new(IdleWatcher::new(timeout))
-        });
+        let idle_watcher = config
+            .exit_on_idle
+            .map(|timeout| Arc::new(IdleWatcher::new(timeout)));
 
         Ok(Self {
             config,
@@ -84,9 +84,7 @@ impl ClaudeWrapper {
                 cmd.arg(arg);
             }
 
-            let pair = pty_system
-                .openpty(pty_size)
-                .context("Failed to open PTY")?;
+            let pair = pty_system.openpty(pty_size).context("Failed to open PTY")?;
 
             let child = pair
                 .slave
@@ -111,7 +109,9 @@ impl ClaudeWrapper {
                                 let render = terminal_render.lock().await;
                                 let text = render.render();
 
-                                if text.contains("esc to interrupt") || text.contains("to run in background") {
+                                if text.contains("esc to interrupt")
+                                    || text.contains("to run in background")
+                                {
                                     // info!("[claude-yes] Claude is idle, but seems still working, not exiting yet");
                                     false
                                 } else {
@@ -163,7 +163,8 @@ impl ClaudeWrapper {
 
                     // info!("Claude crashed, restarting...");
                     // Update command to continue
-                    self.config.claude_args = vec!["--continue".to_string(), "continue".to_string()];
+                    self.config.claude_args =
+                        vec!["--continue".to_string(), "continue".to_string()];
                 } else {
                     exit_code = Some(code);
                     break;
@@ -230,25 +231,34 @@ impl ClaudeWrapper {
                                         || lower.contains("allow claude")
                                         || lower.contains("do you want to")
                                         || lower.contains("would you like")
-                                        || (lower.contains("yes") && lower.contains("no") && clean_text.contains("❯"))
+                                        || (lower.contains("yes")
+                                            && lower.contains("no")
+                                            && clean_text.contains("❯"))
                                         || clean_text.contains("[y/n]")
-                                        || clean_text.contains("(y/n)") {
+                                        || clean_text.contains("(y/n)")
+                                    {
                                         // info!("[claude-yes] Auto-responding to prompt");
-                                        let response = if lower.contains("[y/n]") || lower.contains("(y/n)") {
-                                            "y\n".to_string()
-                                        } else {
-                                            "\r".to_string()
-                                        };
+                                        let response =
+                                            if lower.contains("[y/n]") || lower.contains("(y/n)") {
+                                                "y\n".to_string()
+                                            } else {
+                                                "\r".to_string()
+                                            };
                                         match response_tx.try_send(response) {
                                             Ok(_) => {
                                                 // info!("[claude-yes] Auto-response sent");
                                                 output_buffer.clear();
-                                            },
-                                            Err(tokio::sync::mpsc::error::TrySendError::Closed(_)) => {
+                                            }
+                                            Err(
+                                                tokio::sync::mpsc::error::TrySendError::Closed(_),
+                                            ) => {
                                                 // Channel closed, likely because input task was cancelled
                                                 // This is expected when Claude is exiting, don't warn
-                                            },
-                                            Err(e) => warn!("[claude-yes] Failed to send auto-response: {}", e),
+                                            }
+                                            Err(e) => warn!(
+                                                "[claude-yes] Failed to send auto-response: {}",
+                                                e
+                                            ),
                                         }
                                     }
 
@@ -278,7 +288,9 @@ impl ClaudeWrapper {
                                 let valid_up_to = e.utf8_error().valid_up_to();
                                 if valid_up_to > 0 {
                                     // Process the valid part
-                                    let text = String::from_utf8_lossy(&incomplete_utf8[..valid_up_to]).into_owned();
+                                    let text =
+                                        String::from_utf8_lossy(&incomplete_utf8[..valid_up_to])
+                                            .into_owned();
                                     output_buffer.push_str(&text);
 
                                     rt.block_on(async {
@@ -330,42 +342,74 @@ impl ClaudeWrapper {
                 if let Ok(Event::Key(key_event)) = event::read() {
                     let mut bytes = Vec::new();
                     match key_event {
-                        KeyEvent { code: KeyCode::Char('c'), modifiers, .. } if modifiers.contains(KeyModifiers::CONTROL) => {
+                        KeyEvent {
+                            code: KeyCode::Char('c'),
+                            modifiers,
+                            ..
+                        } if modifiers.contains(KeyModifiers::CONTROL) => {
                             // Ctrl+C - send interrupt signal
                             bytes.push(3);
                         }
-                        KeyEvent { code: KeyCode::Char('d'), modifiers, .. } if modifiers.contains(KeyModifiers::CONTROL) => {
+                        KeyEvent {
+                            code: KeyCode::Char('d'),
+                            modifiers,
+                            ..
+                        } if modifiers.contains(KeyModifiers::CONTROL) => {
                             // Ctrl+D - EOF
                             break;
                         }
-                        KeyEvent { code: KeyCode::Char(c), .. } => {
+                        KeyEvent {
+                            code: KeyCode::Char(c),
+                            ..
+                        } => {
                             // Regular character
                             let mut buf = [0; 4];
                             let s = c.encode_utf8(&mut buf);
                             bytes.extend_from_slice(s.as_bytes());
                         }
-                        KeyEvent { code: KeyCode::Enter, .. } => {
+                        KeyEvent {
+                            code: KeyCode::Enter,
+                            ..
+                        } => {
                             bytes.push(b'\r');
                         }
-                        KeyEvent { code: KeyCode::Tab, .. } => {
+                        KeyEvent {
+                            code: KeyCode::Tab, ..
+                        } => {
                             bytes.push(b'\t');
                         }
-                        KeyEvent { code: KeyCode::Backspace, .. } => {
+                        KeyEvent {
+                            code: KeyCode::Backspace,
+                            ..
+                        } => {
                             bytes.push(127); // DEL character
                         }
-                        KeyEvent { code: KeyCode::Left, .. } => {
+                        KeyEvent {
+                            code: KeyCode::Left,
+                            ..
+                        } => {
                             bytes.extend_from_slice(b"\x1b[D");
                         }
-                        KeyEvent { code: KeyCode::Right, .. } => {
+                        KeyEvent {
+                            code: KeyCode::Right,
+                            ..
+                        } => {
                             bytes.extend_from_slice(b"\x1b[C");
                         }
-                        KeyEvent { code: KeyCode::Up, .. } => {
+                        KeyEvent {
+                            code: KeyCode::Up, ..
+                        } => {
                             bytes.extend_from_slice(b"\x1b[A");
                         }
-                        KeyEvent { code: KeyCode::Down, .. } => {
+                        KeyEvent {
+                            code: KeyCode::Down,
+                            ..
+                        } => {
                             bytes.extend_from_slice(b"\x1b[B");
                         }
-                        KeyEvent { code: KeyCode::Esc, .. } => {
+                        KeyEvent {
+                            code: KeyCode::Esc, ..
+                        } => {
                             bytes.push(27); // ESC
                         }
                         _ => continue, // Ignore other keys

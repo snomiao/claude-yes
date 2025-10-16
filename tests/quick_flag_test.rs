@@ -32,7 +32,10 @@ fn test_exit_on_idle_without_claude() {
 
     // The process should exit with non-zero status since claude is likely not installed
     // or the command is invalid
-    assert!(!output.status.success(), "Process should fail when claude is not available");
+    assert!(
+        !output.status.success(),
+        "Process should fail when claude is not available"
+    );
 }
 
 #[test]
@@ -49,7 +52,10 @@ fn test_continue_on_crash_flag() {
         .output()
         .expect("Failed to execute claude-yes");
 
-    assert!(output.status.success(), "Help should work with --continue-on-crash flag");
+    assert!(
+        output.status.success(),
+        "Help should work with --continue-on-crash flag"
+    );
 }
 
 #[test]
@@ -66,5 +72,8 @@ fn test_log_file_flag() {
         .output()
         .expect("Failed to execute claude-yes");
 
-    assert!(output.status.success(), "Help should work with --log-file flag");
+    assert!(
+        output.status.success(),
+        "Help should work with --log-file flag"
+    );
 }

@@ -1,6 +1,6 @@
-use std::process::Command;
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 #[test]
 fn test_claude_yes_with_version_flag() {
@@ -22,7 +22,9 @@ fn test_claude_yes_with_version_flag() {
     // Should contain claude version info
     let combined_output = format!("{}{}", stdout, stderr);
     assert!(
-        combined_output.contains("Claude") || combined_output.contains("claude") || combined_output.contains("1."),
+        combined_output.contains("Claude")
+            || combined_output.contains("claude")
+            || combined_output.contains("1."),
         "Output should contain version info. Stdout: '{}', Stderr: '{}'",
         stdout,
         stderr
@@ -45,10 +47,11 @@ fn test_simple_file_creation_with_claude() {
     // Run claude-yes with a simple file creation command
     let output = Command::new(binary_path)
         .args(&[
-            "--exit-on-idle", "5s",
+            "--exit-on-idle",
+            "5s",
             "--verbose",
             "--",
-            "just create a file called test_output.txt with content 'Hello from Claude'"
+            "just create a file called test_output.txt with content 'Hello from Claude'",
         ])
         .output()
         .expect("Failed to execute claude-yes");
@@ -68,7 +71,10 @@ fn test_simple_file_creation_with_claude() {
     if Path::new(test_file).exists() {
         let content = fs::read_to_string(test_file).expect("Failed to read test file");
         println!("File created with content: {}", content);
-        assert!(content.contains("Hello") || content.contains("Claude"), "File should contain expected text");
+        assert!(
+            content.contains("Hello") || content.contains("Claude"),
+            "File should contain expected text"
+        );
 
         // Cleanup
         let _ = fs::remove_file(test_file);

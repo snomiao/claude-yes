@@ -51,7 +51,7 @@ fn parse_duration_string(s: &str) -> Result<Option<Duration>> {
     }
     match s.parse::<HumanDuration>() {
         Ok(duration) => Ok(Some(duration.into())),
-        Err(e) => anyhow::bail!("Invalid duration '{}': {}", s, e)
+        Err(e) => anyhow::bail!("Invalid duration '{}': {}", s, e),
     }
 }
 
@@ -74,9 +74,7 @@ async fn main() -> Result<()> {
 
     // Initialize tracing
     let log_level = if args.verbose { "debug" } else { "info" };
-    tracing_subscriber::fmt()
-        .with_env_filter(log_level)
-        .init();
+    tracing_subscriber::fmt().with_env_filter(log_level).init();
 
     // if args.verbose {
     //     info!("Starting claude-yes with args: {:?}", args);

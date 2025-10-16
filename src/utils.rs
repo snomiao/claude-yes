@@ -8,8 +8,7 @@ pub fn remove_control_characters(text: &str) -> String {
         // Match ANSI escape sequences and control characters
         // \x1B\[[0-9;]*[a-zA-Z] - ANSI escape sequences
         // [\x00-\x1F\x7F] - Control characters (including \x08 backspace)
-        Regex::new(r"\x1B\[[0-9;]*[a-zA-Z]|[\x00-\x1F\x7F]")
-            .expect("Failed to compile ANSI regex")
+        Regex::new(r"\x1B\[[0-9;]*[a-zA-Z]|[\x00-\x1F\x7F]").expect("Failed to compile ANSI regex")
     });
 
     regex.replace_all(text, "").into_owned()
