@@ -7,6 +7,12 @@ pub struct ReadyManager {
     notify: Arc<Notify>,
 }
 
+impl Default for ReadyManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ReadyManager {
     pub fn new() -> Self {
         Self {

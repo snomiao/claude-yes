@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use humantime::Duration as HumanDuration;
 use std::time::Duration;
-use tracing::{error, info};
+use tracing::error;
 
 mod claude_wrapper;
 mod idle_watcher;

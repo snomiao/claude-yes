@@ -29,7 +29,7 @@ fn test_write_file_with_auto_bypass_prompts() {
     };
 
     let output = Command::new(binary_path)
-        .args(&[
+        .args([
             "--log-file",
             log_file,
             "--exit-on-idle",
@@ -132,7 +132,7 @@ fn test_invalid_idle_timeout() {
     };
 
     let output = Command::new(binary_path)
-        .args(&["--exit-on-idle", "invalid"])
+        .args(["--exit-on-idle", "invalid"])
         .output()
         .expect("Failed to execute claude-yes");
 

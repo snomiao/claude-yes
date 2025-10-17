@@ -12,7 +12,7 @@ fn test_claude_yes_with_version_flag() {
     };
 
     let output = Command::new(binary_path)
-        .args(&["--exit-on-idle", "2s", "--", "--version"])
+        .args(["--exit-on-idle", "2s", "--", "--version"])
         .output()
         .expect("Failed to execute claude-yes");
 
@@ -46,7 +46,7 @@ fn test_simple_file_creation_with_claude() {
 
     // Run claude-yes with a simple file creation command
     let output = Command::new(binary_path)
-        .args(&[
+        .args([
             "--exit-on-idle",
             "5s",
             "--verbose",

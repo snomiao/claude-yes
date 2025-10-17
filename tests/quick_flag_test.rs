@@ -17,7 +17,7 @@ fn test_exit_on_idle_without_claude() {
 
     // Run with a very short idle timeout
     let output = Command::new(binary_path)
-        .args(&["--exit-on-idle", "1s", "--", "test command"])
+        .args(["--exit-on-idle", "1s", "--", "test command"])
         .output()
         .expect("Failed to execute claude-yes");
 
@@ -48,7 +48,7 @@ fn test_continue_on_crash_flag() {
 
     // Test that --continue-on-crash flag is accepted
     let output = Command::new(binary_path)
-        .args(&["--continue-on-crash", "--help"])
+        .args(["--continue-on-crash", "--help"])
         .output()
         .expect("Failed to execute claude-yes");
 
@@ -68,7 +68,7 @@ fn test_log_file_flag() {
 
     // Test that --log-file flag is accepted
     let output = Command::new(binary_path)
-        .args(&["--log-file", "test.log", "--help"])
+        .args(["--log-file", "test.log", "--help"])
         .output()
         .expect("Failed to execute claude-yes");
 

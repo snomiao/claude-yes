@@ -5,9 +5,8 @@ use std::io::{BufReader, Read, Write};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::io::AsyncReadExt;
 use tokio::sync::{Mutex, RwLock};
-use tracing::{info, warn};
+use tracing::warn;
 
 use crate::idle_watcher::IdleWatcher;
 use crate::ready_manager::ReadyManager;
@@ -54,8 +53,8 @@ impl ClaudeWrapper {
         let (cols, rows) = terminal::size()?;
 
         let pty_size = PtySize {
-            rows: rows,
-            cols: cols,
+            rows,
+            cols,
             pixel_width: 0,
             pixel_height: 0,
         };
@@ -414,11 +413,10 @@ impl ClaudeWrapper {
                         }
                         _ => continue, // Ignore other keys
                     }
-                    if !bytes.is_empty() {
-                        if stdin_tx.blocking_send(bytes).is_err() {
+                    if !bytes.is_empty()
+                        && stdin_tx.blocking_send(bytes).is_err() {
                             break;
                         }
-                    }
                 }
             }
         });

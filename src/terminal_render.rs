@@ -8,6 +8,12 @@ pub struct TerminalRender {
     current_line: String,
 }
 
+impl Default for TerminalRender {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TerminalRender {
     pub fn new() -> Self {
         Self {
