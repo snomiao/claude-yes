@@ -1,9 +1,15 @@
 {
-  "name": "claude-yes",
+  "name": "cli-yes",
   "version": "0.0.0",
-  "description": "A wrapper tool that automates interactions with the Claude CLI by automatically handling common prompts and responses.",
+  "description": "A wrapper tool that automates interactions with various AI CLI tools by automatically handling common prompts and responses.",
   "keywords": [
     "claude",
+    "qwen",
+    "gemini",
+    "codex",
+    "copilot",
+    "cursor",
+    "grok",
     "ai",
     "automation",
     "cli",
@@ -26,36 +32,74 @@
   "exports": {
     "bun": "./dist/bun/index.js",
     "node": "./dist/node/index.js",
-    "types": "./index.ts"
+    "types": "./ts/index.ts"
   },
-  "types": "./index.ts",
+  "main": "dist/index.js",
+  "module": "ts/index.ts",
+  "types": "./ts/index.ts",
   "bin": {
-    "claude-yes": "dist/cli.js"
+    "claude-yes": "dist/claude-yes.js",
+    "cli-yes": "dist/cli.js",
+    "codex-yes": "dist/codex-yes.js",
+    "copilot-yes": "dist/copilot-yes.js",
+    "cursor-yes": "dist/cursor-yes.js",
+    "gemini-yes": "dist/gemini-yes.js",
+    "grok-yes": "dist/grok-yes.js",
+    "qwen-yes": "dist/qwen-yes.js"
   },
   "directories": {
     "doc": "docs"
   },
   "files": [
-    "*.ts",
+    "ts/*.ts",
     "dist"
   ],
   "scripts": {
     "build": "bun run build:cli && bun run build:bun && bun run build:node",
-    "build:cli": "bun build cli.ts --outfile=dist/cli.js --package=external --no-bundle --target=bun",
-    "build:bun": "bun build index.ts --outdir=dist/bun/index.js --external=bun-pty --target=bun --sourcemap",
-    "build:node": "bun build index.ts --outdir=dist/node/index.js --external=node-pty --target=node --sourcemap",
+    "build:cli": "bun build ts/cli.ts --outfile=dist/cli.js --package=external --no-bundle --target=bun",
+    "build:bun": "bun build ts/index.ts --outdir=dist/bun/index.js --external=bun-pty --target=bun --sourcemap",
+    "build:node": "bun build ts/index.ts --outdir=dist/node/index.js --external=node-pty --target=node --sourcemap",
     "build:rs": "cargo build --release",
-    "dev": "tsx index.ts",
-    "fmt": "prettier -w .",
-    "prepare": "husky",
+    "postbuild": "bun ./ts/postbuild.ts",
+    "dev": "tsx ts/index.ts",
+    "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
+    "prepack": "bun run build",
+    "prepare": "bunx husky",
     "test": "vitest"
   },
   "lint-staged": {
     "*.{ts,js,json,md}": [
-      "prettier --write"
+      "bunx @biomejs/biome check --fix"
     ]
   },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/changelog",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      [
+        "@semantic-release/exec",
+        {
+          "publishCmd": "npm pkg set name=claude-yes"
+        }
+      ],
+      "@semantic-release/npm",
+      "@semantic-release/github"
+    ]
+  },
+  "dependencies": {
+    "bun-pty": "^0.3.2",
+    "cpu-wait": "^0.0.10",
+    "p-map": "^7.0.3",
+    "phpdie": "^1.7.0",
+    "tsa-composer": "^3.0.2"
+  },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.5",
     "@types/bun": "^1.2.18",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
@@ -65,21 +109,17 @@
     "from-node-stream": "^0.0.11",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.4",
-    "prettier": "^3.6.2",
     "rambda": "^10.3.2",
     "semantic-release": "^24.2.6",
     "sflow": "^1.20.2",
     "strip-ansi-control-characters": "^2.0.0",
-    "terminal-render": "^1.1.0",
+    "terminal-render": "^1.2.0",
     "tsx": "^4.20.3",
     "vitest": "^3.2.4",
     "yargs": "^18.0.0"
   },
   "peerDependencies": {
-    "typescript": "^5.8.3",
-    "node-pty": "^1.0.0"
-  },
-  "dependencies": {
-    "bun-pty": "^0.3.2"
+    "node-pty": "^1.0.0",
+    "typescript": "^5.8.3"
   }
 }

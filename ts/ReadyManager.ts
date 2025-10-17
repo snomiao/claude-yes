@@ -2,10 +2,8 @@ export class ReadyManager {
   private isReady = false;
   private readyQueue: (() => void)[] = [];
   wait() {
-    return new Promise<void>((resolve) => {
-      if (this.isReady) return resolve();
-      this.readyQueue.push(resolve);
-    });
+    if (this.isReady) return;
+    return new Promise<void>((resolve) => this.readyQueue.push(resolve));
   }
   unready() {
     this.isReady = false;

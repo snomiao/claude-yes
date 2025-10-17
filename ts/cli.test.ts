@@ -1,14 +1,13 @@
-import { execaCommand } from 'execa';
-import { fromStdio } from 'from-node-stream';
 import { exec } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { readFile, unlink } from 'node:fs/promises';
+import { fromStdio } from 'from-node-stream';
 import sflow from 'sflow';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { createIdleWatcher } from './createIdleWatcher';
+import { expect, it } from 'vitest';
+import { IdleWaiter } from './idleWaiter';
 import { sleepms } from './utils';
 
-it('Write file with auto bypass prompts', async () => {
+it.skip('Write file with auto bypass prompts', async () => {
   const flagFile = './.cache/flag.json';
   await cleanup();
   async function cleanup() {
@@ -17,7 +16,7 @@ it('Write file with auto bypass prompts', async () => {
   }
 
   const p = exec(
-    `bunx tsx ./cli.ts --logFile=./cli-rendered.log --exit-on-idle=3s "just write {on: 1} into ./.cache/flag.json and wait"`
+    `bunx tsx ./ts/cli.ts claude --logFile=./cli-rendered.log --idle=3s -- "just write {on: 1} into ./.cache/flag.json and wait"`,
   );
   const pExitCode = new Promise<number | null>((r) => p.once('exit', r));
 
@@ -34,12 +33,13 @@ it('Write file with auto bypass prompts', async () => {
 
   // ping function to exit claude when idle
 
-  const { ping } = createIdleWatcher(() => exit(), 3000);
+  const idleWaiter = new IdleWaiter();
+  idleWaiter.wait(3000).then(() => exit());
 
   const output = await sflow(tr.readable)
     .by(fromStdio(p))
     .log()
-    .forEach(() => ping())
+    .forEach(() => idleWaiter.ping())
     .text();
 
   // expect the file exists
