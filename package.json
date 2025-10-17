@@ -30,7 +30,8 @@
   "author": "snomiao <snomiao@gmail.com>",
   "type": "module",
   "exports": {
-    "import": "./dist/index.js",
+    "bun": "./dist/bun/index.js",
+    "node": "./dist/node/index.js",
     "types": "./ts/index.ts"
   },
   "main": "dist/index.js",
@@ -54,7 +55,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build ts/index.ts ts/cli.ts --outdir=dist --target=node --sourcemap --external=bun-pty --external=node-pty",
+    "build": "bun run build:cli && bun run build:bun && bun run build:node",
+    "build:cli": "bun build ts/cli.ts --outfile=dist/cli.js --package=external --no-bundle --target=bun",
+    "build:bun": "bun build ts/index.ts --outdir=dist/bun/index.js --external=bun-pty --target=bun --sourcemap",
+    "build:node": "bun build ts/index.ts --outdir=dist/node/index.js --external=node-pty --target=node --sourcemap",
+    "build:rs": "cargo build --release",
     "postbuild": "bun ./ts/postbuild.ts",
     "dev": "tsx ts/index.ts",
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
