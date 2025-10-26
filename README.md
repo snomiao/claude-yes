@@ -42,15 +42,16 @@ Learn more: https://www.anthropic.com/claude-code
 ```
 
 ### Cursor
+```bash
+# Install Cursor agent CLI
+# Check Cursor's documentation for installation instructions
+```
+
 ### Grok
 ```bash
 npm install -g @vibe-kit/grok-cli
 ```
 Learn more: https://github.com/vibe-kit/grok-cli
-```bash
-# Install Cursor agent CLI
-# Check Cursor's documentation for installation instructions
-```
 
 Then install this project:
 
@@ -109,12 +110,12 @@ claude-code-execute claude-yes "your task here"
 
 | Tool | CLI Name | Description | Installation/Update |
 |------|----------|-------------|---------------------|
-| Claude | `claude` | Anthropic's Claude Code (default) | `npm install -g @anthropic/claude-code@latest` |
-| Gemini | `gemini` | Google's Gemini CLI | `npm install -g @google-ai/gemini@latest` |
-| Codex | `codex` | Microsoft's Codex CLI | `npm install -g @microsoft/codex-cli@latest` |
-| Copilot | `copilot` | GitHub Copilot CLI | `npm install -g @github-copilot/cli@latest` |
-| Cursor | `cursor` | Cursor agent CLI | `npm install -g @cursor-ai/cursor@latest` |
-| Grok | `grok` | Vibe Kit's Grok CLI | `npm install -g @vibe-kit/grok@latest` |
+| Claude | `claude` | Anthropic's Claude Code (default) | `npm install -g @anthropic-ai/claude-code@latest` |
+| Gemini | `gemini` | Google's Gemini CLI | `npm install -g @google/gemini-cli@latest` |
+| Codex | `codex` | OpenAI's Codex CLI | `npm install -g @openai/codex-cli@latest` |
+| Copilot | `copilot` | GitHub Copilot CLI | `npm install -g @github/copilot@latest` |
+| Cursor | `cursor` | Cursor agent CLI | See https://cursor.com/ja/docs/cli/installation |
+| Grok | `grok` | Vibe Kit's Grok CLI | `npm install -g @vibe-kit/grok-cli@latest` |
 | Qwen | `qwen` | Alibaba's Qwen Code CLI | `npm install -g @qwen-code/qwen-code@latest` |
 
 The tool will:
