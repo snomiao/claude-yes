@@ -44,6 +44,7 @@ const argv = yargs(hideBin(process.argv))
     type: 'string',
     description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
     deprecated: 'use --idle instead',
+    default: '60s',
     alias: 'e',
   })
   .option('idle', {
