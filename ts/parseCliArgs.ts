@@ -16,40 +16,60 @@ export function parseCliArgs(argv: string[]) {
 
   // Parse args with yargs (same logic as cli.ts:16-73)
   const parsedArgv = yargs(hideBin(argv))
+    .usage('Usage: $0 [cli] [cli-yes args] [agent-cli args] [--] [prompts...]')
+    .example(
+      '$0 claude --idle=30s -- solve all todos in my codebase, commit one by one',
+      'Run Claude with a 30 seconds idle timeout, and the prompt is everything after `--`',
+    )
     .option('robust', {
       type: 'boolean',
       default: true,
+      description:
+        're-spawn Claude with --continue if it crashes, only works for claude yet',
       alias: 'r',
     })
     .option('logFile', {
       type: 'string',
+      description: 'Rendered log file to write to.',
     })
     .option('prompt', {
       type: 'string',
+      description: 'Prompt to send to Claude (also can be passed after --)',
       alias: 'p',
     })
     .option('verbose', {
       type: 'boolean',
+      description: 'Enable verbose logging, will emit ./agent-yes.log',
       default: false,
     })
     .option('exit-on-idle', {
       type: 'string',
+      description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
+      deprecated: 'use --idle instead',
+      default: '60s',
       alias: 'e',
     })
     .option('idle', {
       type: 'string',
+      description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
       alias: 'i',
     })
     .option('queue', {
       type: 'boolean',
+      description:
+        'Queue Agent when spawning multiple agents in the same directory/repo, can be disabled with --no-queue',
       default: true,
     })
     .positional('cli', {
+      describe:
+        'The AI CLI to run, e.g., claude, codex, copilot, cursor, gemini',
       type: 'string',
       choices: SUPPORTED_CLIS,
       demandOption: false,
       default: cliName,
     })
+    .help()
+    .version()
     .parserConfiguration({
       'unknown-options-as-args': true,
       'halt-at-non-option': true,
@@ -79,7 +99,7 @@ export function parseCliArgs(argv: string[]) {
     cliArgs: cliArgsForSpawn,
     prompt: [parsedArgv.prompt, dashPrompt].join(' ').trim() || undefined,
     exitOnIdle: Number(
-      (parsedArgv.exitOnIdle || parsedArgv.idle)?.replace(/.*/, (e) =>
+      (parsedArgv.idle || parsedArgv.exitOnIdle)?.replace(/.*/, (e) =>
         String(enhancedMs(e)),
       ) || 0,
     ),
