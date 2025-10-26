@@ -3,6 +3,7 @@ use claude_yes::utils::remove_control_characters;
 use std::process::Command;
 
 #[test]
+#[ignore] // This test is skipped in CI as the binary is built after tests
 fn test_binary_exists() {
     // Check that the binary exists (it should already be built)
     let binary_path = "./target/release/claude-yes";
@@ -14,6 +15,7 @@ fn test_binary_exists() {
 }
 
 #[test]
+#[ignore] // This test is skipped in CI as the binary is built after tests
 fn test_binary_help() {
     // Test that the binary runs and shows help
     let output = Command::new("./target/release/claude-yes")
@@ -72,6 +74,7 @@ fn test_ansi_removal_comprehensive() {
 }
 
 #[test]
+#[ignore] // This test is skipped in CI as the binary is built after tests
 fn test_version_flag() {
     let output = Command::new("./target/release/claude-yes")
         .arg("--version")
