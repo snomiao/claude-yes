@@ -1,3 +1,10 @@
+# [1.26.0](https://github.com/snomiao/claude-yes/compare/v1.25.0...v1.26.0) (2025-10-26)
+
+
+### Features
+
+* **tests:** add bun test setup file and configuration for bun testing environment ([da53577](https://github.com/snomiao/claude-yes/commit/da5357798b4a194c8bbd0e15fd203a42272888ee))
+
 # [1.25.0](https://github.com/snomiao/claude-yes/compare/v1.24.2...v1.25.0) (2025-10-26)
 
 
