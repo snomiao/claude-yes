@@ -10,8 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build claude-yes binary
+  build-rs:
+    name: Build Rust binary
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -100,9 +100,37 @@ jobs:
           name: ${{ matrix.binary_name }}
           path: release/${{ matrix.binary_name }}
 
+  build-ts:
+    name: Build TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build TypeScript
+        run: |
+          if [ -f "tsconfig.json" ]; then
+            bun run build:cli || true
+            bun run build:bun || true
+            bun run build:node || true
+          fi
+
+      - name: Upload TypeScript artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-build
+          path: |
+            dist/
+            build/
+          if-no-files-found: ignore
+
   release:
     name: Semantic Release
-    needs: build
+    needs: [build-rs, build-ts]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.repository_owner == 'snomiao'
     permissions:
@@ -119,15 +147,6 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
       - run: bun install
-
-      # Build TypeScript/JavaScript versions
-      - name: Build TypeScript
-        run: |
-          if [ -f "tsconfig.json" ]; then
-            bun run build:cli || true
-            bun run build:bun || true
-            bun run build:node || true
-          fi
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
