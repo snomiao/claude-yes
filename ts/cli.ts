@@ -44,6 +44,7 @@ const argv = yargs(hideBin(process.argv))
     type: 'string',
     description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
     deprecated: 'use --idle instead',
+    default: '60s',
     alias: 'e',
   })
   .option('idle', {
@@ -83,10 +84,12 @@ const dashIndex = optionalIndex(rawArgs.indexOf('--'));
 // In that example the prompt will be `help me refactor this` and won't be
 // passed as args to the underlying CLI binary.
 
-const cliArgsForSpawn = rawArgs.slice(cliArgIndex ?? 0, dashIndex ?? undefined); // default to all args
-const dashPrompt: string | undefined = rawArgs
-  .slice((dashIndex ?? cliArgIndex ?? 0) + 1)
-  .join(' ');
+const cliArgsForSpawn = argv._[0]
+  ? rawArgs.slice(cliArgIndex ?? 0, dashIndex ?? undefined)
+  : []; // default to all args
+const dashPrompt: string | undefined = dashIndex
+  ? rawArgs.slice(dashIndex + 1).join(' ')
+  : undefined;
 
 // console.clear();
 if (argv.verbose) {

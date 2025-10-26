@@ -23,6 +23,7 @@ export default defineCliYesConfig({
       fatal: [
         /No conversation found to continue/,
         /⎿  Claude usage limit reached\./,
+        /^error: unknown option/,
       ],
       defaultArgs: ['--model=sonnet'], // default to sonnet, to prevent opus model overload
     },
