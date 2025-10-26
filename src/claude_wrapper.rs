@@ -413,10 +413,9 @@ impl ClaudeWrapper {
                         }
                         _ => continue, // Ignore other keys
                     }
-                    if !bytes.is_empty()
-                        && stdin_tx.blocking_send(bytes).is_err() {
-                            break;
-                        }
+                    if !bytes.is_empty() && stdin_tx.blocking_send(bytes).is_err() {
+                        break;
+                    }
                 }
             }
         });
