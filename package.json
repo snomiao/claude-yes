@@ -56,7 +56,7 @@
   ],
   "scripts": {
     "build": "bun run build:cli && bun run build:bun && bun run build:node",
-    "build:cli": "bun build ts/cli.ts --outfile=dist/cli.js --package=external --no-bundle --target=bun",
+    "build:cli": "bun build ts/cli.ts --outdir=dist/tmp --external=node-pty --external=bun-pty --target=node --sourcemap && mv dist/tmp/cli.js dist/ && mv dist/tmp/cli.js.map dist/ && rmdir dist/tmp",
     "build:bun": "bun build ts/index.ts --outdir=dist/bun/index.js --external=bun-pty --target=bun --sourcemap",
     "build:node": "bun build ts/index.ts --outdir=dist/node/index.js --external=node-pty --target=node --sourcemap",
     "build:rs": "cargo build --release",
@@ -65,7 +65,8 @@
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
     "prepack": "bun run build",
     "prepare": "bunx husky",
-    "test": "bun test --coverage"
+    "test": "bun test --coverage",
+    "test:e2e": "node e2e-tests/unified-compatibility-test.js"
   },
   "lint-staged": {
     "*.{ts,js,json,md}": [
