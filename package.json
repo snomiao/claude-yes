@@ -1,6 +1,6 @@
 {
   "name": "cli-yes",
-  "version": "0.0.0",
+  "version": "1.25.0",
   "description": "A wrapper tool that automates interactions with various AI CLI tools by automatically handling common prompts and responses.",
   "keywords": [
     "claude",
@@ -75,8 +75,8 @@
     ],
     "plugins": [
       "@semantic-release/commit-analyzer",
-      "@semantic-release/changelog",
       "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
       "@semantic-release/npm",
       [
         "@semantic-release/exec",
@@ -85,6 +85,7 @@
         }
       ],
       "@semantic-release/npm",
+      "@semantic-release/git",
       "@semantic-release/github"
     ]
   },
@@ -99,6 +100,7 @@
     "@biomejs/biome": "^2.2.5",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
     "@semantic-release/release-notes-generator": "^14.1.0",
     "@types/bun": "^1.2.18",
     "@types/jest": "^30.0.0",
