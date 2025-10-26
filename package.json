@@ -54,15 +54,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build ts/index.ts ts/cli.ts --outdir=dist --target=node --sourcemap --external=bun-pty --external=node-pty",
+    "build": "bun build ts/index.ts ts/cli.ts --outdir=dist --target=node --sourcemap --packages=external --external=node-pty",
     "postbuild": "bun ./ts/postbuild.ts",
     "dev": "tsx ts/index.ts",
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
     "prepack": "bun run build",
     "prepare": "bunx husky",
-    "test": "vitest",
-    "test:bun": "bun test ts/*.bun.spec.ts",
-    "test:all": "npm run test && npm run test:bun"
+    "test": "bun test --coverage"
   },
   "lint-staged": {
     "*.{ts,js,json,md}": [
@@ -90,11 +88,7 @@
     ]
   },
   "dependencies": {
-    "bun-pty": "^0.3.2",
-    "cpu-wait": "^0.0.10",
-    "p-map": "^7.0.3",
-    "phpdie": "^1.7.0",
-    "tsa-composer": "^3.0.2"
+    "bun-pty": "^0.3.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",
@@ -106,16 +100,20 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
     "@types/yargs": "^17.0.33",
+    "cpu-wait": "^0.0.10",
     "enhanced-ms": "^4.1.0",
     "execa": "^9.6.0",
     "from-node-stream": "^0.0.11",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.4",
+    "p-map": "^7.0.3",
+    "phpdie": "^1.7.0",
     "rambda": "^10.3.2",
     "semantic-release": "^24.2.6",
     "sflow": "^1.20.2",
     "strip-ansi-control-characters": "^2.0.0",
     "terminal-render": "^1.2.0",
+    "tsa-composer": "^3.0.2",
     "tsx": "^4.20.3",
     "vitest": "^3.2.4",
     "yargs": "^18.0.0"

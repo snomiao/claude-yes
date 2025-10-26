@@ -9,10 +9,11 @@ import { SUPPORTED_CLIS } from '.';
  */
 export function parseCliArgs(argv: string[]) {
   // Detect cli name from script name (same logic as cli.ts:10-14)
+  const scriptName = argv[1]?.split(/[\/\\]/).pop();
   const cliName = ((e?: string) => {
-    if (e === 'cli' || e === 'cli.ts') return undefined;
-    return e;
-  })(argv[1]?.split('/').pop()?.split('-')[0]);
+    if (e === 'cli' || e === 'cli.ts' || e === 'cli.js') return undefined;
+    return e?.replace(/-yes$/, '');
+  })(scriptName);
 
   // Parse args with yargs (same logic as cli.ts:16-73)
   const parsedArgv = yargs(hideBin(argv))
@@ -85,9 +86,10 @@ export function parseCliArgs(argv: string[]) {
   const cliArgsForSpawn = parsedArgv._[0]
     ? rawArgs.slice(cliArgIndex ?? 0, dashIndex ?? undefined)
     : [];
-  const dashPrompt: string | undefined = dashIndex
-    ? rawArgs.slice(dashIndex + 1).join(' ')
-    : undefined;
+  const dashPrompt: string | undefined =
+    dashIndex !== undefined
+      ? rawArgs.slice(dashIndex + 1).join(' ')
+      : undefined;
 
   // Return the config object that would be passed to cliYes (same logic as cli.ts:99-121)
   return {
@@ -97,7 +99,8 @@ export function parseCliArgs(argv: string[]) {
         ?.toString()
         ?.replace?.(/-yes$/, '')) as (typeof SUPPORTED_CLIS)[number],
     cliArgs: cliArgsForSpawn,
-    prompt: [parsedArgv.prompt, dashPrompt].join(' ').trim() || undefined,
+    prompt:
+      [parsedArgv.prompt, dashPrompt].filter(Boolean).join(' ') || undefined,
     exitOnIdle: Number(
       (parsedArgv.idle || parsedArgv.exitOnIdle)?.replace(/.*/, (e) =>
         String(enhancedMs(e)),

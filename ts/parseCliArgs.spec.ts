@@ -33,6 +33,18 @@ describe('CLI argument parsing', () => {
     expect(result.prompt).toBe('hello world');
   });
 
+  it('should parse prompt from only -- separator with -yes cli', () => {
+    const result = parseCliArgs([
+      'node',
+      '/path/to/claude-yes',
+      '--',
+      'hello',
+      'world',
+    ]);
+
+    expect(result.prompt).toBe('hello world');
+  });
+
   it('should combine --prompt and -- prompt', () => {
     const result = parseCliArgs([
       'node',

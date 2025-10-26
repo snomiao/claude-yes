@@ -1,8 +1,0 @@
-[test]
-# Test configuration for bun test
-timeout = 30000
-# Use jest-compatible globals
-preload = ["./bun.test.setup.ts"]
-# Only run bun-specific test files
-include = ["**/*.bun.spec.ts"]
-exclude = ["**/*.spec.ts", "!**/*.bun.spec.ts"]
