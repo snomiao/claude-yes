@@ -97,6 +97,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",
+    "@semantic-release/changelog": "^6.0.3",
     "@types/bun": "^1.2.18",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
