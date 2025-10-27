@@ -1,3 +1,10 @@
+# [1.27.0](https://github.com/snomiao/claude-yes/compare/v1.26.0...v1.27.0) (2025-10-27)
+
+
+### Features
+
+* implement per-directory session restoration for codex ([4238062](https://github.com/snomiao/claude-yes/commit/423806229c28ebd185c3a8ccbea2603d42016deb))
+
 # [1.26.0](https://github.com/snomiao/claude-yes/compare/v1.25.0...v1.26.0) (2025-10-26)
 
 
