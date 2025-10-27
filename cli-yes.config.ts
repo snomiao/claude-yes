@@ -37,6 +37,7 @@ export default defineCliYesConfig({
     codex: {
       promptArg: 'first-arg',
       install: 'npm install -g @openai/codex-cli',
+      restoreArgs: ['resume', '--last'],
       ready: [/⏎ send/],
       enter: [
         /> 1. Yes, allow Codex to work in this folder/,

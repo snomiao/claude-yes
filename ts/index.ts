@@ -6,6 +6,11 @@ import sflow from 'sflow';
 import { TerminalTextRender } from 'terminal-render';
 import tsaComposer from 'tsa-composer';
 import rawConfig from '../cli-yes.config.js';
+import {
+  extractSessionId,
+  getSessionForCwd,
+  storeSessionForCwd,
+} from './codexSessionManager.js';
 import { defineCliYesConfig } from './defineConfig.js';
 import { IdleWaiter } from './idleWaiter';
 import { ReadyManager } from './ReadyManager';
@@ -171,6 +176,25 @@ export default async function cliYes({
     ? [...cliConf.defaultArgs, ...cliArgs]
     : cliArgs;
 
+  // Handle --continue flag for codex session restoration
+  const continueIndex = cliArgs.indexOf('--continue');
+  if (continueIndex !== -1 && cli === 'codex') {
+    // Remove the --continue flag from args
+    cliArgs.splice(continueIndex, 1);
+
+    // Try to get stored session for this directory
+    const storedSessionId = await getSessionForCwd(workingDir);
+    if (storedSessionId) {
+      // Replace or add resume args
+      cliArgs = ['resume', storedSessionId, ...cliArgs];
+      await yesLog`continue|using stored session ID: ${storedSessionId}`;
+    } else {
+      // Fallback to --last if no stored session
+      cliArgs = ['resume', '--last', ...cliArgs];
+      await yesLog`continue|no stored session, using --last`;
+    }
+  }
+
   if (prompt && cliConf.promptArg) {
     if (cliConf.promptArg === 'first-arg') {
       cliArgs = [prompt, ...cliArgs];
@@ -221,7 +245,7 @@ export default async function cliYes({
   }
 
   shell.onData(onData);
-  shell.onExit(function onExit({ exitCode }) {
+  shell.onExit(async function onExit({ exitCode }) {
     stdinReady.unready(); // start buffer stdin
     const agentCrashed = exitCode !== 0;
 
@@ -240,7 +264,20 @@ export default async function cliYes({
 
       console.log(`${cli} crashed, restarting...`);
 
-      shell = pty.spawn(cli, conf.restoreArgs, getPtyOptions());
+      // For codex, try to use stored session ID for this directory
+      let restoreArgs = conf.restoreArgs;
+      if (cli === 'codex') {
+        const storedSessionId = await getSessionForCwd(workingDir);
+        if (storedSessionId) {
+          // Use specific session ID instead of --last
+          restoreArgs = ['resume', storedSessionId];
+          await yesLog`restore|using stored session ID: ${storedSessionId}`;
+        } else {
+          await yesLog`restore|no stored session, using default restore args`;
+        }
+      }
+
+      shell = pty.spawn(cli, restoreArgs, getPtyOptions());
       shell.onData(onData);
       shell.onExit(onExit);
       return;
@@ -345,6 +382,15 @@ export default async function cliYes({
             await yesLog`fatal |${e}`;
             isFatal = true;
             await exitAgent();
+          }
+
+          // session ID capture for codex
+          if (cli === 'codex') {
+            const sessionId = extractSessionId(e);
+            if (sessionId) {
+              await yesLog`session|captured session ID: ${sessionId}`;
+              await storeSessionForCwd(workingDir, sessionId);
+            }
           }
         })
         .run(),
