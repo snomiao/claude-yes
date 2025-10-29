@@ -54,7 +54,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build ts/index.ts ts/cli.ts --outdir=dist --target=node --sourcemap --packages=external --external=node-pty",
+    "build": "bun build ts/index.ts ts/cli.ts --outdir=dist --target=node --sourcemap --external=node-pty --external=bun-pty",
     "postbuild": "bun ./ts/postbuild.ts",
     "dev": "tsx ts/index.ts",
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
@@ -88,10 +88,10 @@
     ]
   },
   "dependencies": {
-    "from-node-stream": "^0.0.11",
     "bun-pty": "^0.3.2"
   },
   "devDependencies": {
+    "from-node-stream": "^0.0.11",
     "@biomejs/biome": "^2.2.5",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^7.1.0",
