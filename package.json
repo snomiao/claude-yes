@@ -58,7 +58,7 @@
     "postbuild": "bun ./ts/postbuild.ts",
     "build:cli": "bun build ts/cli.ts --outdir=dist --target=node --sourcemap --external=node-pty --external=bun-pty",
     "build:index": "bun build ts/index.ts --outdir=dist --target=node --sourcemap --external=node-pty --external=bun-pty",
-    "dev": "tsx ts/index.ts",
+    "dev": "bun ts/index.ts",
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
     "prepack": "bun run build",
     "prepare": "bunx husky && bun run build",
@@ -116,7 +116,6 @@
     "strip-ansi-control-characters": "^2.0.0",
     "terminal-render": "^1.2.0",
     "tsa-composer": "^3.0.2",
-    "tsx": "^4.20.3",
     "vitest": "^3.2.4",
     "yargs": "^18.0.0"
   },
