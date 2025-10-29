@@ -88,6 +88,7 @@
     ]
   },
   "dependencies": {
+    "from-node-stream": "^0.0.11",
     "bun-pty": "^0.3.2"
   },
   "devDependencies": {
@@ -103,7 +104,6 @@
     "cpu-wait": "^0.0.10",
     "enhanced-ms": "^4.1.0",
     "execa": "^9.6.0",
-    "from-node-stream": "^0.0.11",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.4",
     "p-map": "^7.0.3",
