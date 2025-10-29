@@ -87,12 +87,14 @@ export function parseCliArgs(argv: string[]) {
     ? rawArgs.slice(cliArgIndex ?? 0, dashIndex ?? undefined)
     : [];
   const dashPrompt: string | undefined =
-    dashIndex !== undefined
-      ? rawArgs.slice(dashIndex + 1).join(' ')
-      : undefined;
+    dashIndex === undefined
+      ? undefined
+      : rawArgs.slice(dashIndex + 1).join(' ');
 
   // Return the config object that would be passed to cliYes (same logic as cli.ts:99-121)
   return {
+    cwd: process.cwd(),
+    env: process.env as Record<string, string>,
     cli: (cliName ||
       parsedArgv.cli ||
       parsedArgv._[0]

@@ -1,17 +1,15 @@
 import { fromReadable, fromWritable } from 'from-node-stream';
-import { appendFile, mkdir, rm, writeFile } from 'fs/promises';
+import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import DIE from 'phpdie';
 import sflow from 'sflow';
 import { TerminalTextRender } from 'terminal-render';
-import tsaComposer from 'tsa-composer';
 import rawConfig from '../cli-yes.config.js';
 import {
   extractSessionId,
   getSessionForCwd,
   storeSessionForCwd,
 } from './codexSessionManager.js';
-import { defineCliYesConfig } from './defineConfig.js';
 import { IdleWaiter } from './idleWaiter';
 import { ReadyManager } from './ReadyManager';
 import { removeControlCharacters } from './removeControlCharacters';
@@ -22,8 +20,10 @@ import {
   updateCurrentTaskStatus,
 } from './runningLock';
 import { catcher } from './tryCatch';
-import { deepMixin } from './utils';
 import { yesLog } from './yesLog';
+
+export { parseCliArgs } from './parseCliArgs';
+export { removeControlCharacters };
 
 export type AgentCliConfig = {
   install?: string; // hint user for install command if not installed
@@ -157,11 +157,12 @@ export default async function cliYes({
   // const pty = await import('node-pty');
 
   // its recommened to use bun-pty in windows
-  const pty = await import('node-pty')
-    .catch(async () => await import('bun-pty'))
+  const pty = await (globalThis.Bun ? import('bun-pty') : import('node-pty'))
+    // .catch(async () => await import('node-pty'))
     .catch(async () =>
       DIE('Please install node-pty or bun-pty, run this: bun install bun-pty'),
     );
+  console.log(globalThis.Bun);
 
   const getPtyOptions = () => ({
     name: 'xterm-color',
@@ -496,5 +497,3 @@ export default async function cliYes({
     };
   }
 }
-
-export { removeControlCharacters };

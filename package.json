@@ -54,12 +54,14 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun build ts/index.ts ts/cli.ts --outdir=dist --target=node --sourcemap --external=node-pty --external=bun-pty",
+    "build": "bun run build:index && bun run build:cli",
+    "build:index": "bun build ts/index.ts --outdir=dist --target=node --sourcemap --external=node-pty --external=bun-pty",
+    "build:cli": "bun build ts/cli.ts --outdir=dist --target=node --sourcemap --external=node-pty --external=bun-pty",
     "postbuild": "bun ./ts/postbuild.ts",
     "dev": "tsx ts/index.ts",
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
     "prepack": "bun run build",
-    "prepare": "bunx husky",
+    "prepare": "bunx husky && bun run build",
     "test": "bun test --coverage"
   },
   "lint-staged": {
