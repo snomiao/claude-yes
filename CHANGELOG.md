@@ -1,3 +1,10 @@
+## [1.28.1](https://github.com/snomiao/claude-yes/compare/v1.28.0...v1.28.1) (2025-10-29)
+
+
+### Bug Fixes
+
+* add from-node-stream as external dependency in build scripts ([3b0d414](https://github.com/snomiao/claude-yes/commit/3b0d414fdf81b22fc48ef40a8f40c53af6b69507))
+
 # [1.28.0](https://github.com/snomiao/claude-yes/compare/v1.27.0...v1.28.0) (2025-10-29)
 
 
