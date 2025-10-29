@@ -1,3 +1,10 @@
+# [1.28.0](https://github.com/snomiao/claude-yes/compare/v1.27.0...v1.28.0) (2025-10-29)
+
+
+### Features
+
+* add SKILL.md for Claude Skills integration ([#19](https://github.com/snomiao/claude-yes/issues/19)) ([0f3fa66](https://github.com/snomiao/claude-yes/commit/0f3fa663a39ce80c8711408529a5114e771e4541))
+
 # [1.27.0](https://github.com/snomiao/claude-yes/compare/v1.26.0...v1.27.0) (2025-10-27)
 
 
