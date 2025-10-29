@@ -6,9 +6,6 @@
     "clientKind": "git",
     "useIgnoreFile": true
   },
-  "files": {
-    "includes": ["ts/**", "*.json", "*.js"]
-  },
   "formatter": {
     "indentStyle": "space",
     "indentWidth": 2,

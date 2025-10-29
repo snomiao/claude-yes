@@ -39,28 +39,28 @@ Works with multiple AI coding assistants:
 
 ```bash
 # Use Claude (default)
-claude-yes -- run all tests and commit current changes
-bunx claude-yes "Solve TODO.md"
+cli-yes claude -- run all tests and commit current changes
+bunx cli-yes claude "Solve TODO.md"
 
 # Use other AI tools
-codex-yes -- refactor this function
-grok-yes -- help me with this code
-copilot-yes -- generate unit tests
-cursor-yes -- optimize performance
-gemini-yes -- debug this code
-qwen-yes -- implement new feature
+cli-yes codex -- refactor this function
+cli-yes grok -- help me with this code
+cli-yes copilot -- generate unit tests
+cli-yes cursor -- optimize performance
+cli-yes gemini -- debug this code
+cli-yes qwen -- implement new feature
 
 # Auto-exit when idle (for automation)
-claude-yes --exit-on-idle=60s "run all tests and commit current changes"
+cli-yes claude --exit-on-idle=60s "run all tests and commit current changes"
 ```
 
 ### Library Usage in Node.js
 
 ```typescript
-import claudeYes from 'claude-yes';
+import cliYes from 'cli-yes';
 
 // Use Claude
-await claudeYes({
+await cliYes({
   prompt: 'help me solve all todos in my codebase',
   cli: 'claude',
   cliArgs: ['--verbose'],
@@ -70,7 +70,7 @@ await claudeYes({
 });
 
 // Use other tools
-await claudeYes({
+await cliYes({
   prompt: 'debug this function',
   cli: 'gemini',
   exitOnIdle: 60000,
