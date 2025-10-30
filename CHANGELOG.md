@@ -1,3 +1,10 @@
+## [1.29.1](https://github.com/snomiao/claude-yes/compare/v1.29.0...v1.29.1) (2025-10-30)
+
+
+### Bug Fixes
+
+* **pkg:** keep only module ([932cb3d](https://github.com/snomiao/claude-yes/commit/932cb3d015505beeeb83102269a047b51c3a881f))
+
 # [1.29.0](https://github.com/snomiao/claude-yes/compare/v1.28.1...v1.29.0) (2025-10-30)
 
 
