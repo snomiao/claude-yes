@@ -164,11 +164,22 @@ export default async function cliYes({
     );
   console.log(globalThis.Bun);
 
+  // Detect if running as sub-agent
+  const isSubAgent = !!process.env.CLAUDE_PPID;
+  if (isSubAgent) {
+    console.log(
+      `[${cli}-yes] Running as sub-agent (CLAUDE_PPID=${process.env.CLAUDE_PPID})`,
+    );
+  }
+
   const getPtyOptions = () => ({
     name: 'xterm-color',
     ...getTerminalDimensions(),
     cwd: cwd ?? process.cwd(),
-    env: env ?? (process.env as Record<string, string>),
+    env: {
+      ...(env ?? (process.env as Record<string, string>)),
+      CLAUDE_PPID: String(process.ppid),
+    },
   });
 
   // Apply CLI specific configurations (moved to CLI_CONFIGURES)
