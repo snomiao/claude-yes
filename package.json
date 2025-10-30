@@ -62,7 +62,8 @@
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
     "prepack": "bun run build",
     "prepare": "bunx husky && bun run build",
-    "test": "bun test --coverage"
+    "test": "bun test --coverage",
+    "test:node": "vitest run"
   },
   "lint-staged": {
     "*.{ts,js,json,md}": [

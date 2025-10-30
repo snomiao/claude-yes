@@ -1,0 +1,5 @@
+# Exclude tests that require Node.js runtime (incompatible with bun)
+# These tests use better-sqlite3 which has symbol incompatibilities with bun
+# Run them separately with: npm run test:node
+
+[test]

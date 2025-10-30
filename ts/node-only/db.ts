@@ -19,6 +19,7 @@ export interface Database {
 
 // Database instance
 let db: Kysely<Database> | null = null;
+let initPromise: Promise<void> | null = null;
 
 /**
  * Get or create the database instance
@@ -45,8 +46,8 @@ export function getDb(): Kysely<Database> {
     }),
   });
 
-  // Initialize schema
-  initSchema(db);
+  // Initialize schema asynchronously
+  initPromise = initSchema(db);
 
   return db;
 }
@@ -54,29 +55,36 @@ export function getDb(): Kysely<Database> {
 /**
  * Initialize database schema
  */
-function initSchema(db: Kysely<Database>) {
-  // Create pid table if it doesn't exist
-  db.schema
-    .createTable('pid')
-    .ifNotExists()
-    .addColumn('id', 'integer', (col) => col.primaryKey().autoIncrement())
-    .addColumn('pid', 'integer', (col) => col.notNull())
-    .addColumn('ppid', 'integer')
-    .addColumn('cli', 'text', (col) => col.notNull())
-    .addColumn('args', 'text', (col) => col.notNull())
-    .execute()
-    .catch((err) => {
-      // Ignore error if table already exists
-      if (!err.message.includes('already exists')) {
-        throw err;
-      }
-    });
+async function initSchema(db: Kysely<Database>): Promise<void> {
+  try {
+    // Create pid table if it doesn't exist
+    await db.schema
+      .createTable('pid')
+      .ifNotExists()
+      .addColumn('id', 'integer', (col) => col.primaryKey().autoIncrement())
+      .addColumn('pid', 'integer', (col) => col.notNull())
+      .addColumn('ppid', 'integer')
+      .addColumn('cli', 'text', (col) => col.notNull())
+      .addColumn('args', 'text', (col) => col.notNull())
+      .execute();
+  } catch (err: any) {
+    // Ignore error if table already exists
+    if (!err.message.includes('already exists')) {
+      throw err;
+    }
+  }
 }
 
 /**
  * Close the database connection
  */
 export async function closeDb() {
+  // Wait for initialization to complete if it's in progress
+  if (initPromise) {
+    await initPromise;
+    initPromise = null;
+  }
+
   if (db) {
     await db.destroy();
     db = null;
