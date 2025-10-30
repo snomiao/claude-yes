@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import DIE from 'phpdie';
-import cliYes, { SUPPORTED_CLIS } from './index.js';
-import { parseCliArgs } from './parseCliArgs.js';
+import cliYes, { SUPPORTED_CLIS } from '.';
+import { parseCliArgs } from './parseCliArgs';
 
 // Parse CLI arguments
 const config = parseCliArgs(process.argv);

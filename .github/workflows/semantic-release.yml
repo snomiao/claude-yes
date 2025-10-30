@@ -1,4 +1,4 @@
-name: Build and Release
+name: Semantic Release
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
             binary_name: claude-yes-macos-arm64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -104,49 +104,32 @@ jobs:
     name: Build TypeScript
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
       - uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install
-
-      - name: Build TypeScript
-        run: |
-          if [ -f "tsconfig.json" ]; then
-            bun run build:cli || true
-            bun run build:bun || true
-            bun run build:node || true
-          fi
+      - run: bun i
+      - run: bun run build
 
       - name: Upload TypeScript artifacts
         uses: actions/upload-artifact@v4
         with:
           name: typescript-build
-          path: |
-            dist/
-            build/
-          if-no-files-found: ignore
+          path: dist/
 
-  release:
-    name: Semantic Release
+  semantic-release:
     needs: [build-rs, build-ts]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.repository_owner == 'snomiao'
     permissions:
       contents: write
-      id-token: write
       issues: write
-      pull-requests: write
-      packages: write
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
+      - uses: actions/setup-node@v5
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
+      - run: bun i
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -169,9 +152,12 @@ jobs:
           chmod +x release/claude-yes-macos-arm64 || true
           ls -la release/
 
-      - name: Run semantic-release
+      - run: bun run build
+      - run: bun run test
+      - run: bunx semantic-release
         env:
+          # reminder to setup read/write permission for this token
+          # here: REPO_URL/settings/actions
+          # for publishing to GitHub releases
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: bunx semantic-release

@@ -30,8 +30,7 @@
   "author": "snomiao <snomiao@gmail.com>",
   "type": "module",
   "exports": {
-    "bun": "./dist/bun/index.js",
-    "node": "./dist/node/index.js",
+    "import": "./dist/index.js",
     "types": "./ts/index.ts"
   },
   "main": "dist/index.js",
@@ -55,18 +54,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "bun run build:cli && bun run build:bun && bun run build:node",
-    "build:cli": "bun build ts/cli.ts --outdir=dist/tmp --external=node-pty --external=bun-pty --target=node --sourcemap && mv dist/tmp/cli.js dist/ && mv dist/tmp/cli.js.map dist/ && rmdir dist/tmp",
-    "build:bun": "bun build ts/index.ts --outdir=dist/bun/index.js --external=bun-pty --target=bun --sourcemap",
-    "build:node": "bun build ts/index.ts --outdir=dist/node/index.js --external=node-pty --target=node --sourcemap",
-    "build:rs": "cargo build --release",
+    "build": "bun build ts/index.ts ts/cli.ts --outdir=dist --target=node --sourcemap --packages=external --external=node-pty",
     "postbuild": "bun ./ts/postbuild.ts",
     "dev": "tsx ts/index.ts",
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
     "prepack": "bun run build",
     "prepare": "bunx husky",
-    "test": "bun test --coverage",
-    "test:e2e": "node e2e-tests/unified-compatibility-test.js"
+    "test": "bun test --coverage"
   },
   "lint-staged": {
     "*.{ts,js,json,md}": [
