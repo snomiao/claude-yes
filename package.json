@@ -90,8 +90,10 @@
     ]
   },
   "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "bun-pty": "^0.3.2",
     "from-node-stream": "^0.0.11",
-    "bun-pty": "^0.3.2"
+    "kysely": "^0.28.8"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",
@@ -99,6 +101,7 @@
     "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/release-notes-generator": "^14.1.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/bun": "^1.2.18",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.10",
