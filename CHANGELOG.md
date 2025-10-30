@@ -1,3 +1,10 @@
+# [1.29.0](https://github.com/snomiao/claude-yes/compare/v1.28.1...v1.29.0) (2025-10-30)
+
+
+### Features
+
+* detect and display sub-agent status using CLAUDE_PPID ([#20](https://github.com/snomiao/claude-yes/issues/20)) ([d0c968b](https://github.com/snomiao/claude-yes/commit/d0c968b02ed345b769444c103f8dce0a3fb53621))
+
 ## [1.28.1](https://github.com/snomiao/claude-yes/compare/v1.28.0...v1.28.1) (2025-10-29)
 
 
