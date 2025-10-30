@@ -63,11 +63,7 @@ describe('db', () => {
 
       // Check WAL mode is enabled by querying the database
       // Just verify we can query the database successfully
-      const result = await db
-        .selectFrom('pid')
-        .selectAll()
-        .limit(1)
-        .execute();
+      const result = await db.selectFrom('pid').selectAll().limit(1).execute();
 
       // If we got here, WAL mode is working
       expect(result).toBeDefined();
