@@ -1,0 +1,43 @@
+{
+  "testProject": {
+    "name": "vite-project",
+    "path": "./vite-project",
+    "devCommand": "npm run dev",
+    "port": 3000,
+    "url": "http://localhost:3000"
+  },
+  "implementations": {
+    "rust": {
+      "binary": "../target/release/claude-yes",
+      "buildCommand": "cargo build --release"
+    },
+    "typescript": {
+      "binary": "npx claude-yes",
+      "buildCommand": "npm run build:cli"
+    }
+  },
+  "tests": [
+    {
+      "name": "start-vite-dev-server",
+      "description": "Test starting Vite dev server",
+      "command": "cd vite-project && npm run dev",
+      "timeout": 30000,
+      "expectedOutput": ["Local:", "localhost:3000"],
+      "autoResponse": true
+    },
+    {
+      "name": "help-command",
+      "description": "Test help command",
+      "command": "--help",
+      "timeout": 5000,
+      "expectedOutput": ["claude-yes", "--help"]
+    },
+    {
+      "name": "version-command",
+      "description": "Test version command",
+      "command": "--version",
+      "timeout": 5000,
+      "expectedOutput": ["claude-yes"]
+    }
+  ]
+}

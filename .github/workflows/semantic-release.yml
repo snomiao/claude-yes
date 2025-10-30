@@ -1,16 +1,157 @@
+name: Semantic Release
+
 on:
   push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
 jobs:
-  semantic-release:
-    permissions:
-      contents: write
-      issues: write
+  build-rs:
+    name: Build Rust binary
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: claude-yes-linux-x64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            binary_name: claude-yes-linux-arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: claude-yes-windows-x64.exe
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            binary_name: claude-yes-windows-arm64.exe
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary_name: claude-yes-macos-x64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary_name: claude-yes-macos-arm64
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cross-compilation tools
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Configure cross-compilation
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          mkdir -p .cargo
+          cat > .cargo/config.toml <<EOF
+          [target.aarch64-unknown-linux-gnu]
+          linker = "aarch64-linux-gnu-gcc"
+          EOF
+
+      - name: Check formatting (Rust)
+        if: matrix.os == 'ubuntu-latest' && matrix.target == 'x86_64-unknown-linux-gnu'
+        run: cargo fmt -- --check
+
+      - name: Run clippy (Rust)
+        if: matrix.os == 'ubuntu-latest' && matrix.target == 'x86_64-unknown-linux-gnu'
+        run: cargo clippy -- -D warnings
+
+      - name: Run tests (Rust)
+        if: matrix.os == 'ubuntu-latest' && matrix.target == 'x86_64-unknown-linux-gnu'
+        run: cargo test
+
+      - name: Build binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Prepare binary
+        shell: bash
+        run: |
+          mkdir -p release
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp target/${{ matrix.target }}/release/claude-yes.exe release/${{ matrix.binary_name }}
+          else
+            cp target/${{ matrix.target }}/release/claude-yes release/${{ matrix.binary_name }}
+            chmod +x release/${{ matrix.binary_name }}
+          fi
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary_name }}
+          path: release/${{ matrix.binary_name }}
+
+  build-ts:
+    name: Build TypeScript
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
       - uses: oven-sh/setup-bun@v2
       - run: bun i
+      - run: bun run build
+
+      - name: Upload TypeScript artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-build
+          path: dist/
+
+  semantic-release:
+    needs: [build-rs, build-ts]
+    permissions:
+      contents: write
+      issues: write
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun i
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+
+      - name: Flatten artifacts
+        run: |
+          mkdir -p release-flat
+          find release -type f -exec cp {} release-flat/ \;
+          ls -la release-flat/
+          rm -rf release
+          mv release-flat release
+
+      - name: Set execute permissions for binaries
+        run: |
+          chmod +x release/claude-yes-linux-x64 || true
+          chmod +x release/claude-yes-linux-arm64 || true
+          chmod +x release/claude-yes-macos-x64 || true
+          chmod +x release/claude-yes-macos-arm64 || true
+          ls -la release/
+
       - run: bun run build
       - run: bun run test
       - run: bunx semantic-release
