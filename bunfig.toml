@@ -1,5 +1,3 @@
-# Exclude tests that require Node.js runtime (incompatible with bun)
-# These tests use better-sqlite3 which has symbol incompatibilities with bun
-# Run them separately with: npm run test:node
-
-[test]
+# Configuration for bun test
+# Exclude Node.js-only tests that use better-sqlite3 (incompatible with bun)
+# These are run separately with vitest via: npm run test:node
