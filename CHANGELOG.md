@@ -1,3 +1,10 @@
+## [1.29.2](https://github.com/snomiao/claude-yes/compare/v1.29.1...v1.29.2) (2025-10-30)
+
+
+### Bug Fixes
+
+* **cli.ts:** update import statement for cliYes to use local module path for better compatibility ([7a199e3](https://github.com/snomiao/claude-yes/commit/7a199e357b31c81a1dbe7bf40f99d727e632c3c7))
+
 ## [1.29.1](https://github.com/snomiao/claude-yes/compare/v1.29.0...v1.29.1) (2025-10-30)
 
 
