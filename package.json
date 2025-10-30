@@ -33,7 +33,6 @@
     "import": "./dist/index.js",
     "types": "./ts/index.ts"
   },
-  "main": "dist/index.js",
   "module": "ts/index.ts",
   "types": "./ts/index.ts",
   "bin": {
