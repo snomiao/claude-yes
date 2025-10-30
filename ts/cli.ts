@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import cliYes, { parseCliArgs } from 'cli-yes';
 import DIE from 'phpdie';
+import cliYes, { parseCliArgs } from './';
 
 // if (!globalThis.Bun) // run with same arguments in Bun
 
