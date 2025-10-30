@@ -13,6 +13,8 @@ jobs:
       - run: bun i
       - run: bun run build
       - run: bun run test
+      - name: Run Node.js tests
+        run: bun run test:node
       - run: bunx semantic-release
         env:
           # reminder to setup read/write permission for this token

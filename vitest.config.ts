@@ -6,7 +6,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['ts/**/*.spec.ts'],
+    include: ['ts/node-only/**/*.spec.ts'],
     exclude: ['ts/**/*.bun.spec.ts', 'node_modules/**/*'],
     fileParallelism: false,
     pool: 'forks',

@@ -1,0 +1,3 @@
+# Configuration for bun test
+# Exclude Node.js-only tests that use better-sqlite3 (incompatible with bun)
+# These are run separately with vitest via: npm run test:node
