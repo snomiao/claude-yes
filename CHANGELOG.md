@@ -1,3 +1,10 @@
+# [1.30.0](https://github.com/snomiao/claude-yes/compare/v1.29.2...v1.30.0) (2025-11-03)
+
+
+### Features
+
+* add Dockerfile and docker-compose.yaml for containerized setup ([f9f841f](https://github.com/snomiao/claude-yes/commit/f9f841ff7dbfdf51c8f99dad99ac144f36f386dc))
+
 ## [1.29.2](https://github.com/snomiao/claude-yes/compare/v1.29.1...v1.29.2) (2025-10-30)
 
 
