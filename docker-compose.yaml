@@ -1,0 +1,8 @@
+services:
+  claude-yes:
+    build: .
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./:/app
+    command: claude --install -- hello

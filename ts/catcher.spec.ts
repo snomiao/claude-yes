@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { catcher } from './tryCatch';
+import { catcher } from './catcher';
 
-describe('tryCatch', () => {
+describe('catcher', () => {
   describe('curried overload', () => {
     it('should return a function when called with only catchFn', () => {
       const catchFn = () => 'error';
@@ -9,10 +9,14 @@ describe('tryCatch', () => {
       expect(typeof result).toBe('function');
     });
 
-    it('should catch errors and call catchFn', () => {
+    it('should catch errors and call catchFn with error, function, and args', () => {
       let catchedError: unknown;
-      const catchFn = (error: unknown) => {
+      let catchedFn: unknown;
+      let catchedArgs: unknown[];
+      const catchFn = (error: unknown, fn: unknown, ...args: unknown[]) => {
         catchedError = error;
+        catchedFn = fn;
+        catchedArgs = args;
         return 'caught';
       };
 
@@ -27,6 +31,8 @@ describe('tryCatch', () => {
 
       expect(result).toBe('caught');
       expect(catchedError).toBeInstanceOf(Error);
+      expect(catchedFn).toBe(errorFn);
+      expect(catchedArgs).toEqual(['arg1', 'arg2']);
       expect(calledArgs).toEqual(['arg1', 'arg2']);
     });
 
@@ -53,10 +59,14 @@ describe('tryCatch', () => {
   });
 
   describe('direct overload', () => {
-    it('should catch errors and call catchFn directly', () => {
+    it('should catch errors and call catchFn with error, function, and args directly', () => {
       let catchedError: unknown;
-      const catchFn = (error: unknown) => {
+      let catchedFn: unknown;
+      let catchedArgs: unknown[];
+      const catchFn = (error: unknown, fn: unknown, ...args: unknown[]) => {
         catchedError = error;
+        catchedFn = fn;
+        catchedArgs = args;
         return 'caught';
       };
 
@@ -71,6 +81,8 @@ describe('tryCatch', () => {
 
       expect(result).toBe('caught');
       expect(catchedError).toBeInstanceOf(Error);
+      expect(catchedFn).toBe(errorFn);
+      expect(catchedArgs).toEqual(['arg1', 'arg2']);
       expect(calledArgs).toEqual(['arg1', 'arg2']);
     });
 
@@ -97,40 +109,52 @@ describe('tryCatch', () => {
   });
 
   describe('error handling', () => {
-    it('should handle different error types', () => {
+    it('should handle different error types and pass function context', () => {
       const results: unknown[] = [];
-      const catchFn = (error: unknown) => {
+      const functions: unknown[] = [];
+      const catchFn = (error: unknown, fn: unknown, ...args: unknown[]) => {
         results.push(error);
+        functions.push(fn);
         return 'handled';
       };
 
       // String error
-      const stringErrorFn = catcher(catchFn, () => {
+      const stringErrorFn = () => {
         throw 'string error';
-      });
-      expect(stringErrorFn()).toBe('handled');
+      };
+      const wrappedStringFn = catcher(catchFn, stringErrorFn);
+      expect(wrappedStringFn()).toBe('handled');
       expect(results[0]).toBe('string error');
+      expect(functions[0]).toBe(stringErrorFn);
 
       // Object error
       const objectError = { message: 'object error' };
-      const objectErrorFn = catcher(catchFn, () => {
+      const objectErrorFn = () => {
         throw objectError;
-      });
-      expect(objectErrorFn()).toBe('handled');
+      };
+      const wrappedObjectFn = catcher(catchFn, objectErrorFn);
+      expect(wrappedObjectFn()).toBe('handled');
       expect(results[1]).toBe(objectError);
+      expect(functions[1]).toBe(objectErrorFn);
 
       // null error
-      const nullErrorFn = catcher(catchFn, () => {
+      const nullErrorFn = () => {
         throw null;
-      });
-      expect(nullErrorFn()).toBe('handled');
+      };
+      const wrappedNullFn = catcher(catchFn, nullErrorFn);
+      expect(wrappedNullFn()).toBe('handled');
       expect(results[2]).toBe(null);
+      expect(functions[2]).toBe(nullErrorFn);
     });
 
-    it('should preserve function parameters', () => {
+    it('should preserve function parameters and pass them to catchFn', () => {
       let caughtError: unknown;
-      const catchFn = (error: unknown) => {
+      let caughtFn: unknown;
+      let caughtArgs: unknown[];
+      const catchFn = (error: unknown, fn: unknown, ...args: unknown[]) => {
         caughtError = error;
+        caughtFn = fn;
+        caughtArgs = args;
         return 'caught';
       };
 
@@ -151,12 +175,18 @@ describe('tryCatch', () => {
       expect(wrappedFn(10, 'error', false)).toBe('caught');
       expect(testArgs).toEqual([10, 'error', false]);
       expect(caughtError).toBeInstanceOf(Error);
+      expect(caughtFn).toBe(testFn);
+      expect(caughtArgs).toEqual([10, 'error', false]);
     });
 
     it('should handle functions with no parameters', () => {
       let caughtError: unknown;
-      const catchFn = (error: unknown) => {
+      let caughtFn: unknown;
+      let caughtArgs: unknown[];
+      const catchFn = (error: unknown, fn: unknown, ...args: unknown[]) => {
         caughtError = error;
+        caughtFn = fn;
+        caughtArgs = args;
         return 'no params caught';
       };
 
@@ -172,6 +202,8 @@ describe('tryCatch', () => {
       expect(result).toBe('no params caught');
       expect(called).toBe(true);
       expect(caughtError).toBeInstanceOf(Error);
+      expect(caughtFn).toBe(noParamsFn);
+      expect(caughtArgs).toEqual([]);
     });
 
     it('should handle functions returning different types', () => {
@@ -194,7 +226,8 @@ describe('tryCatch', () => {
 
   describe('type safety', () => {
     it('should maintain function signature', () => {
-      const catchFn = (error: unknown) => 'error';
+      const catchFn = (error: unknown, fn: unknown, ...args: unknown[]) =>
+        'error';
       const originalFn = (a: number, b: string): string => `${a}-${b}`;
 
       const wrappedFn = catcher(catchFn, originalFn);
@@ -202,6 +235,26 @@ describe('tryCatch', () => {
       // This should be type-safe
       const result: string = wrappedFn(1, 'test');
       expect(result).toBe('1-test');
+    });
+
+    it('should pass function reference and arguments to catchFn', () => {
+      let capturedFn: unknown;
+      let capturedArgs: unknown[];
+      const catchFn = (error: unknown, fn: unknown, ...args: unknown[]) => {
+        capturedFn = fn;
+        capturedArgs = args;
+        return 'handled';
+      };
+
+      const testFn = (x: number, y: string) => {
+        throw new Error('test');
+      };
+
+      const wrappedFn = catcher(catchFn, testFn);
+      wrappedFn(42, 'hello');
+
+      expect(capturedFn).toBe(testFn);
+      expect(capturedArgs).toEqual([42, 'hello']);
     });
   });
 });

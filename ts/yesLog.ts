@@ -1,6 +1,6 @@
 import { appendFileSync, rmSync } from 'node:fs';
 import tsaComposer from 'tsa-composer';
-import { catcher } from './tryCatch';
+import { catcher } from './catcher';
 
 let initial = true;
 

@@ -14,7 +14,7 @@ export default defineCliYesConfig({
       enter: [/^   1. Yes/],
     },
     claude: {
-      promptArg: 'first-arg',
+      promptArg: 'last-arg',
       install: 'npm install -g @anthropic-ai/claude-code',
       restoreArgs: ['--continue'],
       // ready: [/^> /], // regex matcher for stdin ready
@@ -25,6 +25,7 @@ export default defineCliYesConfig({
         /⎿  Claude usage limit reached\./,
         /^error: unknown option/,
       ],
+      bunx: true, // use bunx to run the binary, start time is 5s faster than node
       defaultArgs: ['--model=sonnet'], // default to sonnet, to prevent opus model overload
     },
     gemini: {
@@ -59,6 +60,7 @@ export default defineCliYesConfig({
       install: 'open https://cursor.com/ja/docs/cli/installation',
       // map logical "cursor" cli name to actual binary name
       binary: 'cursor-agent',
+      bunx: true,
       ready: [/\/ commands/],
       enter: [/→ Run \(once\) \(y\) \(enter\)/, /▶ \[a\] Trust this workspace/],
       fatal: [/^  Error: You've hit your usage limit/],

@@ -50,13 +50,15 @@
   },
   "files": [
     "ts/*.ts",
-    "dist"
+    "dist",
+    "scripts"
   ],
   "scripts": {
     "build": "bun run build:index && bun run build:cli",
     "postbuild": "bun ./ts/postbuild.ts",
-    "build:cli": "bun build ts/cli.ts --outdir=dist --target=node --sourcemap --external=node-pty --external=bun-pty --external=from-node-stream",
-    "build:index": "bun build ts/index.ts --outdir=dist --target=node --sourcemap --external=node-pty --external=bun-pty --external=from-node-stream",
+    "build:cli": "bun build ts/cli.ts --outdir=dist --target=node --sourcemap --external=bun-pty --external=node-pty --external=from-node-stream --external=bun",
+    "build:index": "bun build ts/index.ts --outdir=dist --target=node --sourcemap --external=bun-pty --external=node-pty --external=from-node-stream --external=bun",
+    "demo": "bun run build && bun link && claude-yes -- demo",
     "dev": "bun ts/index.ts",
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
     "prepack": "bun run build",
@@ -89,8 +91,11 @@
     ]
   },
   "dependencies": {
+    "@types/ms": "^2.1.0",
+    "bun": "^1.3.1",
+    "bun-pty": "^0.3.2",
     "from-node-stream": "^0.0.11",
-    "bun-pty": "^0.3.2"
+    "ms": "^2.1.3"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",
@@ -103,7 +108,6 @@
     "@types/node": "^24.0.10",
     "@types/yargs": "^17.0.33",
     "cpu-wait": "^0.0.10",
-    "enhanced-ms": "^4.1.0",
     "execa": "^9.6.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.4",
@@ -119,7 +123,7 @@
     "yargs": "^18.0.0"
   },
   "peerDependencies": {
-    "node-pty": "^1.0.0",
+    "node-pty": "^1.1.0-beta38",
     "typescript": "^5.8.3"
   }
 }

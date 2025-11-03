@@ -1,4 +1,4 @@
-import enhancedMs from 'enhanced-ms';
+import ms from 'ms';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { SUPPORTED_CLIS } from '.';
@@ -12,7 +12,7 @@ export function parseCliArgs(argv: string[]) {
   const scriptName = argv[1]?.split(/[\/\\]/).pop();
   const cliName = ((e?: string) => {
     if (e === 'cli' || e === 'cli.ts' || e === 'cli.js') return undefined;
-    return e?.replace(/-yes$/, '');
+    return e?.replace(/-yes(\.[jt]s)?$/, '');
   })(scriptName);
 
   // Parse args with yargs (same logic as cli.ts:16-73)
@@ -105,7 +105,7 @@ export function parseCliArgs(argv: string[]) {
       [parsedArgv.prompt, dashPrompt].filter(Boolean).join(' ') || undefined,
     exitOnIdle: Number(
       (parsedArgv.idle || parsedArgv.exitOnIdle)?.replace(/.*/, (e) =>
-        String(enhancedMs(e)),
+        String(ms(e as ms.StringValue)),
       ) || 0,
     ),
     queue: parsedArgv.queue,

@@ -1,3 +1,4 @@
+import { execaCommand, execaCommandSync, parseCommandString } from 'execa';
 import { fromReadable, fromWritable } from 'from-node-stream';
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
@@ -5,6 +6,7 @@ import DIE from 'phpdie';
 import sflow from 'sflow';
 import { TerminalTextRender } from 'terminal-render';
 import rawConfig from '../cli-yes.config.js';
+import { catcher } from './catcher.js';
 import {
   extractSessionId,
   getSessionForCwd,
@@ -19,7 +21,6 @@ import {
   shouldUseLock,
   updateCurrentTaskStatus,
 } from './runningLock';
-import { catcher } from './tryCatch';
 import { yesLog } from './yesLog';
 
 export { parseCliArgs } from './parseCliArgs';
@@ -36,6 +37,7 @@ export type AgentCliConfig = {
   defaultArgs?: string[]; // function to ensure certain args are present
   noEOL?: boolean; // if true, do not split lines by \n, used for codex, which uses cursor-move csi code instead of \n to move lines
   promptArg?: (string & {}) | 'first-arg' | 'last-arg'; // argument name to pass the prompt, e.g. --prompt, or first-arg for positional arg
+  bunx?: boolean; // if true, use bunx to run the binary
 };
 export type CliYesConfig = {
   clis: { [key: string]: AgentCliConfig };
@@ -91,6 +93,7 @@ export default async function cliYes({
   removeControlCharactersFromStdout = false, // = !process.stdout.isTTY,
   verbose = false,
   queue = true,
+  install = false,
 }: {
   cli: SUPPORTED_CLIS;
   cliArgs?: string[];
@@ -103,6 +106,7 @@ export default async function cliYes({
   removeControlCharactersFromStdout?: boolean;
   verbose?: boolean;
   queue?: boolean;
+  install?: boolean; // if true, install the cli tool if not installed, e.g. will run `npm install -g cursor-agent`
 }) {
   // those overrides seems only works in bun
   // await Promise.allSettled([
@@ -118,7 +122,11 @@ export default async function cliYes({
   //   });
 
   if (!cli) throw new Error(`cli is required`);
-  const conf = CLIS_CONFIG[cli] || DIE(`Unsupported cli tool: ${cli}`);
+  const conf =
+    CLIS_CONFIG[cli] ||
+    DIE(
+      `Unsupported cli tool: ${cli}, current process.argv: ${process.argv.join(' ')}`,
+    );
 
   // Acquire lock before starting agent (if in git repo or same cwd and lock is not disabled)
   const workingDir = cwd ?? process.cwd();
@@ -157,12 +165,12 @@ export default async function cliYes({
   // const pty = await import('node-pty');
 
   // its recommened to use bun-pty in windows
-  const pty = await (globalThis.Bun ? import('bun-pty') : import('node-pty'))
-    // .catch(async () => await import('node-pty'))
-    .catch(async () =>
-      DIE('Please install node-pty or bun-pty, run this: bun install bun-pty'),
-    );
-  console.log(globalThis.Bun);
+  const pty = await (globalThis.Bun
+    ? import('bun-pty')
+    : import('node-pty')
+  ).catch(async () =>
+    DIE('Please install node-pty or bun-pty, run this: bun install bun-pty'),
+  );
 
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;
@@ -223,33 +231,59 @@ export default async function cliYes({
   }
   const cliCommand = cliConf?.binary || cli;
 
+  const spawn = () => {
+    // const [bin, ...args] = [...parseCommandString((cliConf.bunx ? 'bunx --bun ' : '') + cliCommand), ...(cliArgs)];
+    // console.log(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
+    // return pty.spawn(bin!, args, getPtyOptions());
+    return pty.spawn(cliCommand, cliArgs, getPtyOptions());
+  };
   let shell = catcher(
-    (error: unknown) => {
+    // error handler
+    (error: unknown, fn, ...args) => {
       console.error(`Fatal: Failed to start ${cliCommand}.`);
+
       if (cliConf?.install && isCommandNotFoundError(error))
+        if (install) {
+          console.log(`Attempting to install ${cli}...`);
+          execaCommandSync(cliConf.install, { stdio: 'inherit' });
+          console.log(
+            `${cli} installed successfully. Please rerun the command.`,
+          );
+          return spawn();
+        }
+      console.error(
+        `If you did not installed it yet, Please install it first: ${cliConf.install}`,
+      );
+
+      if (
+        globalThis.Bun &&
+        error instanceof Error &&
+        error.stack?.includes('bun-pty')
+      ) {
+        // try to fix bun-pty issues
         console.error(
-          `If you did not installed it yet, Please install it first: ${cliConf.install}`,
+          `Detected bun-pty issue, attempted to fix it. Please try again.`,
         );
+        require('./fix-pty.js');
+        // unable to retry with same process, so exit here.
+      }
       throw error;
 
       function isCommandNotFoundError(e: unknown) {
         if (e instanceof Error) {
           return (
-            e.message.includes('command not found') ||
-            e.message.includes('ENOENT') ||
+            e.message.includes('command not found') || // unix
+            e.message.includes('ENOENT') || // unix
             e.message.includes('spawn') // windows
           );
         }
         return false;
       }
     },
-    () => pty.spawn(cliCommand, cliArgs, getPtyOptions()),
+    spawn,
   )();
   const pendingExitCode = Promise.withResolvers<number | null>();
   let pendingExitCodeValue = null;
-
-  // TODO handle error if claude is not installed, show msg:
-  // npm install -g @anthropic-ai/claude-code
 
   async function onData(data: string) {
     // append data to the buffer, so we can process it later
