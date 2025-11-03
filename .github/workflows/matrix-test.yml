@@ -13,6 +13,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         runtime: [node, bun]
+        exclude:
+          # Bun on Windows has issues with native modules like node-pty
+          - os: windows-latest
+            runtime: bun
         include:
           - runtime: node
             runtime-version: '20'
