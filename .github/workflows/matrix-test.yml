@@ -1,0 +1,86 @@
+name: Matrix Test
+
+on:
+  push:
+    branches: [main, sno-matrix-test]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        runtime: [node, bun]
+        include:
+          - runtime: node
+            runtime-version: '20'
+          - runtime: bun
+            runtime-version: 'latest'
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        if: matrix.runtime == 'node'
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.runtime-version }}
+
+      - name: Setup Bun
+        if: matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ matrix.runtime-version }}
+
+      - name: Install dependencies (Node)
+        if: matrix.runtime == 'node'
+        run: npm install
+
+      - name: Install dependencies (Bun)
+        if: matrix.runtime == 'bun'
+        run: bun install
+
+      - name: Build (Node)
+        if: matrix.runtime == 'node'
+        run: npm run build
+
+      - name: Build (Bun)
+        if: matrix.runtime == 'bun'
+        run: bun run build
+
+      - name: Run tests (Node)
+        if: matrix.runtime == 'node'
+        run: npm test
+
+      - name: Run tests (Bun)
+        if: matrix.runtime == 'bun'
+        run: bun test
+
+      - name: Test CLI execution (Node - Unix)
+        if: matrix.runtime == 'node' && runner.os != 'Windows'
+        run: |
+          node dist/cli.js --version
+          node dist/claude-yes.js --help
+
+      - name: Test CLI execution (Node - Windows)
+        if: matrix.runtime == 'node' && runner.os == 'Windows'
+        run: |
+          node dist/cli.js --version
+          node dist/claude-yes.js --help
+
+      - name: Test CLI execution (Bun - Unix)
+        if: matrix.runtime == 'bun' && runner.os != 'Windows'
+        run: |
+          bun dist/cli.js --version
+          bun dist/claude-yes.js --help
+
+      - name: Test CLI execution (Bun - Windows)
+        if: matrix.runtime == 'bun' && runner.os == 'Windows'
+        run: |
+          bun dist/cli.js --version
+          bun dist/claude-yes.js --help
