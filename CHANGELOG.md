@@ -1,3 +1,10 @@
+## [1.31.1](https://github.com/snomiao/claude-yes/compare/v1.31.0...v1.31.1) (2025-11-06)
+
+
+### Bug Fixes
+
+* **package.json:** reorder devDependencies and remove duplicate entries for @types/ms and ms ([d68b20d](https://github.com/snomiao/claude-yes/commit/d68b20db2a605c93c50c64615df1d4c7d93d605d))
+
 # [1.31.0](https://github.com/snomiao/claude-yes/compare/v1.30.0...v1.31.0) (2025-11-06)
 
 
