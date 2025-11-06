@@ -68,10 +68,6 @@ describe('Codex Session Restoration', () => {
     // Create test directories
     await mkdir(cwd1, { recursive: true });
     await mkdir(cwd2, { recursive: true });
-
-    // Build the project first
-    const buildResult = await runCodexYes(['--help'], process.cwd(), 10000);
-    console.log('Build check:', buildResult.exitCode === 0 ? 'OK' : 'FAILED');
   });
 
   afterAll(async () => {
