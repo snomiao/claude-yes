@@ -37,7 +37,7 @@
   "types": "./ts/index.ts",
   "bin": {
     "claude-yes": "dist/claude-yes.js",
-    "cli-yes": "dist/cli.js",
+    "cli-yes": "src/cli.ts",
     "codex-yes": "dist/codex-yes.js",
     "copilot-yes": "dist/copilot-yes.js",
     "cursor-yes": "dist/cursor-yes.js",

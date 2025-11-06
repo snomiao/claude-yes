@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import DIE from 'phpdie';
 import cliYesConfig from '../cli-yes.config';
 
