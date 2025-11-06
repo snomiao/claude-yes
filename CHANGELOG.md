@@ -1,3 +1,10 @@
+## [1.31.2](https://github.com/snomiao/claude-yes/compare/v1.31.1...v1.31.2) (2025-11-06)
+
+
+### Bug Fixes
+
+* **package.json:** update from-node-stream dependency version from 0.1.0 to 0.1.2 to incorporate bug fixes and improvements ([b09a69d](https://github.com/snomiao/claude-yes/commit/b09a69d26a44786154c153017621ee67ecabacc1))
+
 ## [1.31.1](https://github.com/snomiao/claude-yes/compare/v1.31.0...v1.31.1) (2025-11-06)
 
 
