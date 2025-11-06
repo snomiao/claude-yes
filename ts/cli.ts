@@ -3,10 +3,10 @@ import DIE from 'phpdie';
 import cliYesConfig from '../cli-yes.config';
 
 // if node-pty is not installed, re-run with bun
-// const hasNodePty = !!await import('node-pty').catch(() => null);
-if (!globalThis.Bun) {
+const hasNodePty = !!(await import('node-pty').catch(() => null));
+if (!globalThis.Bun && !hasNodePty) {
   // run with same arguments in Bun if not already
-  console.log('Re-running with Bun...', process.argv);
+  console.log('No node-pty installed. Re-running with Bun...', process.argv);
   (await import('child_process')).spawnSync(
     'node_modules/.bin/bun',
     [process.argv[1]!, '--', ...process.argv.slice(2)],
