@@ -1,3 +1,10 @@
+# [1.31.0](https://github.com/snomiao/claude-yes/compare/v1.30.0...v1.31.0) (2025-11-06)
+
+
+### Features
+
+* enhance session management with codex session file parsing and retrieval ([2c92688](https://github.com/snomiao/claude-yes/commit/2c92688e73d0602c247047673e8835e60db257b5))
+
 # [1.30.0](https://github.com/snomiao/claude-yes/compare/v1.29.2...v1.30.0) (2025-11-03)
 
 
