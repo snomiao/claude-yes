@@ -1,6 +1,6 @@
 {
   "name": "cli-yes",
-  "version": "1.31.2",
+  "version": "1.31.4",
   "description": "A wrapper tool that automates interactions with various AI CLI tools by automatically handling common prompts and responses.",
   "keywords": [
     "claude",
@@ -63,7 +63,8 @@
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",
     "prepack": "bun run build",
     "prepare": "bunx husky && bun run build",
-    "test": "bun test --coverage"
+    "test": "bun test --coverage",
+    "release:beta": "bunx standard-version && bun publish --tag beta"
   },
   "lint-staged": {
     "*.{ts,js,json,md}": [
