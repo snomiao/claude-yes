@@ -27,10 +27,11 @@ echo "Running: cli-yes --version"
 # should print the correct version
 bun x --no-cache --bun cli-yes@beta --version
 
+# should run claude command with -h, shows claude help
+bun x --no-cache --bun cli-yes@beta claude -h
+
 # should run claude command and exit
 bun x --no-cache --bun cli-yes@beta claude -- say hello world and exit
 
-# should run claude command with -h, shows claude help
-bun x --no-cache --bun cli-yes@beta claude -h
 
 echo "Beta test completed successfully!"

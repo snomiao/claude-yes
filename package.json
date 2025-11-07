@@ -56,8 +56,8 @@
   "scripts": {
     "build": "bun run build:index && bun run build:cli",
     "postbuild": "bun ./ts/postbuild.ts",
-    "build:cli": "bun build ts/cli.ts --outdir=dist --target=node --sourcemap --external=bun-pty --external=node-pty --external=from-node-stream --external=bun",
-    "build:index": "bun build ts/index.ts --outdir=dist --target=node --sourcemap --external=bun-pty --external=node-pty --external=from-node-stream --external=bun",
+    "build:cli": "bun build ts/cli.ts --outdir=dist --target=node --sourcemap --external=@snomiao/bun-pty --external=bun-pty --external=node-pty --external=from-node-stream --external=bun",
+    "build:index": "bun build ts/index.ts --outdir=dist --target=node --sourcemap --external=@snomiao/bun-pty --external=bun-pty --external=node-pty --external=from-node-stream --external=bun",
     "demo": "bun run build && bun link && claude-yes -- demo",
     "dev": "bun ts/index.ts",
     "fmt": "bunx @biomejs/biome check --fix && bunx sort-package-json",

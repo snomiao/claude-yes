@@ -23,7 +23,7 @@ function getLibraryName() {
 
 // Check if we need to rebuild bun-pty
 const bunPtyPath =
-  dirname(fileURLToPath(import.meta.resolve('bun-pty'))) + '/..';
+  dirname(fileURLToPath(import.meta.resolve('@snomiao/bun-pty'))) + '/..';
 const libName = getLibraryName();
 const libPath = join(bunPtyPath, 'rust-pty', 'target', 'release', libName);
 
@@ -97,7 +97,7 @@ function rebuildBunPty() {
 
       try {
         execSync(
-          `git clone https://github.com/sursaone/bun-pty.git "${tmpDir}"`,
+          `git clone https://github.com/snomiao/bun-pty.git "${tmpDir}"`,
           { stdio: 'inherit' },
         );
 

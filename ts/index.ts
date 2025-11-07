@@ -1,10 +1,11 @@
 import { execaCommand, execaCommandSync, parseCommandString } from 'execa';
 import { fromReadable, fromWritable } from 'from-node-stream';
 import { mkdir, writeFile } from 'fs/promises';
-import path from 'path';
+import path, { dirname } from 'path';
 import DIE from 'phpdie';
 import sflow from 'sflow';
 import { TerminalTextRender } from 'terminal-render';
+import { fileURLToPath } from 'url';
 import rawConfig from '../cli-yes.config.js';
 import { catcher } from './catcher.js';
 import {
@@ -37,7 +38,6 @@ export type AgentCliConfig = {
   defaultArgs?: string[]; // function to ensure certain args are present
   noEOL?: boolean; // if true, do not split lines by \n, used for codex, which uses cursor-move csi code instead of \n to move lines
   promptArg?: (string & {}) | 'first-arg' | 'last-arg'; // argument name to pass the prompt, e.g. --prompt, or first-arg for positional arg
-  bunx?: boolean; // if true, use bunx to run the binary
   exitCommands?: string[]; // commands to exit the cli gracefully
 };
 export type CliYesConfig = {
@@ -167,10 +167,33 @@ export default async function cliYes({
   const outputWriter = shellOutputStream.writable.getWriter();
   // const pty = await import('node-pty');
 
-  // its recommened to use bun-pty in windows
+  //
+  // if (globalThis.Bun) {
+  //   const entryPath = (fileURLToPath(import.meta.resolve('@snomiao/bun-pty'))); // path to bun-pty/dist/index.js
+  //   const pkgPath = path.resolve(entryPath, '..', '..'); // path to bun-pty package root
+  //   process.env.BUN_PTY_LIB = path.join(pkgPath, 'rust-pty', 'target', 'release', 'rust_pty.dll');
+  // }
+
+  // its recommened to use bun-pty in windows, since node-pty is super complex to install there, requires a 10G M$ build tools
   const pty = await (globalThis.Bun
-    ? import('bun-pty')
-    : import('node-pty')
+    ? import('@snomiao/bun-pty')
+    : // .catch((error) => {
+      //   if (!error.message.includes("librust_pty shared library not found.")) throw error
+      //   // error: librust_pty shared library not found.
+      //   // Checked:
+      //   //   - BUN_PTY_LIB=<unset>
+      //   //   - C:\Users\snomi\AppData\Local\Temp\bunx-4154515258-cli-yes@beta\node_modules\bun-pty\dist\index.js\rust-pty\target\release\rust_pty.dll
+      //   //   - C:\Users\snomi\AppData\Local\Temp\bunx-4154515258-cli-yes@beta\node_modules\bun-pty\dist\bun-pty\rust-pty\target\release\rust_pty.dll
+      //   //   - C:\Users\snomi\node_modules\bun-pty\rust-pty\target\release\rust_pty.dll
+
+      //   // solve this error by set process.env.BUN_PTY_LIB to
+      //   // bun-pty\rust-pty\target\release\rust_pty.dll
+      //   const entryPath = (fileURLToPath(import.meta.resolve('bun-pty'))); // path to bun-pty/dist/index.js
+      //   const pkgPath = path.resolve(entryPath, '..', '..'); // path to bun-pty package root
+      //   process.env.BUN_PTY_LIB = path.join(pkgPath, 'rust-pty', 'target', 'release', 'rust_pty.dll');
+      //   return import('bun-pty')
+      // })
+      import('node-pty')
   ).catch(async (error) => {
     // DIE('Please install node-pty or bun-pty, run this: bun install bun-pty')
     console.error(error);
@@ -253,14 +276,14 @@ export default async function cliYes({
   const spawn = () => {
     const cliCommand = cliConf?.binary || cli;
     let [bin, ...args] = [
-      ...parseCommandString((cliConf.bunx ? 'bunx --bun ' : '') + cliCommand),
+      ...parseCommandString((globalThis.Bun ? 'bunx --bun ' : '') + cliCommand),
       ...cliArgs,
     ];
     verbose &&
       console.log(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
 
-    if (globalThis.Bun)
-      args = args.map((arg) => `'${arg.replace(/'/g, "\\'")}'`);
+    // if (globalThis.Bun)
+    //   args = args.map((arg) => `'${arg.replace(/'/g, "\\'")}'`);
     return pty.spawn(bin!, args, getPtyOptions());
   };
 
