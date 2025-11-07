@@ -24,7 +24,7 @@ export default defineCliYesConfig({
         /⎿  Claude usage limit reached\./,
         /^error: unknown option/,
       ],
-      exitCommand: '/exit',
+      exitCommand: ['/exit'],
       bunx: true, // use bunx to run the binary, start time is 5s faster than node
       defaultArgs: ['--model=sonnet'], // default to sonnet, to prevent opus model overload
     },
@@ -34,6 +34,7 @@ export default defineCliYesConfig({
       ready: [/Type your message/], // used with line index check
       enter: [/│ ● 1. Yes, allow once/],
       fatal: [],
+      exitCommand: ['/chat save ${PWD}', '/quit'],
     },
     codex: {
       promptArg: 'first-arg',

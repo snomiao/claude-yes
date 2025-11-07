@@ -38,6 +38,7 @@ export type AgentCliConfig = {
   noEOL?: boolean; // if true, do not split lines by \n, used for codex, which uses cursor-move csi code instead of \n to move lines
   promptArg?: (string & {}) | 'first-arg' | 'last-arg'; // argument name to pass the prompt, e.g. --prompt, or first-arg for positional arg
   bunx?: boolean; // if true, use bunx to run the binary
+  exitCommands?: string[]; // commands to exit the cli gracefully
 };
 export type CliYesConfig = {
   clis: { [key: string]: AgentCliConfig };
@@ -538,7 +539,7 @@ export default async function cliYes({
     robust = false; // disable robust to avoid auto restart
 
     // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
-    await sendMessage('/exit');
+    for (const cmd of cliConf.exitCommands ?? ['/exit']) await sendMessage(cmd);
 
     // wait for shell to exit or kill it with a timeout
     let exited = false;

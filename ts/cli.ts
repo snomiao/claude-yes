@@ -22,7 +22,7 @@ if (!globalThis.Bun && !hasNodePty) {
 if (globalThis.Bun) console.log('Bun detected, using bun-pty');
 //   await import("./fix-pty.js")
 
-console.log('Running', process.argv);
+// console.log('Running', process.argv);
 
 // Import the CLI module
 const { default: cliYes, parseCliArgs } = await import('./');
