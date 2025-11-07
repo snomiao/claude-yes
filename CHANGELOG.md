@@ -9,6 +9,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.31.15](https://github.com/snomiao/claude-yes/compare/v1.31.14...v1.31.15) (2025-11-07)
+
+
+### Bug Fixes
+
+* **cli-yes.config.ts:** update regex for enter prompts to match leading spaces for consistency ([4de210c](https://github.com/snomiao/claude-yes/commit/4de210cf12f88111cb6a9af9c21e4e0a105f53bf))
+* update shebang to use node and fix CLI args parsing ([84cd7d0](https://github.com/snomiao/claude-yes/commit/84cd7d027dd6520b3cd52fc1ac7f7582c140f977))
+
 ### [1.31.14](https://github.com/snomiao/claude-yes/compare/v1.31.13...v1.31.14) (2025-11-07)
 
 ### [1.31.4](https://github.com/snomiao/claude-yes/compare/v1.31.3...v1.31.4) (2025-11-07)

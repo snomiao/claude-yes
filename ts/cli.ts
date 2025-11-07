@@ -7,7 +7,10 @@ import cliYesConfig from '../cli-yes.config';
 const hasNodePty = !!(await import('node-pty').catch(() => null));
 if (!globalThis.Bun && !hasNodePty) {
   // run with same arguments in Bun if not already
-  console.log('No node-pty installed. Re-running with Bun...', process.argv);
+  console.log(
+    'Info: No node-pty installed. Re-running with Bun...',
+    process.argv,
+  );
   (await import('child_process')).spawnSync(
     'node_modules/.bin/bun',
     [process.argv[1]!, '--', ...process.argv.slice(2)],
