@@ -1,3 +1,11 @@
+## [1.31.6](https://github.com/snomiao/claude-yes/compare/v1.31.5...v1.31.6) (2025-11-07)
+
+
+### Bug Fixes
+
+* add node-pty fallback to bun for compatibility ([f5281e8](https://github.com/snomiao/claude-yes/commit/f5281e876d5a3d0742491a1284e9604551bd59c8))
+* update shebang to use node and fix CLI args parsing ([abc9b89](https://github.com/snomiao/claude-yes/commit/abc9b89b59729a6a2f9660c72b33437f9810a1b6))
+
 ## [1.31.5](https://github.com/snomiao/claude-yes/compare/v1.31.4...v1.31.5) (2025-11-07)
 
 
