@@ -270,4 +270,15 @@ describe('CLI argument parsing', () => {
     expect(result.cliArgs).toEqual([]);
     expect(result.prompt).toBe('lets fix signin page, setup shadcn');
   });
+
+  it('should pass -h flag to claude CLI args', () => {
+    const result = parseCliArgs([
+      '/root/.nvm/versions/node/v24.5.0/bin/node',
+      '/root/.bun/bin/claude-yes',
+      '-h',
+    ]);
+
+    expect(result.cli).toBe('claude');
+    expect(result.cliArgs).toEqual(['-h']);
+  });
 });

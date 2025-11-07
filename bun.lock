@@ -31,7 +31,7 @@
         "sflow": "^1.20.2",
         "strip-ansi-control-characters": "^2.0.0",
         "terminal-render": "^1.2.0",
-        "tsa-composer": "^3.0.2",
+        "tsa-composer": "^3.0.3",
         "vitest": "^3.2.4",
         "yargs": "^18.0.0",
       },
@@ -993,7 +993,7 @@
 
     "ts-essentials": ["ts-essentials@10.1.1", "", { "peerDependencies": { "typescript": ">=4.5.0" }, "optionalPeers": ["typescript"] }, "sha512-4aTB7KLHKmUvkjNj8V+EdnmuVTiECzn3K+zIbRthumvHu+j44x3w63xpfs0JL3NGIzGXqoQ7AV591xHO+XrOTw=="],
 
-    "tsa-composer": ["tsa-composer@3.0.2", "", { "peerDependencies": { "typescript": "^5.8.3" } }, "sha512-9LGdIIvukyoP9e27iWbqVu07Zj87FiATPa/FnIdxpUQ7t+rG327K61KdWdXhmBwiC23LOUq+YCu+mu5FGzLIpg=="],
+    "tsa-composer": ["tsa-composer@3.0.3", "", { "peerDependencies": { "typescript": "^5.8.3" } }, "sha512-apQPSpi6wtLc6mQUWiqz/Uhm2I2Lu8/HHB8gePxoGOeJuWtHlnDM6gvAGJ5OF15bKN1sS5Dqm5ksdwv3Fz7qzg=="],
 
     "tsx": ["tsx@4.20.3", "", { "dependencies": { "esbuild": "~0.25.0", "get-tsconfig": "^4.7.5" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "bin": { "tsx": "dist/cli.mjs" } }, "sha512-qjbnuR9Tr+FJOMBqJCW5ehvIo/buZq7vH7qD7JziU98h6l3qGy0a/yPFjwO+y0/T7GFpNgNAvEcPPVfyT8rrPQ=="],
 

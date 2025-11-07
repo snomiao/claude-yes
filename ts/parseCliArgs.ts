@@ -68,6 +68,12 @@ export function parseCliArgs(argv: string[]) {
       description: 'Install/Update the CLI if not found or outdated',
       default: true,
     })
+    .option('continue', {
+      type: 'boolean',
+      description: 'Resume previous session in current cwd if any',
+      default: false,
+      alias: 'c',
+    })
     .positional('cli', {
       describe:
         'The AI CLI to run, e.g., claude, codex, copilot, cursor, gemini',
@@ -90,10 +96,56 @@ export function parseCliArgs(argv: string[]) {
   const cliArgIndex = optionalIndex(rawArgs.indexOf(String(parsedArgv._[0])));
   const dashIndex = optionalIndex(rawArgs.indexOf('--'));
 
-  const cliArgsForSpawn =
-    parsedArgv._[0] && !cliName
-      ? rawArgs.slice((cliArgIndex ?? 0) + 1, dashIndex ?? undefined)
-      : [];
+  // Reconstruct what yargs consumed vs what it didn't
+  const yargsConsumed = new Set<string>();
+
+  // Add consumed flags
+  Object.keys(parsedArgv).forEach((key) => {
+    if (
+      key !== '_' &&
+      key !== '$0' &&
+      parsedArgv[key as keyof typeof parsedArgv] !== undefined
+    ) {
+      yargsConsumed.add(`--${key}`);
+      // Add short aliases
+      if (key === 'prompt') yargsConsumed.add('-p');
+      if (key === 'robust') yargsConsumed.add('-r');
+      if (key === 'idle') yargsConsumed.add('-i');
+      if (key === 'exitOnIdle') yargsConsumed.add('-e');
+    }
+  });
+
+  const cliArgsForSpawn = (() => {
+    if (parsedArgv._[0] && !cliName) {
+      // Explicit CLI name provided as positional arg
+      return rawArgs.slice((cliArgIndex ?? 0) + 1, dashIndex ?? undefined);
+    } else if (cliName) {
+      // CLI name from script, filter out only what yargs consumed
+      const result: string[] = [];
+      const argsToCheck = rawArgs.slice(0, dashIndex ?? undefined);
+
+      for (let i = 0; i < argsToCheck.length; i++) {
+        const arg = argsToCheck[i];
+        if (!arg) continue;
+
+        const [flag] = arg.split('=');
+
+        if (flag && yargsConsumed.has(flag)) {
+          // Skip consumed flag and its value if separate
+          if (!arg.includes('=') && i + 1 < argsToCheck.length) {
+            const nextArg = argsToCheck[i + 1];
+            if (nextArg && !nextArg.startsWith('-')) {
+              i++; // Skip value
+            }
+          }
+        } else {
+          result.push(arg);
+        }
+      }
+      return result;
+    }
+    return [];
+  })();
   const dashPrompt: string | undefined =
     dashIndex === undefined
       ? undefined
@@ -121,5 +173,6 @@ export function parseCliArgs(argv: string[]) {
     robust: parsedArgv.robust,
     logFile: parsedArgv.logFile,
     verbose: parsedArgv.verbose,
+    resume: parsedArgv.continue, // Note: intentional use resume here to avoid preserved keyword (continue)
   };
 }

@@ -94,6 +94,7 @@ export default async function cliYes({
   verbose = false,
   queue = true,
   install = false,
+  resume = false,
 }: {
   cli: SUPPORTED_CLIS;
   cliArgs?: string[];
@@ -107,6 +108,7 @@ export default async function cliYes({
   verbose?: boolean;
   queue?: boolean;
   install?: boolean; // if true, install the cli tool if not installed, e.g. will run `npm install -g cursor-agent`
+  resume?: boolean; // if true, resume previous session in current cwd if any
 }) {
   // those overrides seems only works in bun
   // await Promise.allSettled([
@@ -197,21 +199,31 @@ export default async function cliYes({
     : cliArgs;
 
   // Handle --continue flag for codex session restoration
-  const continueIndex = cliArgs.indexOf('--continue');
-  if (continueIndex !== -1 && cli === 'codex') {
-    // Remove the --continue flag from args
-    cliArgs.splice(continueIndex, 1);
-
-    // Try to get stored session for this directory
-    const storedSessionId = await getSessionForCwd(workingDir);
-    if (storedSessionId) {
-      // Replace or add resume args
-      cliArgs = ['resume', storedSessionId, ...cliArgs];
-      await yesLog`continue|using stored session ID: ${storedSessionId}`;
+  if (resume) {
+    if (cli === 'codex') {
+      // Try to get stored session for this directory
+      const storedSessionId = await getSessionForCwd(workingDir);
+      if (storedSessionId) {
+        // Replace or add resume args
+        cliArgs = ['resume', storedSessionId, ...cliArgs];
+        await yesLog`resume|using stored session ID: ${storedSessionId}`;
+      } else {
+        throw new Error(
+          `No stored session found for codex in directory: ${workingDir}, please try without resume option.`,
+        );
+      }
+    } else if (cli === 'claude') {
+      // just add --continue flag for claude
+      cliArgs = ['--continue', ...cliArgs];
+      await yesLog`resume|adding --continue flag for claude`;
+    } else if (cli === 'gemini') {
+      throw new Error(
+        'check gemini issues https://github.com/google-gemini/gemini-cli/discussions/1538 for conversation resume support',
+      );
     } else {
-      // Fallback to --last if no stored session
-      cliArgs = ['resume', '--last', ...cliArgs];
-      await yesLog`continue|no stored session, using --last`;
+      throw new Error(
+        `Resume option is not supported for cli: ${cli}, make a feature request if you want it. https://github.com/snomiao/claude-yes/issues`,
+      );
     }
   }
 

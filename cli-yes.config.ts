@@ -16,7 +16,6 @@ export default defineCliYesConfig({
     claude: {
       promptArg: 'last-arg',
       install: 'npm install -g @anthropic-ai/claude-code@latest',
-      restoreArgs: ['--continue'],
       // ready: [/^> /], // regex matcher for stdin ready
       ready: [/\? for shortcuts/], // regex matcher for stdin ready
       enter: [/❯ +1. Yes/, /❯ +1. Dark mode✔/, /Press Enter to continue…/],
@@ -40,7 +39,6 @@ export default defineCliYesConfig({
       promptArg: 'first-arg',
       install: 'npm install -g @openai/codex@latest',
       updateAvailable: [/^✨⬆️ Update available!/],
-      restoreArgs: ['resume', '--last'],
       ready: [/⏎ send/],
       enter: [
         /> 1. Yes, allow Codex to work in this folder/,

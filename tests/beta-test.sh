@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bun
 set -e
 
 echo "Running beta release..."
@@ -23,9 +23,14 @@ done
 
 echo "Testing the published package..."
 echo "Running: cli-yes --version"
+
+# should print the correct version
 bun x --no-cache --bun cli-yes@beta --version
-# bun x --no-cache --bun cli-yes@beta --idle=5s claude -- say hello world and exit
-# bun x --no-cache --bun cli-yes@beta claude -- say hello world and exit
-bun x --no-cache --bun cli-yes@beta codex -- say hello world and exit
+
+# should run claude command and exit
+bun x --no-cache --bun cli-yes@beta claude -- say hello world and exit
+
+# should run claude command with -h, shows claude help
+bun x --no-cache --bun cli-yes@beta claude -h
 
 echo "Beta test completed successfully!"
