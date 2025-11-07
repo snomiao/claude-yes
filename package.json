@@ -67,7 +67,7 @@
     "release:beta": "bunx standard-version && bun publish --tag beta"
   },
   "lint-staged": {
-    "*.{ts,js,json,md}": [
+    "*.{ts,js,json}": [
       "bunx @biomejs/biome check --fix"
     ]
   },
