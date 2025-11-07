@@ -6,13 +6,12 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### [1.31.12](https://github.com/snomiao/claude-yes/compare/v1.31.3...v1.31.12) (2025-11-07)
 
+### [1.31.11](https://github.com/snomiao/claude-yes/compare/v1.31.10...v1.31.11) (2025-11-07)
+
 
 ### Bug Fixes
 
 * escape single quotes in CLI args for Bun runtime ([9550e4a](https://github.com/snomiao/claude-yes/commit/9550e4a24cf066ca015c741ff438d40cf04e66ed))
-
-### [1.31.11](https://github.com/snomiao/claude-yes/compare/v1.31.10...v1.31.11) (2025-11-07)
-
 ## [1.31.3](https://github.com/snomiao/claude-yes/compare/v1.31.2...v1.31.3) (2025-11-07)
 
 
@@ -20,16 +19,6 @@ All notable changes to this project will be documented in this file. See [standa
 
 * CLI args parsing when CLI name detected from script name ([d603cac](https://github.com/snomiao/claude-yes/commit/d603cac47b78dbe35522d5d1a162ffede522aedb))
 
-# Changelog
-
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
-
-### [1.31.11](https://github.com/snomiao/claude-yes/compare/v1.31.10...v1.31.11) (2025-11-07)
-
-
-### Bug Fixes
-
-* CLI args parsing when CLI name detected from script name ([d603cac](https://github.com/snomiao/claude-yes/commit/d603cac47b78dbe35522d5d1a162ffede522aedb))
 
 ### [1.31.10](https://github.com/snomiao/claude-yes/compare/v1.31.9...v1.31.10) (2025-11-06)
 
