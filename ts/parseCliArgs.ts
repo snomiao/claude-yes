@@ -61,6 +61,11 @@ export function parseCliArgs(argv: string[]) {
         'Queue Agent when spawning multiple agents in the same directory/repo, can be disabled with --no-queue',
       default: true,
     })
+    .option('install', {
+      type: 'boolean',
+      description: 'Install/Update the CLI if not found or outdated',
+      default: true,
+    })
     .positional('cli', {
       describe:
         'The AI CLI to run, e.g., claude, codex, copilot, cursor, gemini',
@@ -83,9 +88,10 @@ export function parseCliArgs(argv: string[]) {
   const cliArgIndex = optionalIndex(rawArgs.indexOf(String(parsedArgv._[0])));
   const dashIndex = optionalIndex(rawArgs.indexOf('--'));
 
-  const cliArgsForSpawn = parsedArgv._[0]
-    ? rawArgs.slice(cliArgIndex ?? 0, dashIndex ?? undefined)
-    : [];
+  const cliArgsForSpawn =
+    parsedArgv._[0] && !cliName
+      ? rawArgs.slice(cliArgIndex ?? 0, dashIndex ?? undefined)
+      : [];
   const dashPrompt: string | undefined =
     dashIndex === undefined
       ? undefined
@@ -103,6 +109,7 @@ export function parseCliArgs(argv: string[]) {
     cliArgs: cliArgsForSpawn,
     prompt:
       [parsedArgv.prompt, dashPrompt].filter(Boolean).join(' ') || undefined,
+    install: parsedArgv.install,
     exitOnIdle: Number(
       (parsedArgv.idle || parsedArgv.exitOnIdle)?.replace(/.*/, (e) =>
         String(ms(e as ms.StringValue)),

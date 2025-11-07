@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import DIE from 'phpdie';
+import { argv } from 'process';
 import cliYesConfig from '../cli-yes.config';
 
 // if node-pty is not installed, re-run with bun
@@ -33,6 +34,7 @@ if (!config.cli)
 if (config.verbose) {
   process.env.VERBOSE = 'true'; // enable verbose logging in yesLog.ts
   console.log(config);
+  console.log(argv);
 }
 
 const { exitCode } = await cliYes(config);

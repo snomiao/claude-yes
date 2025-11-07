@@ -19,7 +19,7 @@ export const yesLog = tsaComposer()(
     function yesLog(msg: string) {
       // process.stdout.write(`${msg}\r`); // touch process to avoid "The process is not running a TTY." error
       if (!process.env.VERBOSE) return; // no-op if not verbose
-      if (initial) rmSync('./agent-yes.log'); // ignore error if file doesn't exist
+      if (initial) rmSync('./agent-yes.log', { force: true }); // ignore error if file doesn't exist
       initial = false;
       appendFileSync('./agent-yes.log', `${msg}\n`);
     },

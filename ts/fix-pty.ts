@@ -1,14 +1,11 @@
 #!/usr/bin/env node
 
 import { execSync } from 'child_process';
+import { error } from 'console';
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { arch, platform } from 'process';
 import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = join(__dirname, '..');
 
 // Determine the platform-specific library name
 function getLibraryName() {
@@ -25,12 +22,14 @@ function getLibraryName() {
 }
 
 // Check if we need to rebuild bun-pty
-const bunPtyPath = join(projectRoot, 'node_modules', 'bun-pty');
+const bunPtyPath =
+  dirname(fileURLToPath(import.meta.resolve('bun-pty'))) + '/..';
 const libName = getLibraryName();
 const libPath = join(bunPtyPath, 'rust-pty', 'target', 'release', libName);
 
 if (!existsSync(bunPtyPath)) {
-  console.log('bun-pty not found, skipping postinstall');
+  console.log({ bunPtyPath });
+  console.log('bun-pty not found, skipping fix-pty in ');
   process.exit(0);
 }
 
@@ -106,7 +105,7 @@ function rebuildBunPty() {
         if (isWindows) {
           execSync(
             `cd /d "${tmpDir}" && cargo build --release --manifest-path rust-pty\\Cargo.toml`,
-            { stdio: 'inherit', shell: true },
+            { stdio: 'inherit' },
           );
         } else {
           execSync(
@@ -121,10 +120,8 @@ function rebuildBunPty() {
           // Ensure target directory exists
           const targetDir = join(rustPtyDir, 'target', 'release');
           if (isWindows) {
-            execSync(`if not exist "${targetDir}" mkdir "${targetDir}"`, {
-              shell: true,
-            });
-            execSync(`copy /Y "${builtLib}" "${libPath}"`, { shell: true });
+            execSync(`if not exist "${targetDir}" mkdir "${targetDir}"`, {});
+            execSync(`copy /Y "${builtLib}" "${libPath}"`, {});
           } else {
             execSync(`mkdir -p "${targetDir}"`, { stdio: 'inherit' });
             execSync(`cp "${builtLib}" "${libPath}"`, { stdio: 'inherit' });
@@ -134,12 +131,15 @@ function rebuildBunPty() {
 
         // Cleanup
         if (isWindows) {
-          execSync(`rmdir /s /q "${tmpDir}"`, { stdio: 'ignore', shell: true });
+          execSync(`rmdir /s /q "${tmpDir}"`, { stdio: 'ignore' });
         } else {
           execSync(`rm -rf "${tmpDir}"`, { stdio: 'ignore' });
         }
       } catch (buildError) {
-        console.error('Failed to build bun-pty:', buildError.message);
+        console.error(
+          'Failed to build bun-pty:',
+          buildError instanceof Error ? buildError.message : buildError,
+        );
         console.warn('The application may not work correctly without bun-pty');
       }
     } else {
@@ -148,7 +148,6 @@ function rebuildBunPty() {
       if (isWindows) {
         execSync(`cd /d "${rustPtyDir}" && cargo build --release`, {
           stdio: 'inherit',
-          shell: true,
         });
       } else {
         execSync(`cd "${rustPtyDir}" && cargo build --release`, {
@@ -158,7 +157,10 @@ function rebuildBunPty() {
       console.log('Successfully rebuilt bun-pty native module');
     }
   } catch (error) {
-    console.error('Failed to rebuild bun-pty:', error.message);
+    console.error(
+      'Failed to rebuild bun-pty:',
+      error instanceof Error ? error.message : error,
+    );
     console.warn('The application may not work correctly without bun-pty');
   }
 }

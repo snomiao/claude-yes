@@ -229,4 +229,25 @@ describe('CLI argument parsing', () => {
     expect(result.cliArgs).toContain('--some-flag');
     expect(result.cliArgs).toContain('--another-flag');
   });
+
+  it('should parse bunx cli-yes command with verbose and dash prompt', () => {
+    const result = parseCliArgs([
+      '/tmp/bunx-0-cli-yes@beta/node_modules/bun/bin/bun.exe',
+      '/tmp/bunx-0-cli-yes@beta/node_modules/cli-yes/dist/claude-yes.js',
+      '--verbose',
+      'claude',
+      '--',
+      'lets',
+      'fix',
+      'signin',
+      'page,',
+      'setup',
+      'shadcn',
+    ]);
+
+    expect(result.cli).toBe('claude');
+    expect(result.verbose).toBe(true);
+    expect(result.cliArgs).toEqual([]);
+    expect(result.prompt).toBe('lets fix signin page, setup shadcn');
+  });
 });

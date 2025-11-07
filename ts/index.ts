@@ -242,7 +242,7 @@ export default async function cliYes({
     (error: unknown, fn, ...args) => {
       console.error(`Fatal: Failed to start ${cliCommand}.`);
 
-      if (cliConf?.install && isCommandNotFoundError(error))
+      if (cliConf?.install && isCommandNotFoundError(error)) {
         if (install) {
           console.log(`Attempting to install ${cli}...`);
           execaCommandSync(cliConf.install, { stdio: 'inherit' });
@@ -250,10 +250,13 @@ export default async function cliYes({
             `${cli} installed successfully. Please rerun the command.`,
           );
           return spawn();
+        } else {
+          console.error(
+            `If you did not installed it yet, Please install it first: ${cliConf.install}`,
+          );
+          throw error;
         }
-      console.error(
-        `If you did not installed it yet, Please install it first: ${cliConf.install}`,
-      );
+      }
 
       if (
         globalThis.Bun &&
@@ -264,7 +267,7 @@ export default async function cliYes({
         console.error(
           `Detected bun-pty issue, attempted to fix it. Please try again.`,
         );
-        require('./fix-pty.js');
+        require('./fix-pty');
         // unable to retry with same process, so exit here.
       }
       throw error;
