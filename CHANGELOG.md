@@ -1,3 +1,10 @@
+## [1.31.3](https://github.com/snomiao/claude-yes/compare/v1.31.2...v1.31.3) (2025-11-07)
+
+
+### Bug Fixes
+
+* CLI args parsing when CLI name detected from script name ([d603cac](https://github.com/snomiao/claude-yes/commit/d603cac47b78dbe35522d5d1a162ffede522aedb))
+
 # Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
