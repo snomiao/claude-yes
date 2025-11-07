@@ -171,9 +171,14 @@ export default async function cliYes({
   const pty = await (globalThis.Bun
     ? import('bun-pty')
     : import('node-pty')
-  ).catch(async () =>
-    DIE('Please install node-pty or bun-pty, run this: bun install bun-pty'),
-  );
+  ).catch(async (error) => {
+    // DIE('Please install node-pty or bun-pty, run this: bun install bun-pty')
+    console.error(error);
+    throw new Error(
+      'Please install node-pty or bun-pty, run this: bun install bun-pty',
+      { cause: error },
+    );
+  });
 
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;

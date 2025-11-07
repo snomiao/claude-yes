@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env bash
 set -e
 
 echo "Running beta release..."

@@ -21,7 +21,6 @@ if (!globalThis.Bun && !hasNodePty) {
 // check and fix bun-pty on some systems
 if (globalThis.Bun) console.log('Bun detected, using bun-pty');
 //   await import("./fix-pty.js")
-
 // console.log('Running', process.argv);
 
 // Import the CLI module
