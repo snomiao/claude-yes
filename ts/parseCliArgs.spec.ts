@@ -1,3 +1,4 @@
+#!/usr/bin/env bun test
 import { describe, expect, it } from 'vitest';
 import { parseCliArgs } from './parseCliArgs';
 
@@ -233,7 +234,7 @@ describe('CLI argument parsing', () => {
   it('should parse bunx cli-yes command with verbose and dash prompt', () => {
     const result = parseCliArgs([
       '/tmp/bunx-0-cli-yes@beta/node_modules/bun/bin/bun.exe',
-      '/tmp/bunx-0-cli-yes@beta/node_modules/cli-yes/dist/claude-yes.js',
+      '/tmp/bunx-0-cli-yes@beta/node_modules/cli-yes/dist/cli.js',
       '--verbose',
       'claude',
       '--',
@@ -247,6 +248,25 @@ describe('CLI argument parsing', () => {
 
     expect(result.cli).toBe('claude');
     expect(result.verbose).toBe(true);
+    expect(result.cliArgs).toEqual([]);
+    expect(result.prompt).toBe('lets fix signin page, setup shadcn');
+  });
+
+  it('should parse bunx cli-yes command with verbose and dash prompt', () => {
+    const result = parseCliArgs([
+      '/tmp/bunx-0-cli-yes@beta/node_modules/bun/bin/bun.exe',
+      '/tmp/bunx-0-cli-yes@beta/node_modules/cli-yes/dist/claude-yes.js',
+      '--',
+      'lets',
+      'fix',
+      'signin',
+      'page,',
+      'setup',
+      'shadcn',
+    ]);
+
+    expect(result.cli).toBe('claude');
+    expect(result.verbose).toBe(false);
     expect(result.cliArgs).toEqual([]);
     expect(result.prompt).toBe('lets fix signin page, setup shadcn');
   });

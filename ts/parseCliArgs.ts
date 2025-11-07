@@ -90,7 +90,7 @@ export function parseCliArgs(argv: string[]) {
 
   const cliArgsForSpawn =
     parsedArgv._[0] && !cliName
-      ? rawArgs.slice(cliArgIndex ?? 0, dashIndex ?? undefined)
+      ? rawArgs.slice((cliArgIndex ?? 0) + 1, dashIndex ?? undefined)
       : [];
   const dashPrompt: string | undefined =
     dashIndex === undefined
