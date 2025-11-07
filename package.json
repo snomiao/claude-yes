@@ -1,6 +1,6 @@
 {
   "name": "cli-yes",
-  "version": "1.31.20",
+  "version": "1.31.21",
   "description": "A wrapper tool that automates interactions with various AI CLI tools by automatically handling common prompts and responses.",
   "keywords": [
     "claude",
