@@ -227,6 +227,7 @@ export default async function cliYes({
     }
   }
 
+  // If possible pass prompt via cli args, its usually faster than stdin
   if (prompt && cliConf.promptArg) {
     if (cliConf.promptArg === 'first-arg') {
       cliArgs = [prompt, ...cliArgs];
@@ -241,21 +242,26 @@ export default async function cliYes({
       console.warn(`Unknown promptArg format: ${cliConf.promptArg}`);
     }
   }
-  const cliCommand = cliConf?.binary || cli;
+  // Determine the actual cli command to run
 
   const spawn = () => {
-    // const [bin, ...args] = [...parseCommandString((cliConf.bunx ? 'bunx --bun ' : '') + cliCommand), ...(cliArgs)];
-    // console.log(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
-    // return pty.spawn(bin!, args, getPtyOptions());
-    if (globalThis.Bun)
-      cliArgs = cliArgs.map((arg) => `'${arg.replace(/'/g, "\\'")}'`);
+    const cliCommand = cliConf?.binary || cli;
+    let [bin, ...args] = [
+      ...parseCommandString((cliConf.bunx ? 'bunx --bun ' : '') + cliCommand),
+      ...cliArgs,
+    ];
+    verbose &&
+      console.log(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
 
-    return pty.spawn(cliCommand, cliArgs, getPtyOptions());
+    if (globalThis.Bun)
+      args = args.map((arg) => `'${arg.replace(/'/g, "\\'")}'`);
+    return pty.spawn(bin!, args, getPtyOptions());
   };
+
   let shell = catcher(
     // error handler
     (error: unknown, fn, ...args) => {
-      console.error(`Fatal: Failed to start ${cliCommand}.`);
+      console.error(`Fatal: Failed to start ${cli}.`);
 
       if (cliConf?.install && isCommandNotFoundError(error)) {
         if (install) {
