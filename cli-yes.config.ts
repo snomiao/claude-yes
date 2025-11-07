@@ -15,7 +15,7 @@ export default defineCliYesConfig({
     },
     claude: {
       promptArg: 'last-arg',
-      install: 'npm install -g @anthropic-ai/claude-code',
+      install: 'npm install -g @anthropic-ai/claude-code@latest',
       restoreArgs: ['--continue'],
       // ready: [/^> /], // regex matcher for stdin ready
       ready: [/\? for shortcuts/], // regex matcher for stdin ready
@@ -25,11 +25,12 @@ export default defineCliYesConfig({
         /⎿  Claude usage limit reached\./,
         /^error: unknown option/,
       ],
+      exitCommand: '/exit',
       bunx: true, // use bunx to run the binary, start time is 5s faster than node
       defaultArgs: ['--model=sonnet'], // default to sonnet, to prevent opus model overload
     },
     gemini: {
-      install: 'npm install -g @google/gemini-cli',
+      install: 'npm install -g @google/gemini-cli@latest',
       // match the agent prompt after initial lines; handled by index logic using line index
       ready: [/Type your message/], // used with line index check
       enter: [/│ ● 1. Yes, allow once/],
@@ -37,7 +38,8 @@ export default defineCliYesConfig({
     },
     codex: {
       promptArg: 'first-arg',
-      install: 'npm install -g @openai/codex',
+      install: 'npm install -g @openai/codex@latest',
+      updateAvailable: [/^✨⬆️ Update available!/],
       restoreArgs: ['resume', '--last'],
       ready: [/⏎ send/],
       enter: [

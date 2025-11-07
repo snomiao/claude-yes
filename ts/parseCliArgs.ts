@@ -1,6 +1,7 @@
 import ms from 'ms';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import pkg from '../package.json';
 import { SUPPORTED_CLIS } from '.';
 
 /**
@@ -11,7 +12,8 @@ export function parseCliArgs(argv: string[]) {
   // Detect cli name from script name (same logic as cli.ts:10-14)
   const scriptName = argv[1]?.split(/[\/\\]/).pop();
   const cliName = ((e?: string) => {
-    if (e === 'cli' || e === 'cli.ts' || e === 'cli.js') return undefined;
+    if (e === 'cli' || e === 'cli.ts' || e === 'cli.js' || e === 'cli-yes')
+      return undefined;
     return e?.replace(/-yes(\.[jt]s)?$/, '');
   })(scriptName);
 
@@ -75,7 +77,7 @@ export function parseCliArgs(argv: string[]) {
       default: cliName,
     })
     .help()
-    .version()
+    .version(pkg.version)
     .parserConfiguration({
       'unknown-options-as-args': true,
       'halt-at-non-option': true,
