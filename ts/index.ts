@@ -235,6 +235,9 @@ export default async function cliYes({
     // const [bin, ...args] = [...parseCommandString((cliConf.bunx ? 'bunx --bun ' : '') + cliCommand), ...(cliArgs)];
     // console.log(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
     // return pty.spawn(bin!, args, getPtyOptions());
+    if (globalThis.Bun)
+      cliArgs = cliArgs.map((arg) => `'${arg.replace(/'/g, "\\'")}'`);
+
     return pty.spawn(cliCommand, cliArgs, getPtyOptions());
   };
   let shell = catcher(
