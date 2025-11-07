@@ -1,3 +1,10 @@
+## [1.31.4](https://github.com/snomiao/claude-yes/compare/v1.31.3...v1.31.4) (2025-11-07)
+
+
+### Bug Fixes
+
+* escape single quotes in CLI args for Bun runtime ([9550e4a](https://github.com/snomiao/claude-yes/commit/9550e4a24cf066ca015c741ff438d40cf04e66ed))
+
 ## [1.31.3](https://github.com/snomiao/claude-yes/compare/v1.31.2...v1.31.3) (2025-11-07)
 
 
