@@ -19,7 +19,7 @@ export default defineCliYesConfig({
       restoreArgs: ['--continue'],
       // ready: [/^> /], // regex matcher for stdin ready
       ready: [/\? for shortcuts/], // regex matcher for stdin ready
-      enter: [/❯ 1. Yes/, /❯ 1. Dark mode✔/, /Press Enter to continue…/],
+      enter: [/❯ +1. Yes/, /❯ +1. Dark mode✔/, /Press Enter to continue…/],
       fatal: [
         /No conversation found to continue/,
         /⎿  Claude usage limit reached\./,
@@ -37,7 +37,7 @@ export default defineCliYesConfig({
     },
     codex: {
       promptArg: 'first-arg',
-      install: 'npm install -g @openai/codex-cli',
+      install: 'npm install -g @openai/codex',
       restoreArgs: ['resume', '--last'],
       ready: [/⏎ send/],
       enter: [
