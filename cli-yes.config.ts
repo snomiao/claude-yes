@@ -9,8 +9,8 @@ export default defineCliYesConfig({
       version: 'qwen --version',
     },
     grok: {
-      install: 'npm install -g @vibe-kit/grok-cli',
-      ready: [/^  │ ❯ /],
+      install: 'npm install -g @vibe-kit/grok-cli@latest',
+      ready: [/^  │ ❯ +/],
       enter: [/^   1. Yes/],
     },
     claude: {
@@ -55,7 +55,7 @@ export default defineCliYesConfig({
       promptArg: '--prompt',
       install: 'npm install -g @github/copilot',
       ready: [/^ +> /, /Ctrl\+c Exit/],
-      enter: [/ │ ❯ 1. Yes, proceed/, /❯ 1. Yes/],
+      enter: [/ │ ❯ +1. Yes, proceed/, /❯ +1. Yes/],
       fatal: [],
     },
     cursor: {
