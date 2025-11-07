@@ -18,10 +18,6 @@ All notable changes to this project will be documented in this file. See [standa
 
 * **cli-yes.config.ts:** update regex for enter prompts to match leading spaces for consistency ([4de210c](https://github.com/snomiao/claude-yes/commit/4de210cf12f88111cb6a9af9c21e4e0a105f53bf))
 
-# Changelog
-
-All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
-
 ### [1.31.15](https://github.com/snomiao/claude-yes/compare/v1.31.14...v1.31.15) (2025-11-07)
 
 
