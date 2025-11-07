@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.31.22](https://github.com/snomiao/claude-yes/compare/v1.31.21...v1.31.22) (2025-11-07)
+
 ### [1.31.21](https://github.com/snomiao/claude-yes/compare/v1.31.20...v1.31.21) (2025-11-07)
 
 ### [1.31.20](https://github.com/snomiao/claude-yes/compare/v1.31.19...v1.31.20) (2025-11-07)
