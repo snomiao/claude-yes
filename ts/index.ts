@@ -93,7 +93,7 @@ export default async function cliYes({
   logFile,
   removeControlCharactersFromStdout = false, // = !process.stdout.isTTY,
   verbose = false,
-  queue = true,
+  queue = false,
   install = false,
   resume = false,
 }: {

@@ -61,7 +61,7 @@ export function parseCliArgs(argv: string[]) {
       type: 'boolean',
       description:
         'Queue Agent when spawning multiple agents in the same directory/repo, can be disabled with --no-queue',
-      default: true,
+      default: false,
     })
     .option('install', {
       type: 'boolean',
