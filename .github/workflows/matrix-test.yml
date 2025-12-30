@@ -5,21 +5,63 @@ on:
     branches: [main, sno-matrix-test]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   test:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        runtime: [node, bun]
         include:
-          - runtime: node
+          # Ubuntu tests
+          - runner: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
+            runtime: node
             runtime-version: '20'
-          - runtime: bun
+            package-runner: npx
+          - runner: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
+            runtime: bun
             runtime-version: 'latest'
+            package-runner: bunx
 
-    runs-on: ${{ matrix.os }}
+          # macOS x86_64 tests
+          - runner: macos-latest
+            target: x86_64-apple-darwin
+            runtime: node
+            runtime-version: '20'
+            package-runner: npx
+          - runner: macos-latest
+            target: x86_64-apple-darwin
+            runtime: bun
+            runtime-version: 'latest'
+            package-runner: bunx
+
+          # macOS ARM64 tests
+          - runner: macos-latest
+            target: aarch64-apple-darwin
+            runtime: node
+            runtime-version: '20'
+            package-runner: npx
+          - runner: macos-latest
+            target: aarch64-apple-darwin
+            runtime: bun
+            runtime-version: 'latest'
+            package-runner: bunx
+
+          # Windows tests
+          - runner: windows-latest
+            target: x86_64-pc-windows-gnu
+            runtime: node
+            runtime-version: '20'
+            package-runner: npx
+          - runner: windows-latest
+            target: x86_64-pc-windows-gnu
+            runtime: bun
+            runtime-version: 'latest'
+            package-runner: bunx
+
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout
@@ -84,3 +126,13 @@ jobs:
         run: |
           bun dist/cli.js --version
           bun dist/claude-yes.js --help
+
+      - name: Test package runner (npx/bunx) - Unix
+        if: runner.os != 'Windows'
+        run: |
+          ${{ matrix.package-runner }} claude-yes -h
+
+      - name: Test package runner (npx/bunx) - Windows
+        if: runner.os == 'Windows'
+        run: |
+          ${{ matrix.package-runner }} claude-yes -h
