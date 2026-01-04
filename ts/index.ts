@@ -233,28 +233,64 @@ export default async function cliYes({
   try {
     const workingDir = cwd ?? process.cwd();
     if (useSkills && cli !== 'claude') {
-      const skillPath = path.resolve(workingDir, 'SKILL.md');
-      const md = await readFile(skillPath, 'utf8').catch(() => null);
-      if (md) {
-        // Extract header (content before first level-2 heading `## `)
-        const headerMatch = md.match(/^[\s\S]*?(?=\n##\s)/);
-        const headerRaw = (headerMatch ? headerMatch[0] : md).trim();
-        if (headerRaw) {
-          const MAX = 1200; // keep short to avoid overwhelming initial prompt
-          const header =
-            headerRaw.length > MAX ? headerRaw.slice(0, MAX) + '…' : headerRaw;
-          const prefix = `Use this repository skill as context:\n\n${header}`;
-          prompt = prompt ? `${prefix}\n\n${prompt}` : prefix;
-          verbose &&
-            console.log(
-              `[skills] Injected SKILL.md header (${header.length} chars)`,
-            );
-        } else {
-          verbose && console.log('[skills] SKILL.md found but header empty');
+      // Find git root to determine search boundary
+      let gitRoot: string | null = null;
+      try {
+        const result = execaCommandSync('git rev-parse --show-toplevel', {
+          cwd: workingDir,
+          reject: false,
+        });
+        if (result.exitCode === 0) {
+          gitRoot = result.stdout.trim();
         }
+      } catch {
+        // Not a git repo, will only check cwd
+      }
+
+      // Walk up from cwd to git root (or stop at filesystem root) collecting SKILL.md files
+      const skillHeaders: string[] = [];
+      let currentDir = workingDir;
+      const searchLimit = gitRoot || path.parse(currentDir).root;
+
+      while (true) {
+        const skillPath = path.resolve(currentDir, 'SKILL.md');
+        const md = await readFile(skillPath, 'utf8').catch(() => null);
+        if (md) {
+          // Extract header (content before first level-2 heading `## `)
+          const headerMatch = md.match(/^[\s\S]*?(?=\n##\s)/);
+          const headerRaw = (headerMatch ? headerMatch[0] : md).trim();
+          if (headerRaw) {
+            skillHeaders.push(headerRaw);
+            verbose &&
+              console.log(
+                `[skills] Found SKILL.md in ${currentDir} (${headerRaw.length} chars)`,
+              );
+          }
+        }
+
+        // Stop if we've reached git root or filesystem root
+        if (currentDir === searchLimit) break;
+
+        const parentDir = path.dirname(currentDir);
+        if (parentDir === currentDir) break; // Reached filesystem root
+        currentDir = parentDir;
+      }
+
+      if (skillHeaders.length > 0) {
+        // Combine all headers (most specific first)
+        const combined = skillHeaders.join('\n\n---\n\n');
+        const MAX = 2000; // increased limit for multiple skills
+        const header =
+          combined.length > MAX ? combined.slice(0, MAX) + '…' : combined;
+        const prefix = `Use this repository skill as context:\n\n${header}`;
+        prompt = prompt ? `${prefix}\n\n${prompt}` : prefix;
+        verbose &&
+          console.log(
+            `[skills] Injected ${skillHeaders.length} SKILL.md header(s) (${header.length} chars total)`,
+          );
       } else {
         verbose &&
-          console.log('[skills] No SKILL.md found; skipping injection');
+          console.log('[skills] No SKILL.md found in directory hierarchy');
       }
     }
   } catch (error) {
