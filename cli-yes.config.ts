@@ -32,7 +32,7 @@ export default defineCliYesConfig({
       install: 'npm install -g @google/gemini-cli@latest',
       // match the agent prompt after initial lines; handled by index logic using line index
       ready: [/Type your message/], // used with line index check
-      enter: [/│ ● 1. Yes, allow once/],
+      enter: [/│ ● 1. Yes, allow once/, /│ ● 1. Allow once/],
       fatal: [],
       exitCommand: ['/chat save ${PWD}', '/quit'],
     },
