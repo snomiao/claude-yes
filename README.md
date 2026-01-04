@@ -241,6 +241,7 @@ The tool will:
 
 - `--cli=<tool>`: Specify which AI CLI tool to use (claude, gemini, codex, copilot, cursor). Defaults to `claude`.
 - `--exit-on-idle=<seconds>`: Automatically exit when the AI tool becomes idle for the specified duration. Useful for automation scripts.
+- `--use-skills`: Prepend the header section of `SKILL.md` from the current directory to your first prompt (particularly useful to bring Claude Skills-like context to non-Claude agents such as Codex or Gemini).
 
 ## Library Usage
 

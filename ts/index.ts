@@ -1,6 +1,6 @@
 import { execaCommand, execaCommandSync, parseCommandString } from 'execa';
 import { fromReadable, fromWritable } from 'from-node-stream';
-import { mkdir, writeFile } from 'fs/promises';
+import { mkdir, readFile, writeFile } from 'fs/promises';
 import path, { dirname } from 'path';
 import DIE from 'phpdie';
 import sflow from 'sflow';
@@ -96,6 +96,7 @@ export default async function cliYes({
   queue = false,
   install = false,
   resume = false,
+  useSkills = false,
 }: {
   cli: SUPPORTED_CLIS;
   cliArgs?: string[];
@@ -110,6 +111,7 @@ export default async function cliYes({
   queue?: boolean;
   install?: boolean; // if true, install the cli tool if not installed, e.g. will run `npm install -g cursor-agent`
   resume?: boolean; // if true, resume previous session in current cwd if any
+  useSkills?: boolean; // if true, prepend SKILL.md header to the prompt for non-Claude agents
 }) {
   // those overrides seems only works in bun
   // await Promise.allSettled([
@@ -226,6 +228,40 @@ export default async function cliYes({
   cliArgs = cliConf.defaultArgs
     ? [...cliConf.defaultArgs, ...cliArgs]
     : cliArgs;
+
+  // If enabled, read SKILL.md header and prepend to the prompt for non-Claude agents
+  try {
+    const workingDir = cwd ?? process.cwd();
+    if (useSkills && cli !== 'claude') {
+      const skillPath = path.resolve(workingDir, 'SKILL.md');
+      const md = await readFile(skillPath, 'utf8').catch(() => null);
+      if (md) {
+        // Extract header (content before first level-2 heading `## `)
+        const headerMatch = md.match(/^[\s\S]*?(?=\n##\s)/);
+        const headerRaw = (headerMatch ? headerMatch[0] : md).trim();
+        if (headerRaw) {
+          const MAX = 1200; // keep short to avoid overwhelming initial prompt
+          const header =
+            headerRaw.length > MAX ? headerRaw.slice(0, MAX) + '…' : headerRaw;
+          const prefix = `Use this repository skill as context:\n\n${header}`;
+          prompt = prompt ? `${prefix}\n\n${prompt}` : prefix;
+          verbose &&
+            console.log(
+              `[skills] Injected SKILL.md header (${header.length} chars)`,
+            );
+        } else {
+          verbose && console.log('[skills] SKILL.md found but header empty');
+        }
+      } else {
+        verbose &&
+          console.log('[skills] No SKILL.md found; skipping injection');
+      }
+    }
+  } catch (error) {
+    // Non-fatal; continue without skills
+    verbose &&
+      console.warn('[skills] Failed to inject SKILL.md header:', error);
+  }
 
   // Handle --continue flag for codex session restoration
   if (resume) {

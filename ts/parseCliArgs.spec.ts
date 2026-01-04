@@ -281,4 +281,19 @@ describe('CLI argument parsing', () => {
     expect(result.cli).toBe('claude');
     expect(result.cliArgs).toEqual(['-h']);
   });
+
+  it('should parse --use-skills flag', () => {
+    const result = parseCliArgs([
+      'node',
+      '/path/to/cli',
+      '--use-skills',
+      'codex',
+      '--',
+      'Implement feature',
+    ]);
+
+    expect(result.useSkills).toBe(true);
+    expect(result.cli).toBe('codex');
+    expect(result.prompt).toBe('Implement feature');
+  });
 });
