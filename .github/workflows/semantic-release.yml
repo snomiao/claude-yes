@@ -15,9 +15,9 @@ jobs:
       - run: bun run build
       - run: bun run test
       - run: bunx semantic-release
-        env:
+        # env:
           # reminder to setup read/write permission for this token
           # here: REPO_URL/settings/actions
           # for publishing to GitHub releases
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
