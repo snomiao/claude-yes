@@ -173,6 +173,8 @@ export default async function cliYes({
   //   const pkgPath = path.resolve(entryPath, '..', '..'); // path to bun-pty package root
   //   process.env.BUN_PTY_LIB = path.join(pkgPath, 'rust-pty', 'target', 'release', 'rust_pty.dll');
   // }
+  const ptyPackage = globalThis.Bun ? 'bun-pty' : 'node-pty';
+  console.log(`Using ${ptyPackage} for pseudo terminal management.`);
 
   // its recommened to use bun-pty in windows, since node-pty is super complex to install there, requires a 10G M$ build tools
   const pty = await (globalThis.Bun
@@ -275,16 +277,24 @@ export default async function cliYes({
 
   const spawn = () => {
     const cliCommand = cliConf?.binary || cli;
+    // const useBunx = globalThis.Bun;
+    const useBunx = !!globalThis.Bun;
     let [bin, ...args] = [
-      ...parseCommandString((globalThis.Bun ? 'bunx --bun ' : '') + cliCommand),
+      ...parseCommandString(
+        // (useBunx ? 'bunx --bun ' : '')
+
+        cliCommand,
+      ),
       ...cliArgs,
     ];
     verbose &&
       console.log(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
-
+    console.log(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
+    const spawned = pty.spawn(bin!, args, getPtyOptions());
+    console.log(`[${cli}-yes] Spawned ${bin} with PID ${spawned.pid}`);
     // if (globalThis.Bun)
     //   args = args.map((arg) => `'${arg.replace(/'/g, "\\'")}'`);
-    return pty.spawn(bin!, args, getPtyOptions());
+    return spawned;
   };
 
   let shell = catcher(

@@ -33,6 +33,8 @@ const config = parseCliArgs(process.argv);
 if (!config.cli)
   DIE`missing cli def, available clis: ${Object.keys((await cliYesConfig).clis).join(', ')}`;
 
+console.log(`Using CLI: ${config.cli}`);
+
 if (config.verbose) {
   process.env.VERBOSE = 'true'; // enable verbose logging in yesLog.ts
   console.log(config);
