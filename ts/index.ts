@@ -320,9 +320,10 @@ export default async function cliYes({
       cliArgs = ['--continue', ...cliArgs];
       await yesLog`resume|adding --continue flag for claude`;
     } else if (cli === 'gemini') {
-      throw new Error(
-        'check gemini issues https://github.com/google-gemini/gemini-cli/discussions/1538 for conversation resume support',
-      );
+      // Gemini supports session resume natively via --resume flag
+      // Sessions are project/directory-specific by default (stored in ~/.gemini/tmp/<project_hash>/chats/)
+      cliArgs = ['--resume', ...cliArgs];
+      await yesLog`resume|adding --resume flag for gemini`;
     } else {
       throw new Error(
         `Resume option is not supported for cli: ${cli}, make a feature request if you want it. https://github.com/snomiao/claude-yes/issues`,
