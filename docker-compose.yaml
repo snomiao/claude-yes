@@ -5,4 +5,20 @@ services:
     tty: true
     volumes:
       - ./:/app
-    command: claude --install -- hello
+      # - ~/.claude:/root/.claude
+      - ~/.claude/.credentials.json:/root/.claude/.credentials.json:ro
+    
+    # ok
+    entrypoint: npx -y claude-yes
+    # command: hello
+    # entrypoint: [bun, x]
+    # command: claude-x -- hello
+
+    # run
+    # docker compose up --watch
+    develop:
+      watch:
+        - action: rebuild
+          path: docker-compose.yaml
+        - action: rebuild
+          path: ./Dockerfile
