@@ -45,6 +45,12 @@ export function parseCliArgs(argv: string[]) {
       description: 'Enable verbose logging, will emit ./agent-yes.log',
       default: false,
     })
+    .option('use-skills', {
+      type: 'boolean',
+      description:
+        'Prepend SKILL.md header from current directory to the prompt (helpful for non-Claude agents)',
+      default: false,
+    })
     .option('exit-on-idle', {
       type: 'string',
       description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
@@ -174,5 +180,6 @@ export function parseCliArgs(argv: string[]) {
     logFile: parsedArgv.logFile,
     verbose: parsedArgv.verbose,
     resume: parsedArgv.continue, // Note: intentional use resume here to avoid preserved keyword (continue)
+    useSkills: parsedArgv.useSkills,
   };
 }
