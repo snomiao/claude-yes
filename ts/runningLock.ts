@@ -24,8 +24,9 @@ interface LockCheckResult {
   lockKey: string;
 }
 
-const LOCK_DIR = path.join(homedir(), '.claude-yes');
-const LOCK_FILE = path.join(LOCK_DIR, 'running.lock.json');
+const getLockDir = () =>
+  path.join(process.env.CLAUDE_YES_HOME || homedir(), '.claude-yes');
+const getLockFile = () => path.join(getLockDir(), 'running.lock.json');
 const MAX_RETRIES = 5;
 const RETRY_DELAYS = [50, 100, 200, 400, 800]; // exponential backoff in ms
 const POLL_INTERVAL = 2000; // 2 seconds
@@ -94,13 +95,15 @@ function sleep(ms: number): Promise<void> {
  */
 async function readLockFile(): Promise<LockFile> {
   try {
-    await mkdir(LOCK_DIR, { recursive: true });
+    const lockDir = getLockDir();
+    const lockFilePath = getLockFile();
+    await mkdir(lockDir, { recursive: true });
 
-    if (!existsSync(LOCK_FILE)) {
+    if (!existsSync(lockFilePath)) {
       return { tasks: [] };
     }
 
-    const content = await readFile(LOCK_FILE, 'utf8');
+    const content = await readFile(lockFilePath, 'utf8');
     const lockFile = JSON.parse(content) as LockFile;
 
     // Clean stale locks while reading
@@ -124,13 +127,15 @@ async function writeLockFile(
   retryCount = 0,
 ): Promise<void> {
   try {
-    await mkdir(LOCK_DIR, { recursive: true });
+    const lockDir = getLockDir();
+    const lockFilePath = getLockFile();
+    await mkdir(lockDir, { recursive: true });
 
-    const tempFile = `${LOCK_FILE}.tmp.${process.pid}`;
+    const tempFile = `${lockFilePath}.tmp.${process.pid}`;
     await writeFile(tempFile, JSON.stringify(lockFile, null, 2), 'utf8');
 
     // Atomic rename
-    await rename(tempFile, LOCK_FILE);
+    await rename(tempFile, lockFilePath);
   } catch (error) {
     if (retryCount < MAX_RETRIES) {
       // Exponential backoff retry

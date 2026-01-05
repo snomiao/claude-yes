@@ -1,7 +1,6 @@
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { mkdir, readFile, rm, writeFile } from 'fs/promises';
-import { homedir } from 'os';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -13,7 +12,10 @@ import {
   updateCurrentTaskStatus,
 } from './runningLock';
 
-const LOCK_DIR = path.join(homedir(), '.claude-yes');
+// Keep lock files inside the repo to avoid $HOME permission issues in CI
+process.env.CLAUDE_YES_HOME = path.join(process.cwd(), '.cache');
+
+const LOCK_DIR = path.join(process.env.CLAUDE_YES_HOME, '.claude-yes');
 const LOCK_FILE = path.join(LOCK_DIR, 'running.lock.json');
 const TEST_DIR = path.join(process.cwd(), '.cache', 'test-lock');
 
