@@ -120,7 +120,7 @@
     "semantic-release": "^24.2.6",
     "sflow": "^1.20.2",
     "strip-ansi-control-characters": "^2.0.0",
-    "terminal-render": "^1.2.0",
+    "terminal-render": "^1.2.2",
     "tsa-composer": "^3.0.3",
     "vitest": "^3.2.4",
     "yargs": "^18.0.0"
