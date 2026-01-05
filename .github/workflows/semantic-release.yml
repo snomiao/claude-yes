@@ -6,9 +6,6 @@ permissions:
   id-token: write
 jobs:
   semantic-release:
-    permissions:
-      contents: write
-      issues: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
