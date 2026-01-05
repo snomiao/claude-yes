@@ -4,6 +4,7 @@
     "": {
       "name": "main",
       "dependencies": {
+        "@snomiao/bun-pty": "^0.3.4",
         "bun": "^1.3.4",
         "bun-pty": "^0.4.2",
         "from-node-stream": "^0.1.2",
@@ -252,6 +253,8 @@
     "@sindresorhus/is": ["@sindresorhus/is@4.6.0", "", {}, "sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw=="],
 
     "@sindresorhus/merge-streams": ["@sindresorhus/merge-streams@4.0.0", "", {}, "sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ=="],
+
+    "@snomiao/bun-pty": ["@snomiao/bun-pty@0.3.4", "", {}, "sha512-7eVzv+fNQrELScC6vmza52rXAxfHJnPiUSi6k2i1C0NS/xCB4+baEfH4tdRaEpGNrsI2DP6rnppNXQu+6kUWFA=="],
 
     "@types/bun": ["@types/bun@1.2.18", "", { "dependencies": { "bun-types": "1.2.18" } }, "sha512-Xf6RaWVheyemaThV0kUfaAUvCNokFr+bH8Jxp+tTZfx7dAPA8z9ePnP9S9+Vspzuxxx9JRAXhnyccRj3GyCMdQ=="],
 
