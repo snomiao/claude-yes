@@ -5,7 +5,7 @@ import path, { dirname } from 'path';
 import DIE from 'phpdie';
 import sflow from 'sflow';
 import { TerminalTextRender } from 'terminal-render';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import rawConfig from '../cli-yes.config.js';
 import { catcher } from './catcher.js';
 import {
@@ -14,6 +14,7 @@ import {
   storeSessionForCwd,
 } from './codexSessionManager.js';
 import { IdleWaiter } from './idleWaiter';
+import pty, { ptyPackage } from './pty';
 import { ReadyManager } from './ReadyManager';
 import { removeControlCharacters } from './removeControlCharacters';
 import {
@@ -41,6 +42,7 @@ export type AgentCliConfig = {
   exitCommands?: string[]; // commands to exit the cli gracefully
 };
 export type CliYesConfig = {
+  configDir?: string; // directory to store cli-yes config files, e.g. session store
   clis: { [key: string]: AgentCliConfig };
 };
 
@@ -77,7 +79,7 @@ export const SUPPORTED_CLIS = Object.keys(CLIS_CONFIG) as SUPPORTED_CLIS[];
  *   cliArgs: ['--verbose'], // additional args to pass to agent-cli
  *   exitOnIdle: 30000, // exit after 30 seconds of idle
  *   robust: true, // auto restart with --continue if claude crashes, default is true
- *   logFile: 'claude.log', // save logs to file
+ *   logFile: 'claude-output.log', // save logs to file
  *   disableLock: false, // disable running lock (default is false)
  * });
  * ```
@@ -162,50 +164,27 @@ export default async function cliYes({
 
   process.stdin.setRawMode?.(true); // must be called any stdout/stdin usage
   let isFatal = false; // when true, do not restart on crash, and exit agent
+
   const stdinReady = new ReadyManager();
+
+  // force ready after 10s to avoid stuck forever if the ready-word mismatched
+  sleep(10e3).then(() => {
+    if (!stdinReady.isReady) stdinReady.ready();
+  });
   const nextStdout = new ReadyManager();
 
   const shellOutputStream = new TransformStream<string, string>();
   const outputWriter = shellOutputStream.writable.getWriter();
-  // const pty = await import('node-pty');
 
-  //
-  // if (globalThis.Bun) {
-  //   const entryPath = (fileURLToPath(import.meta.resolve('@snomiao/bun-pty'))); // path to bun-pty/dist/index.js
-  //   const pkgPath = path.resolve(entryPath, '..', '..'); // path to bun-pty package root
-  //   process.env.BUN_PTY_LIB = path.join(pkgPath, 'rust-pty', 'target', 'release', 'rust_pty.dll');
-  // }
-  const ptyPackage = globalThis.Bun ? 'bun-pty' : 'node-pty';
   console.log(`Using ${ptyPackage} for pseudo terminal management.`);
 
-  // its recommened to use bun-pty in windows, since node-pty is super complex to install there, requires a 10G M$ build tools
-  const pty = await (globalThis.Bun
-    ? import('@snomiao/bun-pty')
-    : // .catch((error) => {
-      //   if (!error.message.includes("librust_pty shared library not found.")) throw error
-      //   // error: librust_pty shared library not found.
-      //   // Checked:
-      //   //   - BUN_PTY_LIB=<unset>
-      //   //   - C:\Users\snomi\AppData\Local\Temp\bunx-4154515258-cli-yes@beta\node_modules\bun-pty\dist\index.js\rust-pty\target\release\rust_pty.dll
-      //   //   - C:\Users\snomi\AppData\Local\Temp\bunx-4154515258-cli-yes@beta\node_modules\bun-pty\dist\bun-pty\rust-pty\target\release\rust_pty.dll
-      //   //   - C:\Users\snomi\node_modules\bun-pty\rust-pty\target\release\rust_pty.dll
-
-      //   // solve this error by set process.env.BUN_PTY_LIB to
-      //   // bun-pty\rust-pty\target\release\rust_pty.dll
-      //   const entryPath = (fileURLToPath(import.meta.resolve('bun-pty'))); // path to bun-pty/dist/index.js
-      //   const pkgPath = path.resolve(entryPath, '..', '..'); // path to bun-pty package root
-      //   process.env.BUN_PTY_LIB = path.join(pkgPath, 'rust-pty', 'target', 'release', 'rust_pty.dll');
-      //   return import('bun-pty')
-      // })
-      import('node-pty')
-  ).catch(async (error) => {
-    // DIE('Please install node-pty or bun-pty, run this: bun install bun-pty')
-    console.error(error);
-    throw new Error(
-      'Please install node-pty or bun-pty, run this: bun install bun-pty',
-      { cause: error },
-    );
-  });
+  const datetime = new Date().toISOString().replace(/\D/g, '').slice(0, 17);
+  const logPath =
+    config.configDir &&
+    path.resolve(config.configDir, 'logs', `${cli}-yes-${datetime}.log`);
+  const rawLogPath =
+    config.configDir &&
+    path.resolve(config.configDir, 'logs', `${cli}-yes-${datetime}.raw.log`);
 
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;
@@ -303,7 +282,7 @@ export default async function cliYes({
 
   // Handle --continue flag for codex session restoration
   if (resume) {
-    if (cli === 'codex') {
+    if (cli === 'codex' && resume) {
       // Try to get stored session for this directory
       const storedSessionId = await getSessionForCwd(workingDir);
       if (storedSessionId) {
@@ -399,7 +378,7 @@ export default async function cliYes({
         console.error(
           `Detected bun-pty issue, attempted to fix it. Please try again.`,
         );
-        require('./fix-pty');
+        require('./pty-fix');
         // unable to retry with same process, so exit here.
       }
       throw error;
@@ -479,9 +458,9 @@ export default async function cliYes({
       .replace(/\s+/g, ' ')
       .match(/esc to interrupt|to run in background/);
 
-  const idleWaiter = new IdleWaiter();
+  const exitIdleWaiter = new IdleWaiter();
   if (exitOnIdle)
-    idleWaiter.wait(exitOnIdle).then(async () => {
+    exitIdleWaiter.wait(exitOnIdle).then(async () => {
       if (isStillWorkingQ()) {
         console.log(
           '[${cli}-yes] ${cli} is idle, but seems still working, not exiting yet',
@@ -513,12 +492,37 @@ export default async function cliYes({
       }),
       readable: shellOutputStream.readable,
     })
-    .forEach(() => idleWaiter.ping())
+    .forEach(() => exitIdleWaiter.ping())
     .forEach(() => nextStdout.ready())
-    .forEach(async (text) => {
+
+    .forkTo((e) =>
+      e
+        .forEach(async (chars) => {
+          // write raw logs ~/.claude-yes/logs-raw/YYYY-MM-DD/HHMMSSmmm-[cli]-yes.log
+          if (rawLogPath) {
+            //including control characters, for debug
+            await writeFile(rawLogPath, chars, { flag: 'a' }).catch(() => null);
+          }
+        })
+        .run(),
+    )
+    // handle cursor position requests and render terminal output
+    .forEach((text) => {
+      // render terminal output for log file
       terminalRender.write(text);
+
+      // Handle Device Attributes query (DA) - ESC[c or ESC[0c
+      // This must be handled regardless of TTY status
+      if (text.includes('\u001b[c') || text.includes('\u001b[0c')) {
+        // Respond with VT100 with Advanced Video Option
+        shell.write('\u001b[?1;2c');
+        yesLog`device|respond DA: VT100 with Advanced Video Option`;
+        return;
+      }
+
       // todo: .onStatus((msg)=> shell.write(msg))
       if (process.stdin.isTTY) return; // only handle it when stdin is not tty
+
       if (!text.includes('\u001b[6n')) return; // only asked for cursor position
       // todo: use terminalRender API to get cursor position when new version is available
       // xterm replies CSI row; column R if asked cursor position
@@ -527,7 +531,7 @@ export default async function cliYes({
       // const rendered = terminalRender.render();
       const { col, row } = terminalRender.getCursorPosition();
       shell.write(`\u001b[${row};${col}R`); // reply cli when getting cursor position
-      await yesLog`cursor|respond position: row=${String(row)}, col=${String(col)}`;
+      yesLog`cursor|respond position: row=${String(row)}, col=${String(col)}`;
       // const row = rendered.split('\n').length + 1;
       // const col = (rendered.split('\n').slice(-1)[0]?.length || 0) + 1;
     })
@@ -597,6 +601,12 @@ export default async function cliYes({
     await releaseLock().catch(() => null);
   }
 
+  if (logPath) {
+    await writeFile(logPath, terminalRender.render()).catch(() => null);
+    console.log(`[${cli}-yes] Logs saved to ${logPath}`);
+  }
+
+  // deprecated logFile option, we have logPath now, but keep for backward compatibility
   if (logFile) {
     verbose && console.log(`[${cli}-yes] Writing rendered logs to ${logFile}`);
     const logFilePath = path.resolve(logFile);
@@ -611,7 +621,7 @@ export default async function cliYes({
   async function sendEnter(waitms = 1000) {
     // wait for idle for a bit to let agent cli finish rendering
     const st = Date.now();
-    await idleWaiter.wait(waitms);
+    await exitIdleWaiter.wait(waitms);
     const et = Date.now();
     // process.stdout.write(`\ridleWaiter.wait(${waitms}) took ${et - st}ms\r`);
     await yesLog`sendEn| idleWaiter.wait(${String(waitms)}) took ${String(et - st)}ms`;
@@ -637,7 +647,7 @@ export default async function cliYes({
     yesLog`send  |${message}`;
     nextStdout.unready();
     shell.write(message);
-    idleWaiter.ping(); // just sent a message, wait for echo
+    exitIdleWaiter.ping(); // just sent a message, wait for echo
     yesLog`waiting next stdout|${message}`;
     await nextStdout.wait();
     yesLog`sending enter`;
@@ -676,4 +686,8 @@ export default async function cliYes({
       rows: process.stdout.rows,
     };
   }
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

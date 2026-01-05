@@ -1,5 +1,5 @@
 export class ReadyManager {
-  private isReady = false;
+  isReady = false;
   private readyQueue: (() => void)[] = [];
   wait() {
     if (this.isReady) return;

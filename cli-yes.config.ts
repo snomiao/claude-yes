@@ -1,8 +1,15 @@
+import path from 'node:path';
 import { defineCliYesConfig } from './ts/defineConfig';
 
 process.env.VERBOSE &&
   console.log('loading cli-yes.config.ts from ' + import.meta.url);
+
+// Default to a workspace-local config directory so it works in sandboxed envs
+const configBase = process.env.CLAUDE_YES_HOME || process.cwd();
+const configDir = path.resolve(configBase, '.claude-yes');
+
 export default defineCliYesConfig({
+  configDir,
   clis: {
     qwen: {
       install: 'npm install -g @qwen-code/qwen-code@latest',
@@ -40,8 +47,12 @@ export default defineCliYesConfig({
       promptArg: 'first-arg',
       install: 'npm install -g @openai/codex@latest',
       updateAvailable: [/^✨⬆️ Update available!/],
-      ready: [/⏎ send/],
+      ready: [
+        /⏎ send/, // legacy
+        /\? for shortcuts/, // 2026-01-05 update
+      ],
       enter: [
+        /> 1. Yes,/,
         /> 1. Yes, allow Codex to work in this folder/,
         /> 1. Approve and run now/,
       ],

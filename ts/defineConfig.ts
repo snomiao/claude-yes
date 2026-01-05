@@ -6,7 +6,7 @@ export async function defineCliYesConfig<T extends CliYesConfig>(
 ) {
   if (typeof cfg === 'function') cfg = await cfg({ clis: {} } as T);
 
-  return cfg as unknown as {
+  return cfg as unknown as Omit<CliYesConfig, 'clis'> & {
     clis: Record<string, AgentCliConfig>;
   };
 }

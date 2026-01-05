@@ -60,13 +60,19 @@ export function parseCliArgs(argv: string[]) {
     })
     .option('idle', {
       type: 'string',
-      description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
+      description:
+        'short idle time, will perform idle action when reached, e.g., "5s" or "1m"',
       alias: 'i',
+    })
+    .option('idle-action', {
+      type: 'string',
+      description:
+        'Idle action to perform when idle time is reached, e.g., "exit" or "TODO.md"',
     })
     .option('queue', {
       type: 'boolean',
       description:
-        'Queue Agent when spawning multiple agents in the same directory/repo, can be disabled with --no-queue',
+        'Queue Agent Commands when spawning multiple agents in the same directory/repo, can be disabled with --no-queue',
       default: false,
     })
     .option('install', {
@@ -76,7 +82,8 @@ export function parseCliArgs(argv: string[]) {
     })
     .option('continue', {
       type: 'boolean',
-      description: 'Resume previous session in current cwd if any',
+      description:
+        'Resume previous session in current cwd if any, note: will exit if no previous session found',
       default: false,
       alias: 'c',
     })
@@ -118,6 +125,7 @@ export function parseCliArgs(argv: string[]) {
       if (key === 'robust') yargsConsumed.add('-r');
       if (key === 'idle') yargsConsumed.add('-i');
       if (key === 'exitOnIdle') yargsConsumed.add('-e');
+      if (key === 'continue') yargsConsumed.add('-c');
     }
   });
 
