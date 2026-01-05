@@ -1,5 +1,9 @@
 on:
   push:
+permissions:
+  contents: write
+  issues: write
+  id-token: write
 jobs:
   semantic-release:
     permissions:
@@ -19,4 +23,4 @@ jobs:
           # here: REPO_URL/settings/actions
           # for publishing to GitHub releases
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
