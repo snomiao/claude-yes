@@ -33,7 +33,10 @@ export default defineCliYesConfig({
       // match the agent prompt after initial lines; handled by index logic using line index
       ready: [/Type your message/], // used with line index check
       enter: [/│ ● 1. Yes, allow once/, /│ ● 1. Allow once/],
-      fatal: [],
+      fatal: [
+        /Error resuming session/,
+        /No previous sessions found for this project./,
+      ],
       exitCommand: ['/chat save ${PWD}', '/quit'],
     },
     codex: {
