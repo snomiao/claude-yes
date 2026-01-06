@@ -496,17 +496,18 @@ export default async function cliYes({
     .forEach(() => exitIdleWaiter.ping())
     .forEach(() => nextStdout.ready())
 
-    .forkTo((e) =>
-      e
+    .forkTo(async (e) => {
+      if (!rawLogPath) return e.run(); // nil
+      console.log('[cli]-yes logging raw output to', rawLogPath);
+      return e
         .forEach(async (chars) => {
           // write raw logs ~/.claude-yes/logs-raw/YYYY-MM-DD/HHMMSSmmm-[cli]-yes.log
-          if (rawLogPath) {
-            //including control characters, for debug
-            await writeFile(rawLogPath, chars, { flag: 'a' }).catch(() => null);
-          }
+          //including control characters, for debug
+          await writeFile(rawLogPath, chars, { flag: 'a' }).catch(() => null);
         })
-        .run(),
-    )
+        .run();
+    })
+
     // handle cursor position requests and render terminal output
     .forEach((text) => {
       // render terminal output for log file
@@ -604,7 +605,7 @@ export default async function cliYes({
 
   if (logPath) {
     await writeFile(logPath, terminalRender.render()).catch(() => null);
-    console.log(`[${cli}-yes] Logs saved to ${logPath}`);
+    console.log(`[${cli}-yes] Full logs saved to ${logPath}`);
   }
 
   // deprecated logFile option, we have logPath now, but keep for backward compatibility
