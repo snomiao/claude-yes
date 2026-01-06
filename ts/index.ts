@@ -498,7 +498,10 @@ export default async function cliYes({
 
     .forkTo(async (e) => {
       if (!rawLogPath) return e.run(); // nil
-      console.log('[cli]-yes logging raw output to', rawLogPath);
+      console.log(`[${cli}-yes] raw logs streaming to ${rawLogPath}`);
+      await mkdir(path.dirname(rawLogPath), { recursive: true }).catch(
+        () => null,
+      );
       return e
         .forEach(async (chars) => {
           // write raw logs ~/.claude-yes/logs-raw/YYYY-MM-DD/HHMMSSmmm-[cli]-yes.log
@@ -604,6 +607,7 @@ export default async function cliYes({
   }
 
   if (logPath) {
+    await mkdir(path.dirname(logPath), { recursive: true }).catch(() => null);
     await writeFile(logPath, terminalRender.render()).catch(() => null);
     console.log(`[${cli}-yes] Full logs saved to ${logPath}`);
   }
