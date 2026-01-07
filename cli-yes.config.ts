@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { exists } from 'node:fs/promises';
 import path from 'node:path';
 import { defineCliYesConfig } from './ts/defineConfig';
 
@@ -8,8 +10,20 @@ process.env.VERBOSE &&
 const configBase = process.env.CLAUDE_YES_HOME || process.cwd();
 const configDir = path.resolve(configBase, '.claude-yes');
 
+const logsDir = await (async () => {
+  // if ./node_modules/ exists, then use ./node_modules/.claude-yes/logs
+  // otherwise use ${configDir}/logs
+  const nmDir = path.resolve(configBase, 'node_modules');
+  if (existsSync(nmDir)) {
+    return path.resolve(nmDir, '.claude-yes', 'logs');
+  } else {
+    return path.resolve(configDir, 'logs');
+  }
+})();
+
 export default defineCliYesConfig({
   configDir,
+  logsDir,
   clis: {
     qwen: {
       install: 'npm install -g @qwen-code/qwen-code@latest',
@@ -65,7 +79,7 @@ export default defineCliYesConfig({
       noEOL: true, // codex use cursor moving instead of EOL when rendering output
     },
     copilot: {
-      promptArg: '--prompt',
+      // promptArg: '--prompt', // use stdin to prompt or it will reject all bash commands
       install: 'npm install -g @github/copilot',
       ready: [/^ +> /, /Ctrl\+c Exit/],
       enter: [/ │ ❯ +1. Yes, proceed/, /❯ +1. Yes/],

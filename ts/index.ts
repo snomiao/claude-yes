@@ -43,6 +43,7 @@ export type AgentCliConfig = {
 };
 export type CliYesConfig = {
   configDir?: string; // directory to store cli-yes config files, e.g. session store
+  logsDir?: string; // directory to store cli-yes log files
   clis: { [key: string]: AgentCliConfig };
 };
 
@@ -180,11 +181,11 @@ export default async function cliYes({
 
   const datetime = new Date().toISOString().replace(/\D/g, '').slice(0, 17);
   const logPath =
-    config.configDir &&
-    path.resolve(config.configDir, 'logs', `${cli}-yes-${datetime}.log`);
+    config.logsDir &&
+    path.resolve(config.logsDir, `${cli}-yes-${datetime}.log`);
   const rawLogPath =
-    config.configDir &&
-    path.resolve(config.configDir, 'logs', `${cli}-yes-${datetime}.raw.log`);
+    config.logsDir &&
+    path.resolve(config.logsDir, `${cli}-yes-${datetime}.raw.log`);
 
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;
