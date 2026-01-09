@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import DIE from 'phpdie';
 import { argv } from 'process';
-import cliYesConfig from '../cli-yes.config';
+import cliYesConfig from '../agent-yes.config';
 
 // Import the CLI module
 const { default: cliYes, parseCliArgs } = await import('./');

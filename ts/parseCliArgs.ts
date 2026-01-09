@@ -12,14 +12,16 @@ export function parseCliArgs(argv: string[]) {
   // Detect cli name from script name (same logic as cli.ts:10-14)
   const scriptName = argv[1]?.split(/[\/\\]/).pop();
   const cliName = ((e?: string) => {
-    if (e === 'cli' || e === 'cli.ts' || e === 'cli.js' || e === 'cli-yes')
+    if (e === 'cli' || e === 'cli.ts' || e === 'cli.js' || e === 'agent-yes')
       return undefined;
     return e?.replace(/-yes(\.[jt]s)?$/, '');
   })(scriptName);
 
   // Parse args with yargs (same logic as cli.ts:16-73)
   const parsedArgv = yargs(hideBin(argv))
-    .usage('Usage: $0 [cli] [cli-yes args] [agent-cli args] [--] [prompts...]')
+    .usage(
+      'Usage: $0 [cli] [agent-yes args] [agent-cli args] [--] [prompts...]',
+    )
     .example(
       '$0 claude --idle=30s -- solve all todos in my codebase, commit one by one',
       'Run Claude with a 30 seconds idle timeout, and the prompt is everything after `--`',

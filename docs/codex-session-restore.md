@@ -6,7 +6,7 @@ This feature enables per-directory session tracking for Codex, allowing you to r
 
 1. **Session Capture**: When running codex, claude-yes automatically captures session IDs from the output and stores them mapped to the current working directory.
 
-2. **Storage**: Session IDs are stored in `~/.config/cli-yes/codex-sessions.json` with the format:
+2. **Storage**: Session IDs are stored in `~/.config/agent-yes/codex-sessions.json` with the format:
    ```json
    {
      "/path/to/project1": {

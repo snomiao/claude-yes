@@ -8,7 +8,7 @@ import sflow from 'sflow';
 import { TerminalTextRender } from 'terminal-render';
 import { fileURLToPath, pathToFileURL } from 'url';
 import winston from 'winston';
-import rawConfig from '../cli-yes.config.js';
+import rawConfig from '../agent-yes.config.js';
 import { catcher } from './catcher.js';
 import {
   extractSessionId,
@@ -45,12 +45,12 @@ export type AgentCliConfig = {
   exitCommands?: string[]; // commands to exit the cli gracefully
 };
 export type CliYesConfig = {
-  configDir?: string; // directory to store cli-yes config files, e.g. session store
-  logsDir?: string; // directory to store cli-yes log files
+  configDir?: string; // directory to store agent-yes config files, e.g. session store
+  logsDir?: string; // directory to store agent-yes log files
   clis: { [key: string]: AgentCliConfig };
 };
 
-// load user config from cli-yes.config.ts if exists
+// load user config from agent-yes.config.ts if exists
 export const config = await rawConfig;
 
 export const CLIS_CONFIG = config.clis as Record<
@@ -101,7 +101,7 @@ function createFifoStream(
     const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 17);
     const randomSuffix = Math.random().toString(36).substring(2, 5);
 
-    fifoPath = `/tmp/cli-yes-${timestamp}${randomSuffix}.stdin`;
+    fifoPath = `/tmp/agent-yes-${timestamp}${randomSuffix}.stdin`;
     mkdirSync(dirname(fifoPath), { recursive: true });
 
     // Create the named pipe using mkfifo
@@ -214,7 +214,7 @@ function createFifoStream(
  *
  * @example
  * ```typescript
- * import cliYes from 'cli-yes';
+ * import cliYes from 'agent-yes';
  * await cliYes({
  *   prompt: 'help me solve all todos in my codebase',
  *
@@ -260,7 +260,7 @@ export default async function cliYes({
 }) {
   // those overrides seems only works in bun
   // await Promise.allSettled([
-  //   import(path.join(process.cwd(), "cli-yes.config")),
+  //   import(path.join(process.cwd(), "agent-yes.config")),
   // ])
   //   .then((e) => e.flatMap((e) => (e.status === "fulfilled" ? [e.value] : [])))
   //   .then(e=>e.at(0))
@@ -268,7 +268,7 @@ export default async function cliYes({
   //   .then(async (override) => deepMixin(config, override || {}))
   //   .catch((error) => {
   //     if (process.env.VERBOSE)
-  //       console.warn("Fail to load cli-yes.config.ts", error);
+  //       console.warn("Fail to load agent-yes.config.ts", error);
   //   });
 
   if (!cli) throw new Error(`cli is required`);
@@ -655,7 +655,7 @@ export default async function cliYes({
         buffer.toString(),
       ),
     )
-    // read from FIFO if available, e.g. /tmp/cli-yes-*.stdin, which can be used to send additional input from other processes
+    // read from FIFO if available, e.g. /tmp/agent-yes-*.stdin, which can be used to send additional input from other processes
     .by((stream) => {
       return fifoResult ? stream.merge(fifoResult.stream) : stream;
     })

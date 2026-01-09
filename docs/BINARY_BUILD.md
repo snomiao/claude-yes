@@ -13,7 +13,7 @@ bunj run build:binary
 ```
 
 This will create binaries in `dist/bin/`:
-- `cli-yes` (main binary)
+- `agent-yes` (main binary)
 - `claude-yes` (symlink/copy)
 - `codex-yes` (symlink/copy)
 - `copilot-yes` (symlink/copy)

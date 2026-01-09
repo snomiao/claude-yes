@@ -24,7 +24,8 @@ for (const platform of platforms) {
     console.log(`\nBuilding for ${targetTriple}...`);
 
     // Build main CLI binary
-    const cliOutputName = platform === 'windows' ? 'cli-yes.exe' : 'cli-yes';
+    const cliOutputName =
+      platform === 'windows' ? 'agent-yes.exe' : 'agent-yes';
     const cliOutputPath = path.join(
       binariesDir,
       `${targetTriple}`,
@@ -56,7 +57,7 @@ for (const platform of platforms) {
           );
         } else {
           // Create a wrapper script that calls the main binary
-          const wrapperScript = `#!/bin/sh\nexec "$(dirname "$0")/cli-yes" "$@"\n`;
+          const wrapperScript = `#!/bin/sh\nexec "$(dirname "$0")/agent-yes" "$@"\n`;
           await Bun.write(variantPath, wrapperScript);
           await execaCommand(`chmod +x ${variantPath}`);
         }

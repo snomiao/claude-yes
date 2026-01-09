@@ -15,7 +15,7 @@ import {
 // Create a temporary test directory
 const testDir = join(tmpdir(), 'claude-yes-test-' + Date.now());
 const testCodexDir = join(testDir, '.codex', 'sessions');
-const testConfigDir = join(testDir, '.config', 'cli-yes');
+const testConfigDir = join(testDir, '.config', 'agent-yes');
 
 // Store original environment
 const originalTestHome = process.env.CLI_YES_TEST_HOME;

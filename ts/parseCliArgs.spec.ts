@@ -154,7 +154,7 @@ describe('CLI argument parsing', () => {
     expect(result.cliArgs).toContain('value');
   });
 
-  it('should separate cli-yes args from cli args before --', () => {
+  it('should separate agent-yes args from cli args before --', () => {
     const result = parseCliArgs([
       'node',
       '/path/to/cli',
@@ -231,10 +231,10 @@ describe('CLI argument parsing', () => {
     expect(result.cliArgs).toContain('--another-flag');
   });
 
-  it('should parse bunx cli-yes command with verbose and dash prompt', () => {
+  it('should parse bunx agent-yes command with verbose and dash prompt', () => {
     const result = parseCliArgs([
-      '/tmp/bunx-0-cli-yes@beta/node_modules/bun/bin/bun.exe',
-      '/tmp/bunx-0-cli-yes@beta/node_modules/cli-yes/dist/cli.js',
+      '/tmp/bunx-0-agent-yes@beta/node_modules/bun/bin/bun.exe',
+      '/tmp/bunx-0-agent-yes@beta/node_modules/agent-yes/dist/cli.js',
       '--verbose',
       'claude',
       '--',
@@ -252,10 +252,10 @@ describe('CLI argument parsing', () => {
     expect(result.prompt).toBe('lets fix signin page, setup shadcn');
   });
 
-  it('should parse bunx cli-yes command with verbose and dash prompt', () => {
+  it('should parse bunx agent-yes command with verbose and dash prompt', () => {
     const result = parseCliArgs([
-      '/tmp/bunx-0-cli-yes@beta/node_modules/bun/bin/bun.exe',
-      '/tmp/bunx-0-cli-yes@beta/node_modules/cli-yes/dist/claude-yes.js',
+      '/tmp/bunx-0-agent-yes@beta/node_modules/bun/bin/bun.exe',
+      '/tmp/bunx-0-agent-yes@beta/node_modules/agent-yes/dist/claude-yes.js',
       '--',
       'lets',
       'fix',

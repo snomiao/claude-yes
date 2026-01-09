@@ -19,7 +19,7 @@ const arch = process.arch;
 console.log(`Platform: ${platform}-${arch}`);
 
 // Build main CLI binary
-const outputName = platform === 'win32' ? 'cli-yes.exe' : 'cli-yes';
+const outputName = platform === 'win32' ? 'agent-yes.exe' : 'agent-yes';
 const outputPath = path.join(binariesDir, outputName);
 
 try {

@@ -12,7 +12,7 @@ A wrapper tool that automates interactions with various AI CLI tools by automati
 - **Interactive Control**: You can still queue more prompts or cancel executing tasks with `ESC` or `Ctrl+C`
 - **Crash Recovery**: Automatically restarts crashed processes (where supported)
 - **Idle Detection**: Optional auto-exit when the AI becomes idle
-- **Named Pipe Input (Linux)**: On Linux systems, automatically creates a FIFO (named pipe) at `/tmp/cli-yes-YYYYMMDDHHMMSSXXX.stdin` for additional input streams
+- **Named Pipe Input (Linux)**: On Linux systems, automatically creates a FIFO (named pipe) at `/tmp/agent-yes-YYYYMMDDHHMMSSXXX.stdin` for additional input streams
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ Learn more: https://github.com/vibe-kit/grok-cli
 Then install this project:
 
 ```bash
-npm install cli-yes -g
+npm install agent-yes -g
 ```
 
 ## Usage
@@ -248,10 +248,10 @@ The tool will:
 
 ### Named Pipe Input (Linux Only)
 
-On Linux systems, `cli-yes` automatically creates a named pipe (FIFO) for additional input streams. This allows you to send input to the CLI from multiple sources simultaneously.
+On Linux systems, `agent-yes` automatically creates a named pipe (FIFO) for additional input streams. This allows you to send input to the CLI from multiple sources simultaneously.
 
 **How it works:**
-- When started on Linux, a FIFO is created at `/tmp/cli-yes-YYYYMMDDHHMMSSXXX.stdin`
+- When started on Linux, a FIFO is created at `/tmp/agent-yes-YYYYMMDDHHMMSSXXX.stdin`
 - The FIFO path is displayed in the console output
 - You can write to this FIFO from another terminal or script
 - Input from both the FIFO and standard stdin are merged together
@@ -260,10 +260,10 @@ On Linux systems, `cli-yes` automatically creates a named pipe (FIFO) for additi
 ```bash
 # Terminal 1: Start the CLI
 claude-yes "help me with my code"
-# Output will show: [claude-yes] Created FIFO at /tmp/cli-yes-20260109123456abc.stdin
+# Output will show: [claude-yes] Created FIFO at /tmp/agent-yes-20260109123456abc.stdin
 
 # Terminal 2: Send additional input via the FIFO
-echo "also check the tests" > /tmp/cli-yes-20260109123456abc.stdin
+echo "also check the tests" > /tmp/agent-yes-20260109123456abc.stdin
 ```
 
 This feature is useful for:

@@ -10,7 +10,7 @@ echo "Released version: $VERSION"
 echo "Waiting for package to be available on npm..."
 for i in {1..10}; do
   sleep 3
-  echo "Attempt $i/10: Checking if cli-yes@$VERSION is available..."
+  echo "Attempt $i/10: Checking if agent-yes@$VERSION is available..."
   if npm view cli-yes@$VERSION version >/dev/null 2>&1; then
     echo "Package is now available!"
     break

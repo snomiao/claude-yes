@@ -4,7 +4,7 @@ A skill for automating AI CLI tool interactions by handling common prompts and m
 
 ## Description
 
-This skill helps you work with the `cli-yes` wrapper tool, which automates interactions with various AI CLI tools (Claude, Gemini, Codex, Copilot, Cursor, Grok, Qwen) by automatically responding to common prompts and keeping the tools running continuously.
+This skill helps you work with the `agent-yes` wrapper tool, which automates interactions with various AI CLI tools (Claude, Gemini, Codex, Copilot, Cursor, Grok, Qwen) by automatically responding to common prompts and keeping the tools running continuously.
 
 ## When to Use This Skill
 
@@ -39,25 +39,25 @@ Works with multiple AI coding assistants:
 
 ```bash
 # Use Claude (default)
-cli-yes claude -- run all tests and commit current changes
-bunx cli-yes claude "Solve TODO.md"
+agent-yes claude -- run all tests and commit current changes
+bunx agent-yes claude "Solve TODO.md"
 
 # Use other AI tools
-cli-yes codex -- refactor this function
-cli-yes grok -- help me with this code
-cli-yes copilot -- generate unit tests
-cli-yes cursor -- optimize performance
-cli-yes gemini -- debug this code
-cli-yes qwen -- implement new feature
+agent-yes codex -- refactor this function
+agent-yes grok -- help me with this code
+agent-yes copilot -- generate unit tests
+agent-yes cursor -- optimize performance
+agent-yes gemini -- debug this code
+agent-yes qwen -- implement new feature
 
 # Auto-exit when idle (for automation)
-cli-yes claude --exit-on-idle=60s "run all tests and commit current changes"
+agent-yes claude --exit-on-idle=60s "run all tests and commit current changes"
 ```
 
 ### Library Usage in Node.js
 
 ```typescript
-import cliYes from 'cli-yes';
+import cliYes from 'agent-yes';
 
 // Use Claude
 await cliYes({
@@ -104,7 +104,7 @@ Uses `node-pty` or `bun-pty` to manage AI CLI processes with:
 
 ```bash
 # Install the wrapper tool globally
-npm install cli-yes -g
+npm install agent-yes -g
 
 # Install your preferred AI CLI
 npm install -g @anthropic-ai/claude-code  # Claude

@@ -8,10 +8,10 @@ export const getSessionsFile = () =>
     ? path.join(
         process.env.CLI_YES_TEST_HOME,
         '.config',
-        'cli-yes',
+        'agent-yes',
         'codex-sessions.json',
       )
-    : path.join(homedir(), '.config', 'cli-yes', 'codex-sessions.json');
+    : path.join(homedir(), '.config', 'agent-yes', 'codex-sessions.json');
 
 export const getCodexSessionsDir = () =>
   process.env.CLI_YES_TEST_HOME
