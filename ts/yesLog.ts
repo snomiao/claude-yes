@@ -1,13 +1,29 @@
 import { appendFileSync, rmSync } from 'node:fs';
 import tsaComposer from 'tsa-composer';
+import winston from 'winston';
 import { catcher } from './catcher';
 
-let initial = true;
+// Create a dedicated logger for yesLog
+const yesLogger = winston.createLogger({
+  level: 'debug',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.printf(({ timestamp, message }) => {
+      return `${timestamp} ${message}`;
+    }),
+  ),
+  transports: [
+    new winston.transports.File({
+      filename: './agent-yes.log',
+      options: { flags: 'a' }, // append mode
+    }),
+  ],
+  silent: !process.env.VERBOSE,
+});
 
 /**
- * Log messages to agent-yes.log file
+ * Log messages to agent-yes.log file using Winston
  * Each message is appended as a new line
- * The log file is cleared on the first call
  *
  * use only for debug, enabled when process.env.VERBOSE is set
  */
@@ -17,11 +33,8 @@ export const yesLog = tsaComposer()(
       console.error('yesLog error:', error);
     },
     function yesLog(msg: string) {
-      // process.stdout.write(`${msg}\r`); // touch process to avoid "The process is not running a TTY." error
       if (!process.env.VERBOSE) return; // no-op if not verbose
-      if (initial) rmSync('./agent-yes.log', { force: true }); // ignore error if file doesn't exist
-      initial = false;
-      appendFileSync('./agent-yes.log', `${msg}\n`);
+      yesLogger.debug(msg);
     },
   ),
 );

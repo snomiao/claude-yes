@@ -43,7 +43,8 @@
     "cursor-yes": "dist/cursor-yes.js",
     "gemini-yes": "dist/gemini-yes.js",
     "grok-yes": "dist/grok-yes.js",
-    "qwen-yes": "dist/qwen-yes.js"
+    "qwen-yes": "dist/qwen-yes.js",
+    "auggie-yes": "dist/auggie-yes.js"
   },
   "directories": {
     "doc": "docs"
@@ -97,7 +98,8 @@
     "@snomiao/bun-pty": "^0.3.4",
     "bun": "^1.3.4",
     "bun-pty": "^0.4.2",
-    "from-node-stream": "^0.1.2"
+    "from-node-stream": "^0.1.2",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",
@@ -108,7 +110,7 @@
     "@types/bun": "^1.2.18",
     "@types/jest": "^30.0.0",
     "@types/ms": "^2.1.0",
-    "@types/node": "^24.0.10",
+    "@types/node": "^25.0.3",
     "@types/yargs": "^17.0.33",
     "cpu-wait": "^0.0.10",
     "execa": "^9.6.0",

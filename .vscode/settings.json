@@ -2,5 +2,8 @@
   "editor.defaultFormatter": "biomejs.biome",
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   }
 }

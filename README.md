@@ -12,6 +12,7 @@ A wrapper tool that automates interactions with various AI CLI tools by automati
 - **Interactive Control**: You can still queue more prompts or cancel executing tasks with `ESC` or `Ctrl+C`
 - **Crash Recovery**: Automatically restarts crashed processes (where supported)
 - **Idle Detection**: Optional auto-exit when the AI becomes idle
+- **Named Pipe Input (Linux)**: On Linux systems, automatically creates a FIFO (named pipe) at `/tmp/cli-yes-YYYYMMDDHHMMSSXXX.stdin` for additional input streams
 
 ## Prerequisites
 
@@ -242,6 +243,33 @@ The tool will:
 - `--cli=<tool>`: Specify which AI CLI tool to use (claude, gemini, codex, copilot, cursor). Defaults to `claude`.
 - `--exit-on-idle=<seconds>`: Automatically exit when the AI tool becomes idle for the specified duration. Useful for automation scripts.
 - `--use-skills`: Automatically discover and prepend SKILL.md headers from the directory hierarchy (walks from current directory up to git root). Multiple SKILL.md files are merged with most specific first. Particularly useful to bring Claude Skills-like context to non-Claude agents such as Codex or Gemini. Supports nested skills for monorepos.
+
+## Advanced Features
+
+### Named Pipe Input (Linux Only)
+
+On Linux systems, `cli-yes` automatically creates a named pipe (FIFO) for additional input streams. This allows you to send input to the CLI from multiple sources simultaneously.
+
+**How it works:**
+- When started on Linux, a FIFO is created at `/tmp/cli-yes-YYYYMMDDHHMMSSXXX.stdin`
+- The FIFO path is displayed in the console output
+- You can write to this FIFO from another terminal or script
+- Input from both the FIFO and standard stdin are merged together
+
+**Example usage:**
+```bash
+# Terminal 1: Start the CLI
+claude-yes "help me with my code"
+# Output will show: [claude-yes] Created FIFO at /tmp/cli-yes-20260109123456abc.stdin
+
+# Terminal 2: Send additional input via the FIFO
+echo "also check the tests" > /tmp/cli-yes-20260109123456abc.stdin
+```
+
+This feature is useful for:
+- Scripting complex interactions
+- Sending input from multiple sources
+- Integrating with other tools and automation systems
 
 ## Library Usage
 
