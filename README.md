@@ -1,4 +1,4 @@
-# Cli Yes! Claude/Gemini/Cursor/Copilot/Qwen
+# Agent-Yes! for Claude/Codex/Gemini/Cursor/Copilot/Qwen/Auggie
 
 A wrapper tool that automates interactions with various AI CLI tools by automatically handling common prompts and responses. Originally designed for Claude CLI, now supports multiple AI coding assistants.
 
@@ -62,6 +62,14 @@ npm install -g @vibe-kit/grok-cli
 
 Learn more: https://github.com/vibe-kit/grok-cli
 
+### Auggie
+
+```bash
+npm install -g @augmentcode-inc/auggie-cli
+```
+
+Learn more: https://www.augmentcode.com/
+
 Then install this project:
 
 ```bash
@@ -103,6 +111,9 @@ cursor-yes -- optimize performance
 # Use Gemini directly
 gemini-yes -- debug this code
 
+# Use Auggie directly
+auggie-yes -- analyze code patterns
+
 claude-yes "help me with this code"
 claude-yes "optimize performance"
 ```
@@ -121,15 +132,16 @@ claude-code-execute claude-yes "your task here"
 
 ### Supported CLI Tools
 
-| Tool    | CLI Name  | Description                       | Installation/Update                               |
-| ------- | --------- | --------------------------------- | ------------------------------------------------- |
-| Claude  | `claude`  | Anthropic's Claude Code (default) | `npm install -g @anthropic-ai/claude-code@latest` |
-| Gemini  | `gemini`  | Google's Gemini CLI               | `npm install -g @google/gemini-cli@latest`        |
-| Codex   | `codex`   | OpenAI's Codex CLI                | `npm install -g @openai/codex-cli@latest`         |
-| Copilot | `copilot` | GitHub Copilot CLI                | `npm install -g @github/copilot@latest`           |
-| Cursor  | `cursor`  | Cursor agent CLI                  | See https://cursor.com/ja/docs/cli/installation   |
-| Grok    | `grok`    | Vibe Kit's Grok CLI               | `npm install -g @vibe-kit/grok-cli@latest`        |
-| Qwen    | `qwen`    | Alibaba's Qwen Code CLI           | `npm install -g @qwen-code/qwen-code@latest`      |
+| Tool    | CLI Name  | Description                       | Installation/Update                                  |
+| ------- | --------- | --------------------------------- | ---------------------------------------------------- |
+| Claude  | `claude`  | Anthropic's Claude Code (default) | `npm install -g @anthropic-ai/claude-code@latest`    |
+| Gemini  | `gemini`  | Google's Gemini CLI               | `npm install -g @google/gemini-cli@latest`           |
+| Codex   | `codex`   | OpenAI's Codex CLI                | `npm install -g @openai/codex-cli@latest`            |
+| Copilot | `copilot` | GitHub Copilot CLI                | `npm install -g @github/copilot@latest`              |
+| Cursor  | `cursor`  | Cursor agent CLI                  | See https://cursor.com/ja/docs/cli/installation      |
+| Grok    | `grok`    | Vibe Kit's Grok CLI               | `npm install -g @vibe-kit/grok-cli@latest`           |
+| Qwen    | `qwen`    | Alibaba's Qwen Code CLI           | `npm install -g @qwen-code/qwen-code@latest`         |
+| Auggie  | `auggie`  | Augment Code's Auggie CLI         | `npm install -g @augmentcode-inc/auggie-cli@latest`  |
 
 The tool will:
 
@@ -261,6 +273,23 @@ The tool will:
 - Less established tooling and integrations
 - Regional trust and security concerns
 
+#### Auggie CLI (Augment Code)
+
+**Pros:**
+
+- AI-powered code assistant with context awareness
+- Supports multiple programming languages
+- Real-time code suggestions and completions
+- Integration with popular IDEs
+- Team collaboration features
+
+**Cons:**
+
+- Requires subscription for full features
+- Newer product with evolving feature set
+- Limited documentation compared to established tools
+- May require configuration for optimal performance
+
 ### Choosing the Right Tool
 
 - **For Solo Developers:** Claude Code (complex tasks) or Grok CLI (cost-conscious)
@@ -273,7 +302,7 @@ The tool will:
 
 ## Options
 
-- `--cli=<tool>`: Specify which AI CLI tool to use (claude, gemini, codex, copilot, cursor). Defaults to `claude`.
+- `--cli=<tool>`: Specify which AI CLI tool to use (claude, gemini, codex, copilot, cursor, grok, qwen, auggie). Defaults to `claude`.
 - `--exit-on-idle=<seconds>`: Automatically exit when the AI tool becomes idle for the specified duration. Useful for automation scripts.
 - `--use-skills`: Automatically discover and prepend SKILL.md headers from the directory hierarchy (walks from current directory up to git root). Multiple SKILL.md files are merged with most specific first. Particularly useful to bring Claude Skills-like context to non-Claude agents such as Codex or Gemini. Supports nested skills for monorepos.
 
@@ -328,6 +357,13 @@ await claudeYes({
 await claudeYes({
   prompt: "debug this function",
   cli: "gemini",
+  exitOnIdle: 60000,
+});
+
+// Use Auggie
+await claudeYes({
+  prompt: "analyze code patterns",
+  cli: "auggie",
   exitOnIdle: 60000,
 });
 ```
