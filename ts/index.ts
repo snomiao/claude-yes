@@ -5,17 +5,17 @@ import path from "path";
 import DIE from "phpdie";
 import sflow from "sflow";
 import { TerminalTextRender } from "terminal-render";
-import rawConfig from "../agent-yes.config";
-import { catcher } from "./catcher.js";
-import { extractSessionId, getSessionForCwd, storeSessionForCwd } from "./codexSessionManager.js";
-import { IdleWaiter } from "./idleWaiter";
-import pty, { ptyPackage } from "./pty";
-import { ReadyManager } from "./ReadyManager";
-import { removeControlCharacters } from "./removeControlCharacters";
-import { acquireLock, releaseLock, shouldUseLock } from "./runningLock";
-import { logger } from "./logger.js";
+import rawConfig from "../agent-yes.config.ts";
+import { catcher } from "./catcher.ts";
+import { extractSessionId, getSessionForCwd, storeSessionForCwd } from "./codexSessionManager.ts";
+import { IdleWaiter } from "./idleWaiter.ts";
+import pty, { ptyPackage } from "./pty.ts";
+import { ReadyManager } from "./ReadyManager.ts";
+import { removeControlCharacters } from "./removeControlCharacters.ts";
+import { acquireLock, releaseLock, shouldUseLock } from "./runningLock.ts";
+import { logger } from "./logger.ts";
 
-export { parseCliArgs } from "./parseCliArgs";
+export { parseCliArgs } from "./parseCliArgs.ts";
 export { removeControlCharacters };
 
 export type AgentCliConfig = {
@@ -383,6 +383,7 @@ export default async function agentYes({
     stdinReady.unready(); // start buffer stdin
     const agentCrashed = exitCode !== 0;
 
+    await sleep(300)
     // Handle restart without continue args (e.g., "No conversation found to continue")
     if (shouldRestartWithoutContinue && robust) {
       logger.info(`${cli} needs restart without continue args, restarting...`);

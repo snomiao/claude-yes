@@ -29,15 +29,24 @@
     "url": "git+https://github.com/snomiao/claude-yes.git"
   },
   "bin": {
-    "agent-yes": "dist/cli.js",
-    "auggie-yes": "dist/auggie-yes.js",
-    "claude-yes": "dist/claude-yes.js",
-    "codex-yes": "dist/codex-yes.js",
-    "copilot-yes": "dist/copilot-yes.js",
-    "cursor-yes": "dist/cursor-yes.js",
-    "gemini-yes": "dist/gemini-yes.js",
-    "grok-yes": "dist/grok-yes.js",
-    "qwen-yes": "dist/qwen-yes.js"
+    "_agent-yes": "dist/cli.js",
+    "agent-yes": "ts/cli.ts",
+    "_auggie-yes": "dist/auggie-yes.js",
+    "auggie-yes": "ts/cli.ts",
+    "_claude-yes": "dist/claude-yes.js",
+    "claude-yes": "ts/cli.ts",
+    "_codex-yes": "dist/codex-yes.js",
+    "codex-yes": "ts/cli.ts",
+    "_copilot-yes": "dist/copilot-yes.js",
+    "copilot-yes": "ts/cli.ts",
+    "_cursor-yes": "dist/cursor-yes.js",
+    "cursor-yes": "ts/cli.ts",
+    "_gemini-yes": "dist/gemini-yes.js",
+    "gemini-yes": "ts/cli.ts",
+    "_grok-yes": "dist/grok-yes.js",
+    "grok-yes": "ts/cli.ts",
+    "_qwen-yes": "dist/qwen-yes.js",
+    "qwen-yes": "ts/cli.tss"
   },
   "directories": {
     "doc": "docs"

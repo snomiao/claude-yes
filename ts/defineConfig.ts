@@ -1,4 +1,4 @@
-import type { AgentCliConfig, AgentYesConfig } from ".";
+import type { AgentCliConfig, AgentYesConfig } from "./index.ts";
 
 type Awaitable<T> = T | Promise<T>;
 export async function defineCliYesConfig<T extends AgentYesConfig>(

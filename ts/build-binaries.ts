@@ -2,7 +2,7 @@
 import { execaCommand } from "execa";
 import { mkdir } from "fs/promises";
 import path from "path";
-import { CLIS_CONFIG } from "./index";
+import { CLIS_CONFIG } from "./index.ts";
 
 const platforms = ["linux", "darwin", "windows"] as const;
 const archs = ["x64", "arm64"] as const;

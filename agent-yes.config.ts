@@ -1,12 +1,12 @@
 import { mkdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { defineCliYesConfig } from "./ts/defineConfig";
+import { defineCliYesConfig } from "./ts/defineConfig.ts";
 
 if (process.env.VERBOSE) console.log("loading cli-yes.config.ts from " + import.meta.url);
 
 // For config path,
-// 1. if run in ts (means in dev mode), import.meta.file.endsWith('.ts'), then use ./ as config dir
+// 1. if run in ts (means in dev mode), igmport.meta.file.endsWith('.ts'), then use ./ as config dir
 // 2. and then default to ~/.agent-yes config, try to mkdir logs to that to find out if we have permission to write it
 // 3. and then fallback to a workspace-local ./node_modules/.agent-yes config directory so it works in sandboxed envs
 

@@ -14,7 +14,7 @@
 //   await import("./pty-fix.js")
 // console.log('Running', process.argv);
 
-import { logger } from "./logger";
+import { logger } from "./logger.ts";
 
 // its recommened to use bun-pty in windows, since node-pty is super complex to install there, requires a 10G M$ build tools
 export const pty = await (async () => {

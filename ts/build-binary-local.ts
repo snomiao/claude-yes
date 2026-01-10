@@ -2,7 +2,7 @@
 import { execaCommand } from "execa";
 import { chmod, copyFile, mkdir } from "fs/promises";
 import path from "path";
-import { CLIS_CONFIG } from "./index";
+import { CLIS_CONFIG } from "./index.ts";
 
 const distDir = path.join(process.cwd(), "dist");
 const binariesDir = path.join(distDir, "bin");
