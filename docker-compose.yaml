@@ -4,15 +4,47 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - ./:/app
-      # - ~/.claude:/root/.claude
+      # Note: Not mounting ./:/app to avoid overwriting built files including fixed bun-pty
+      # For development with hot reload, use: docker compose up --watch
+      # - ./:/app
+
+      # CLI credentials (mount with :ro for read-only security)
+
+      # Claude - Anthropic CLI
       - ~/.claude/.credentials.json:/root/.claude/.credentials.json:ro
-    
-    # ok
-    entrypoint: npx -y claude-yes
+
+      # Cursor - AI code editor
+      - ~/.config/cursor/auth.json:/root/.config/cursor/auth.json:ro
+      - ~/.cursor/cli-config.json:/root/.cursor/cli-config.json:ro
+
+      # Gemini - Google AI CLI
+      - ~/.gemini/oauth_creds.json:/root/.gemini/oauth_creds.json:ro
+      - ~/.gemini/google_accounts.json:/root/.gemini/google_accounts.json:ro
+      - ~/.gemini/settings.json:/root/.gemini/settings.json:ro
+
+      # GitHub Copilot - requires GitHub CLI auth
+      - ~/.config/gh/config.yml:/root/.config/gh/config.yml:ro
+      - ~/.config/gh/hosts.yml:/root/.config/gh/hosts.yml:ro
+      - ~/.copilot:/root/.copilot:ro
+
+      # OpenAI/Codex (if credentials file exists)
+      # - ~/.openai/credentials.json:/root/.openai/credentials.json:ro
+
+      # Auggie, Qwen, Grok (typically use API keys via environment variables)
+      # Set API keys in environment section below if needed
+
+    # Environment variables for API keys (uncomment and set as needed)
+    # environment:
+    # OPENAI_API_KEY: ${OPENAI_API_KEY}
+    # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    # GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+    # XAI_API_KEY: ${XAI_API_KEY}  # For Grok
+    # QWEN_API_KEY: ${QWEN_API_KEY}
+    # AUGMENT_API_KEY: ${AUGMENT_API_KEY}
+
+    # Use bun to run the built binary (node has ES module issues with node-pty)
+    entrypoint: bun /app/dist/claude-yes.js
     # command: hello
-    # entrypoint: [bun, x]
-    # command: claude-x -- hello
 
     # run
     # docker compose up --watch

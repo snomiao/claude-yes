@@ -1,0 +1,19 @@
+# Dependencies
+node_modules
+
+# Build outputs (built inside container)
+dist
+core
+
+# Development
+.git
+
+# Logs
+*.log
+logs
+
+# Environment
+.env*
+
+# OS
+.DS_Store

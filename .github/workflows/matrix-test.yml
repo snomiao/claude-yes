@@ -15,9 +15,9 @@ jobs:
         runtime: [node, bun]
         include:
           - runtime: node
-            runtime-version: '20'
+            runtime-version: "20"
           - runtime: bun
-            runtime-version: 'latest'
+            runtime-version: "latest"
 
     runs-on: ${{ matrix.os }}
 

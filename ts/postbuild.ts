@@ -1,10 +1,10 @@
 #! /usr/bin/env bun
-import { execaCommand } from 'execa';
-import { copyFile } from 'fs/promises';
-import * as pkg from '../package.json';
-import { CLIS_CONFIG } from '.';
+import { execaCommand } from "execa";
+import { copyFile } from "fs/promises";
+import * as pkg from "../package.json";
+import { CLIS_CONFIG } from ".";
 
-const src = 'dist/cli.js';
+const src = "dist/cli.js";
 await Promise.all(
   Object.keys(CLIS_CONFIG).map(async (cli) => {
     const dst = `dist/${cli}-yes.js`;
