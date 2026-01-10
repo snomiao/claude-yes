@@ -1,50 +1,48 @@
-import { execaCommand, execaCommandSync, parseCommandString } from 'execa';
-import { fromReadable, fromWritable } from 'from-node-stream';
-import { createReadStream, mkdirSync } from 'fs';
-import { mkdir, readFile, unlink, writeFile } from 'fs/promises';
-import path, { dirname } from 'path';
-import DIE from 'phpdie';
-import sflow from 'sflow';
-import { TerminalTextRender } from 'terminal-render';
-import { fileURLToPath, pathToFileURL } from 'url';
-import winston from 'winston';
-import rawConfig from '../agent-yes.config.js';
-import { catcher } from './catcher.js';
-import {
-  extractSessionId,
-  getSessionForCwd,
-  storeSessionForCwd,
-} from './codexSessionManager.js';
-import { IdleWaiter } from './idleWaiter';
-import pty, { ptyPackage } from './pty';
-import { ReadyManager } from './ReadyManager';
-import { removeControlCharacters } from './removeControlCharacters';
-import {
-  acquireLock,
-  releaseLock,
-  shouldUseLock,
-  updateCurrentTaskStatus,
-} from './runningLock';
-import { yesLog } from './yesLog';
+import { execaCommandSync, parseCommandString } from "execa";
+import { fromReadable, fromWritable } from "from-node-stream";
+import { mkdir, readFile, writeFile } from "fs/promises";
+import path from "path";
+import DIE from "phpdie";
+import sflow from "sflow";
+import { TerminalTextRender } from "terminal-render";
+import rawConfig from "../agent-yes.config";
+import { catcher } from "./catcher.js";
+import { extractSessionId, getSessionForCwd, storeSessionForCwd } from "./codexSessionManager.js";
+import { IdleWaiter } from "./idleWaiter";
+import pty, { ptyPackage } from "./pty";
+import { ReadyManager } from "./ReadyManager";
+import { removeControlCharacters } from "./removeControlCharacters";
+import { acquireLock, releaseLock, shouldUseLock } from "./runningLock";
+import { logger } from "./logger.js";
 
-export { parseCliArgs } from './parseCliArgs';
+export { parseCliArgs } from "./parseCliArgs";
 export { removeControlCharacters };
 
 export type AgentCliConfig = {
+  // cli
   install?: string; // hint user for install command if not installed
   version?: string; // hint user for version command to check if installed
   binary?: string; // actual binary name if different from cli, e.g. cursor -> cursor-agent
+  defaultArgs?: string[]; // function to ensure certain args are present
+
+  // status detect, and actions
   ready?: RegExp[]; // regex matcher for stdin ready, or line index for gemini
-  enter?: RegExp[]; // array of regex to match for sending Enter
   fatal?: RegExp[]; // array of regex to match for fatal errors
+  exitCommands?: string[]; // commands to exit the cli gracefully
+  promptArg?: (string & {}) | "first-arg" | "last-arg"; // argument name to pass the prompt, e.g. --prompt, or first-arg for positional arg
+
+  // handle special format
+  noEOL?: boolean; // if true, do not split lines by \n when handling inputs, e.g. for codex, which uses cursor-move csi code instead of \n to move lines
+
+  // auto responds
+  enter?: RegExp[]; // array of regex to match for sending Enter
+  typingRespond?: { [message: string]: RegExp[] }; // type specified message to a specified pattern
+
+  // crash/resuming-session behaviour
   restoreArgs?: string[]; // arguments to continue the session when crashed
   restartWithoutContinueArg?: RegExp[]; // array of regex to match for errors that require restart without continue args
-  defaultArgs?: string[]; // function to ensure certain args are present
-  noEOL?: boolean; // if true, do not split lines by \n, used for codex, which uses cursor-move csi code instead of \n to move lines
-  promptArg?: (string & {}) | 'first-arg' | 'last-arg'; // argument name to pass the prompt, e.g. --prompt, or first-arg for positional arg
-  exitCommands?: string[]; // commands to exit the cli gracefully
 };
-export type CliYesConfig = {
+export type AgentYesConfig = {
   configDir?: string; // directory to store agent-yes config files, e.g. session store
   logsDir?: string; // directory to store agent-yes log files
   clis: { [key: string]: AgentCliConfig };
@@ -54,150 +52,11 @@ export type CliYesConfig = {
 export const config = await rawConfig;
 
 export const CLIS_CONFIG = config.clis as Record<
-  keyof Awaited<typeof config>['clis'],
+  keyof Awaited<typeof config>["clis"],
   AgentCliConfig
 >;
 export type SUPPORTED_CLIS = keyof typeof CLIS_CONFIG;
 export const SUPPORTED_CLIS = Object.keys(CLIS_CONFIG) as SUPPORTED_CLIS[];
-
-// Configure Winston logger
-const logFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.printf(({ timestamp, level, message, ...meta }) => {
-    const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
-    return `${timestamp} [${level.toUpperCase()}]: ${message}${metaStr}`;
-  }),
-);
-
-// Create logger instance
-export const logger = winston.createLogger({
-  level: process.env.VERBOSE ? 'debug' : 'info',
-  format: logFormat,
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(winston.format.colorize(), logFormat),
-    }),
-  ],
-  silent: false,
-});
-
-/**
- * Creates a FIFO (named pipe) stream on Linux for additional stdin input
- * @param cli - The CLI name for logging purposes
- * @returns An object with stream and cleanup function, or null if failed
- */
-function createFifoStream(
-  cli: string,
-): { stream: ReadableStream<string>; cleanup: () => Promise<void> } | null {
-  // Only create FIFO on Linux
-  if (process.platform !== 'linux') {
-    return null;
-  }
-
-  let fifoPath: string | null = null;
-  let fifoStream: ReturnType<typeof createReadStream> | null = null;
-
-  try {
-    const timestamp = new Date().toISOString().replace(/\D/g, '').slice(0, 17);
-    const randomSuffix = Math.random().toString(36).substring(2, 5);
-
-    fifoPath = `/tmp/agent-yes-${timestamp}${randomSuffix}.stdin`;
-    mkdirSync(dirname(fifoPath), { recursive: true });
-
-    // Create the named pipe using mkfifo
-    const mkfifoResult = execaCommandSync(`mkfifo ${fifoPath}`, {
-      reject: false,
-    });
-
-    if (mkfifoResult.exitCode !== 0) {
-      logger.warn(
-        `[${cli}-yes] mkfifo command failed with exit code ${mkfifoResult.exitCode}`,
-      );
-      if (mkfifoResult.stderr) {
-        logger.warn(`[${cli}-yes] mkfifo stderr: ${mkfifoResult.stderr}`);
-      }
-      if (mkfifoResult.stdout) {
-        logger.warn(`[${cli}-yes] mkfifo stdout: ${mkfifoResult.stdout}`);
-      }
-      return null;
-    }
-
-    logger.info(`[${cli}-yes] Created FIFO at ${fifoPath}`);
-
-    // Open the FIFO for reading
-    // Note: This will block until a writer opens the FIFO, so we use a dummy writer to unblock it
-    try {
-      // Open a dummy writer in background to prevent blocking
-      execaCommand(`exec 3>"${fifoPath}"`).catch(() => null);
-
-      fifoStream = createReadStream(fifoPath, {
-        flags: 'r',
-        autoClose: true,
-      });
-
-      logger.info(`[${cli}-yes] FIFO opened for reading`);
-
-      // Cleanup FIFO function
-      const cleanupFifo = async () => {
-        if (fifoStream) {
-          try {
-            fifoStream.close();
-            logger.debug(`[${cli}-yes] Closed FIFO stream`);
-          } catch (error) {
-            logger.debug(`[${cli}-yes] Error closing FIFO stream:`, { error });
-          }
-        }
-        if (fifoPath) {
-          try {
-            await unlink(fifoPath).catch(() => null);
-            logger.info(`[${cli}-yes] Cleaned up FIFO at ${fifoPath}`);
-          } catch {}
-        }
-      };
-
-      process.on('exit', () => {
-        if (fifoPath) unlink(fifoPath).catch(() => null);
-      });
-      process.on('SIGINT', async () => {
-        await cleanupFifo();
-      });
-      process.on('SIGTERM', async () => {
-        await cleanupFifo();
-      });
-
-      return {
-        stream: sflow(fromReadable(fifoStream)).map((buffer) =>
-          buffer.toString(),
-        ),
-        cleanup: cleanupFifo,
-      };
-    } catch (error) {
-      logger.warn(`[${cli}-yes] Failed to open FIFO at ${fifoPath}:`, {
-        error,
-      });
-      if (error instanceof Error) {
-        logger.warn(`[${cli}-yes] Error details: ${error.message}`);
-        if (error.stack) {
-          logger.debug(`[${cli}-yes] Stack trace: ${error.stack}`);
-        }
-      }
-      // Clean up the FIFO if we failed to open it
-      if (fifoPath) {
-        unlink(fifoPath).catch(() => null);
-      }
-      return null;
-    }
-  } catch (error) {
-    logger.warn(`[${cli}-yes] Failed to create FIFO:`, { error });
-    if (error instanceof Error) {
-      logger.warn(`[${cli}-yes] Error details: ${error.message}`);
-    }
-    if (fifoPath) {
-      unlink(fifoPath).catch(() => null);
-    }
-    return null;
-  }
-}
 
 /**
  * Main function to run agent-cli with automatic yes/no responses
@@ -214,8 +73,8 @@ function createFifoStream(
  *
  * @example
  * ```typescript
- * import cliYes from 'agent-yes';
- * await cliYes({
+ * import agentYes from 'agent-yes';
+ * await agentYes({
  *   prompt: 'help me solve all todos in my codebase',
  *
  *   // optional
@@ -227,7 +86,7 @@ function createFifoStream(
  * });
  * ```
  */
-export default async function cliYes({
+export default async function agentYes({
   cli,
   cliArgs = [],
   prompt,
@@ -264,7 +123,7 @@ export default async function cliYes({
   // ])
   //   .then((e) => e.flatMap((e) => (e.status === "fulfilled" ? [e.value] : [])))
   //   .then(e=>e.at(0))
-  //   .then((e) => e.default as ReturnType<typeof defineCliYesConfig>)
+  //   .then((e) => e.default as ReturnType<typeof defineAgentYesConfig>)
   //   .then(async (override) => deepMixin(config, override || {}))
   //   .catch((error) => {
   //     if (process.env.VERBOSE)
@@ -274,15 +133,13 @@ export default async function cliYes({
   if (!cli) throw new Error(`cli is required`);
   const conf =
     CLIS_CONFIG[cli] ||
-    DIE(
-      `Unsupported cli tool: ${cli}, current process.argv: ${process.argv.join(' ')}`,
-    );
+    DIE(`Unsupported cli tool: ${cli}, current process.argv: ${process.argv.join(" ")}`);
 
   // Acquire lock before starting agent (if in git repo or same cwd and lock is not disabled)
   const workingDir = cwd ?? process.cwd();
   if (queue) {
     if (queue && shouldUseLock(workingDir)) {
-      await acquireLock(workingDir, prompt ?? 'Interactive session');
+      await acquireLock(workingDir, prompt ?? "Interactive session");
     }
 
     // Register cleanup handlers for lock release
@@ -292,25 +149,26 @@ export default async function cliYes({
       }
     };
 
-    process.on('exit', () => {
+    process.on("exit", () => {
       if (queue) releaseLock().catch(() => null);
     });
-    process.on('SIGINT', async (code) => {
+    process.on("SIGINT", async (code) => {
       await cleanupLock();
       process.exit(code);
     });
-    process.on('SIGTERM', async (code) => {
+    process.on("SIGTERM", async (code) => {
       await cleanupLock();
       process.exit(code);
     });
   }
 
   process.stdin.setRawMode?.(true); // must be called any stdout/stdin usage
+
   let isFatal = false; // when true, do not restart on crash, and exit agent
   let shouldRestartWithoutContinue = false; // when true, restart without continue args
 
   const stdinReady = new ReadyManager();
-  const stdinFirstReady = new ReadyManager();
+  const stdinFirstReady = new ReadyManager(); // if user send ctrl+c before
 
   // force ready after 10s to avoid stuck forever if the ready-word mismatched
   sleep(10e3).then(() => {
@@ -322,26 +180,21 @@ export default async function cliYes({
   const shellOutputStream = new TransformStream<string, string>();
   const outputWriter = shellOutputStream.writable.getWriter();
 
-  logger.info(`Using ${ptyPackage} for pseudo terminal management.`);
+  logger.debug(`Using ${ptyPackage} for pseudo terminal management.`);
 
-  const datetime = new Date().toISOString().replace(/\D/g, '').slice(0, 17);
-  const logPath =
-    config.logsDir &&
-    path.resolve(config.logsDir, `${cli}-yes-${datetime}.log`);
+  const datetime = new Date().toISOString().replace(/\D/g, "").slice(0, 17);
+  const logPath = config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.log`);
   const rawLogPath =
-    config.logsDir &&
-    path.resolve(config.logsDir, `${cli}-yes-${datetime}.raw.log`);
+    config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.raw.log`);
 
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;
   if (isSubAgent) {
-    logger.info(
-      `[${cli}-yes] Running as sub-agent (CLAUDE_PPID=${process.env.CLAUDE_PPID})`,
-    );
+    logger.info(`[${cli}-yes] Running as sub-agent (CLAUDE_PPID=${process.env.CLAUDE_PPID})`);
   }
 
   const getPtyOptions = () => ({
-    name: 'xterm-color',
+    name: "xterm-color",
     ...getTerminalDimensions(),
     cwd: cwd ?? process.cwd(),
     env: {
@@ -352,18 +205,16 @@ export default async function cliYes({
 
   // Apply CLI specific configurations (moved to CLI_CONFIGURES)
   const cliConf = (CLIS_CONFIG as Record<string, AgentCliConfig>)[cli] || {};
-  cliArgs = cliConf.defaultArgs
-    ? [...cliConf.defaultArgs, ...cliArgs]
-    : cliArgs;
+  cliArgs = cliConf.defaultArgs ? [...cliConf.defaultArgs, ...cliArgs] : cliArgs;
 
   // If enabled, read SKILL.md header and prepend to the prompt for non-Claude agents
   try {
     const workingDir = cwd ?? process.cwd();
-    if (useSkills && cli !== 'claude') {
+    if (useSkills && cli !== "claude") {
       // Find git root to determine search boundary
       let gitRoot: string | null = null;
       try {
-        const result = execaCommandSync('git rev-parse --show-toplevel', {
+        const result = execaCommandSync("git rev-parse --show-toplevel", {
           cwd: workingDir,
           reject: false,
         });
@@ -380,18 +231,16 @@ export default async function cliYes({
       const searchLimit = gitRoot || path.parse(currentDir).root;
 
       while (true) {
-        const skillPath = path.resolve(currentDir, 'SKILL.md');
-        const md = await readFile(skillPath, 'utf8').catch(() => null);
+        const skillPath = path.resolve(currentDir, "SKILL.md");
+        const md = await readFile(skillPath, "utf8").catch(() => null);
         if (md) {
           // Extract header (content before first level-2 heading `## `)
           const headerMatch = md.match(/^[\s\S]*?(?=\n##\s)/);
           const headerRaw = (headerMatch ? headerMatch[0] : md).trim();
           if (headerRaw) {
             skillHeaders.push(headerRaw);
-            verbose &&
-              logger.info(
-                `[skills] Found SKILL.md in ${currentDir} (${headerRaw.length} chars)`,
-              );
+            if (verbose)
+              logger.info(`[skills] Found SKILL.md in ${currentDir} (${headerRaw.length} chars)`);
           }
         }
 
@@ -405,50 +254,47 @@ export default async function cliYes({
 
       if (skillHeaders.length > 0) {
         // Combine all headers (most specific first)
-        const combined = skillHeaders.join('\n\n---\n\n');
+        const combined = skillHeaders.join("\n\n---\n\n");
         const MAX = 2000; // increased limit for multiple skills
-        const header =
-          combined.length > MAX ? combined.slice(0, MAX) + '…' : combined;
+        const header = combined.length > MAX ? combined.slice(0, MAX) + "…" : combined;
         const prefix = `Use this repository skill as context:\n\n${header}`;
         prompt = prompt ? `${prefix}\n\n${prompt}` : prefix;
-        verbose &&
+        if (verbose)
           logger.info(
             `[skills] Injected ${skillHeaders.length} SKILL.md header(s) (${header.length} chars total)`,
           );
       } else {
-        verbose &&
-          logger.info('[skills] No SKILL.md found in directory hierarchy');
+        if (verbose) logger.info("[skills] No SKILL.md found in directory hierarchy");
       }
     }
   } catch (error) {
     // Non-fatal; continue without skills
-    verbose &&
-      logger.warn('[skills] Failed to inject SKILL.md header:', { error });
+    if (verbose) logger.warn("[skills] Failed to inject SKILL.md header:", { error });
   }
 
   // Handle --continue flag for codex session restoration
   if (resume) {
-    if (cli === 'codex' && resume) {
+    if (cli === "codex" && resume) {
       // Try to get stored session for this directory
       const storedSessionId = await getSessionForCwd(workingDir);
       if (storedSessionId) {
         // Replace or add resume args
-        cliArgs = ['resume', storedSessionId, ...cliArgs];
-        await yesLog`resume|using stored session ID: ${storedSessionId}`;
+        cliArgs = ["resume", storedSessionId, ...cliArgs];
+        await logger.debug(`resume|using stored session ID: ${storedSessionId}`);
       } else {
         throw new Error(
           `No stored session found for codex in directory: ${workingDir}, please try without resume option.`,
         );
       }
-    } else if (cli === 'claude') {
+    } else if (cli === "claude") {
       // just add --continue flag for claude
-      cliArgs = ['--continue', ...cliArgs];
-      await yesLog`resume|adding --continue flag for claude`;
-    } else if (cli === 'gemini') {
+      cliArgs = ["--continue", ...cliArgs];
+      await logger.debug(`resume|adding --continue flag for claude`);
+    } else if (cli === "gemini") {
       // Gemini supports session resume natively via --resume flag
       // Sessions are project/directory-specific by default (stored in ~/.gemini/tmp/<project_hash>/chats/)
-      cliArgs = ['--resume', ...cliArgs];
-      await yesLog`resume|adding --resume flag for gemini`;
+      cliArgs = ["--resume", ...cliArgs];
+      await logger.debug(`resume|adding --resume flag for gemini`);
     } else {
       throw new Error(
         `Resume option is not supported for cli: ${cli}, make a feature request if you want it. https://github.com/snomiao/agent-yes/issues`,
@@ -458,13 +304,13 @@ export default async function cliYes({
 
   // If possible pass prompt via cli args, its usually faster than stdin
   if (prompt && cliConf.promptArg) {
-    if (cliConf.promptArg === 'first-arg') {
+    if (cliConf.promptArg === "first-arg") {
       cliArgs = [prompt, ...cliArgs];
       prompt = undefined; // clear prompt to avoid sending later
-    } else if (cliConf.promptArg === 'last-arg') {
+    } else if (cliConf.promptArg === "last-arg") {
       cliArgs = [...cliArgs, prompt];
       prompt = undefined; // clear prompt to avoid sending later
-    } else if (cliConf.promptArg.startsWith('--')) {
+    } else if (cliConf.promptArg.startsWith("--")) {
       cliArgs = [cliConf.promptArg, prompt, ...cliArgs];
       prompt = undefined; // clear prompt to avoid sending later
     } else {
@@ -475,18 +321,8 @@ export default async function cliYes({
 
   const spawn = () => {
     const cliCommand = cliConf?.binary || cli;
-    // const useBunx = globalThis.Bun;
-    const useBunx = !!globalThis.Bun;
-    let [bin, ...args] = [
-      ...parseCommandString(
-        // (useBunx ? 'bunx --bun ' : '')
-
-        cliCommand,
-      ),
-      ...cliArgs,
-    ];
-    verbose &&
-      logger.info(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
+    let [bin, ...args] = [...parseCommandString(cliCommand), ...cliArgs];
+    if (verbose) logger.info(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
     logger.info(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
     const spawned = pty.spawn(bin!, args, getPtyOptions());
     logger.info(`[${cli}-yes] Spawned ${bin} with PID ${spawned.pid}`);
@@ -497,16 +333,14 @@ export default async function cliYes({
 
   let shell = catcher(
     // error handler
-    (error: unknown, fn, ...args) => {
+    (error: unknown, _fn, ..._args) => {
       logger.error(`Fatal: Failed to start ${cli}.`);
 
       if (cliConf?.install && isCommandNotFoundError(error)) {
         if (install) {
           logger.info(`Attempting to install ${cli}...`);
-          execaCommandSync(cliConf.install, { stdio: 'inherit' });
-          logger.info(
-            `${cli} installed successfully. Please rerun the command.`,
-          );
+          execaCommandSync(cliConf.install, { stdio: "inherit" });
+          logger.info(`${cli} installed successfully. Please rerun the command.`);
           return spawn();
         } else {
           logger.error(
@@ -516,16 +350,10 @@ export default async function cliYes({
         }
       }
 
-      if (
-        globalThis.Bun &&
-        error instanceof Error &&
-        error.stack?.includes('bun-pty')
-      ) {
+      if (globalThis.Bun && error instanceof Error && error.stack?.includes("bun-pty")) {
         // try to fix bun-pty issues
-        logger.error(
-          `Detected bun-pty issue, attempted to fix it. Please try again.`,
-        );
-        require('./pty-fix');
+        logger.error(`Detected bun-pty issue, attempted to fix it. Please try again.`);
+        require("./pty-fix");
         // unable to retry with same process, so exit here.
       }
       throw error;
@@ -533,9 +361,9 @@ export default async function cliYes({
       function isCommandNotFoundError(e: unknown) {
         if (e instanceof Error) {
           return (
-            e.message.includes('command not found') || // unix
-            e.message.includes('ENOENT') || // unix
-            e.message.includes('spawn') // windows
+            e.message.includes("command not found") || // unix
+            e.message.includes("ENOENT") || // unix
+            e.message.includes("spawn") // windows
           );
         }
         return false;
@@ -544,7 +372,6 @@ export default async function cliYes({
     spawn,
   )();
   const pendingExitCode = Promise.withResolvers<number | null>();
-  let pendingExitCodeValue = null;
 
   async function onData(data: string) {
     // append data to the buffer, so we can process it later
@@ -566,7 +393,7 @@ export default async function cliYes({
       const cliCommand = cliConf?.binary || cli;
       let [bin, ...args] = [
         ...parseCommandString(cliCommand),
-        ...cliArgs.filter((arg) => !['--continue', '--resume'].includes(arg)),
+        ...cliArgs.filter((arg) => !["--continue", "--resume"].includes(arg)),
       ];
 
       shell = pty.spawn(bin!, args, getPtyOptions());
@@ -581,26 +408,24 @@ export default async function cliYes({
           `robust is only supported for ${Object.entries(CLIS_CONFIG)
             .filter(([_, v]) => v.restoreArgs)
             .map(([k]) => k)
-            .join(', ')} currently, not ${cli}`,
+            .join(", ")} currently, not ${cli}`,
         );
         return;
       }
-      if (isFatal) {
-        return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
-      }
+      if (isFatal) return pendingExitCode.resolve(exitCode);
 
       logger.info(`${cli} crashed, restarting...`);
 
       // For codex, try to use stored session ID for this directory
       let restoreArgs = conf.restoreArgs;
-      if (cli === 'codex') {
+      if (cli === "codex") {
         const storedSessionId = await getSessionForCwd(workingDir);
         if (storedSessionId) {
           // Use specific session ID instead of --last
-          restoreArgs = ['resume', storedSessionId];
-          await yesLog`restore|using stored session ID: ${storedSessionId}`;
+          restoreArgs = ["resume", storedSessionId];
+          await logger.debug(`restore|using stored session ID: ${storedSessionId}`);
         } else {
-          await yesLog`restore|no stored session, using default restore args`;
+          await logger.debug(`restore|no stored session, using default restore args`);
         }
       }
 
@@ -609,11 +434,11 @@ export default async function cliYes({
       shell.onExit(onExit);
       return;
     }
-    return pendingExitCode.resolve((pendingExitCodeValue = exitCode));
+    return pendingExitCode.resolve(exitCode);
   });
 
-  // when current tty resized, resize the pty
-  process.stdout.on('resize', () => {
+  // when current tty resized, resize the pty too
+  process.stdout.on("resize", () => {
     const { cols, rows } = getTerminalDimensions(); // minimum 80 columns to avoid layout issues
     shell.resize(cols, rows); // minimum 80 columns to avoid layout issues
   });
@@ -622,103 +447,128 @@ export default async function cliYes({
   const isStillWorkingQ = () =>
     terminalRender
       .render()
-      .replace(/\s+/g, ' ')
+      .replace(/\s+/g, " ")
       .match(/esc to interrupt|to run in background/);
 
-  const exitIdleWaiter = new IdleWaiter();
+  const idleWaiter = new IdleWaiter();
   if (exitOnIdle)
-    exitIdleWaiter.wait(exitOnIdle).then(async () => {
+    idleWaiter.wait(exitOnIdle).then(async () => {
       if (isStillWorkingQ()) {
-        logger.info(
-          '[${cli}-yes] ${cli} is idle, but seems still working, not exiting yet',
-        );
+        logger.warn("[${cli}-yes] ${cli} is idle, but seems still working, not exiting yet");
         return;
       }
 
-      logger.info('[${cli}-yes] ${cli} is idle, exiting...');
+      logger.info("[${cli}-yes] ${cli} is idle, exiting...");
       await exitAgent();
     });
 
-  // console.log(
-  //   `[${cli}-yes] Started ${cli} with args: ${[cliCommand, ...cliArgs].join(" ")}`
-  // );
   // Message streaming
 
   // Message streaming with stdin and optional FIFO (Linux only)
-  const fifoResult = createFifoStream(cli);
-  const fifoCleanup = fifoResult?.cleanup;
 
-  sflow('')
-    // read process.stdin
-    .merge(
-      sflow(fromReadable<Buffer>(process.stdin)).map((buffer) =>
-        buffer.toString(),
-      ),
-    )
-    // read from FIFO if available, e.g. /tmp/agent-yes-*.stdin, which can be used to send additional input from other processes
-    .by((stream) => {
-      return fifoResult ? stream.merge(fifoResult.stream) : stream;
+  await sflow(fromReadable<Buffer>(process.stdin))
+    .map((buffer) => buffer.toString())
+
+    .by(function handleTerminateSignals(s) {
+      let aborted = false;
+      return s.map((chunk) => {
+        // handle CTRL+Z and filter it out, as I dont know how to support it yet
+        if (!aborted && chunk === "\u001A") {
+          return "";
+        }
+        // handle CTRL+C, when stdin is not ready (no response from agent yet, usually this is when agent loading)
+        if (!aborted && !stdinReady.isReady && chunk === "\u0003") {
+          logger.error("User aborted: SIGINT");
+          shell.kill("SIGINT");
+          pendingExitCode.resolve(130); // SIGINT
+          aborted = true;
+          return chunk; // still pass into agent, but they prob be killed XD
+        }
+        return chunk; // normal inputs
+      });
     })
-    // .map((e) => e.replaceAll('\x1a', '')) // remove ctrl+z from user's input (seems bug)
+
+    // read from FIFO if available, e.g. /tmp/agent-yes-*.stdin, which can be used to send additional input from other processes
+    // .by((s) => {
+    //   const fifoResult = createFifoStream(cli);
+    //   if (!fifoResult) return s;
+    //   pendingExitCode.p => fifoResult.cleanup());
+    //   return s.merge(fifoResult.stream);
+    // })
+
+    // .map((e) => e.replaceAll('\x1a', '')) // remove ctrl+z from user's input, to prevent bug (but this seems bug)
     // .forEach(e => appendFile('.cache/io.log', "input |" + JSON.stringify(e) + '\n')) // for debugging
-    // pipe
+
+    .onStart(async function promptOnStart() {
+      // send prompt when start
+      logger.debug("Sending prompt message: " + JSON.stringify(prompt));
+      if (prompt) await sendMessage(prompt);
+    })
+
+    // pipe content by shell
     .by({
       writable: new WritableStream<string>({
         write: async (data) => {
           await stdinReady.wait();
-          // await idleWaiter.wait(20); // wait for idle for 200ms to avoid messing up claude's input
           shell.write(data);
         },
       }),
       readable: shellOutputStream.readable,
     })
-    .forEach(() => exitIdleWaiter.ping())
+
+    .forEach(() => idleWaiter.ping())
     .forEach(() => nextStdout.ready())
 
-    .forkTo(async (e) => {
-      if (!rawLogPath) return e.run(); // nil
-      // todo:
-      // logger.debug(`[${cli}-yes] raw logs streaming to ${rawLogPath}`);
-      await mkdir(path.dirname(rawLogPath), { recursive: true }).catch(
-        () => null,
-      );
-      return e
-        .forEach(async (chars) => {
-          // write raw logs ~/.agent-yes/logs-raw/YYYY-MM-DD/HHMMSSmmm-[cli]-yes.log
-          //including control characters, for debug
-          await writeFile(rawLogPath, chars, { flag: 'a' }).catch(() => null);
+    .forkTo(async function rawLogger(f) {
+      if (!rawLogPath) return f.run(); // no stream
+
+      // try stream the raw log for realtime debugging, including control chars, note: it will be a huge file
+      return await mkdir(path.dirname(rawLogPath), { recursive: true })
+        .then(() => {
+          logger.debug(`[${cli}-yes] raw logs streaming to ${rawLogPath}`);
+          return f
+            .forEach(async (chars) => {
+              await writeFile(rawLogPath, chars, { flag: "a" }).catch(() => null);
+            })
+            .run();
         })
-        .run();
+        .catch(() => f.run());
     })
 
     // handle cursor position requests and render terminal output
-    .forEach((text) => {
-      // render terminal output for log file
-      terminalRender.write(text);
+    .by(function consoleResponder(e) {
+      // wait for cli ready and send prompt if provided
+      if (cli === "codex") shell.write(`\u001b[1;1R`); // send cursor position response when stdin is not tty
+      return e.forEach((text) => {
+        // render terminal output for log file
+        terminalRender.write(text);
 
-      // Handle Device Attributes query (DA) - ESC[c or ESC[0c
-      // This must be handled regardless of TTY status
-      if (text.includes('\u001b[c') || text.includes('\u001b[0c')) {
-        // Respond with VT100 with Advanced Video Option
-        shell.write('\u001b[?1;2c');
-        yesLog`device|respond DA: VT100 with Advanced Video Option`;
-        return;
-      }
+        // Handle Device Attributes query (DA) - ESC[c or ESC[0c
+        // This must be handled regardless of TTY status
+        if (text.includes("\u001b[c") || text.includes("\u001b[0c")) {
+          // Respond shell with VT100 with Advanced Video Option
+          shell.write("\u001b[?1;2c");
+          if (verbose) {
+            logger.debug("device|respond DA: VT100 with Advanced Video Option");
+          }
+          return;
+        }
 
-      // todo: .onStatus((msg)=> shell.write(msg))
-      if (process.stdin.isTTY) return; // only handle it when stdin is not tty
+        // todo: .onStatus((msg)=> shell.write(msg))
+        if (process.stdin.isTTY) return; // only handle it when stdin is not tty, because tty already handled this
 
-      if (!text.includes('\u001b[6n')) return; // only asked for cursor position
-      // todo: use terminalRender API to get cursor position when new version is available
-      // xterm replies CSI row; column R if asked cursor position
-      // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=citation%20needed%5D-,xterm%20replies,-CSI%20row%C2%A0%3B
-      // when agent asking position, respond with row; col
-      // const rendered = terminalRender.render();
-      const { col, row } = terminalRender.getCursorPosition();
-      shell.write(`\u001b[${row};${col}R`); // reply cli when getting cursor position
-      yesLog`cursor|respond position: row=${String(row)}, col=${String(col)}`;
-      // const row = rendered.split('\n').length + 1;
-      // const col = (rendered.split('\n').slice(-1)[0]?.length || 0) + 1;
+        if (!text.includes("\u001b[6n")) return; // only asked for cursor position
+        // todo: use terminalRender API to get cursor position when new version is available
+        // xterm replies CSI row; column R if asked cursor position
+        // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=citation%20needed%5D-,xterm%20replies,-CSI%20row%C2%A0%3B
+        // when agent asking position, respond with row; col
+        // const rendered = terminalRender.render();
+        const { col, row } = terminalRender.getCursorPosition();
+        shell.write(`\u001b[${row};${col}R`); // reply cli when getting cursor position
+        logger.debug(`cursor|respond position: row=${String(row)}, col=${String(col)}`);
+        // const row = rendered.split('\n').length + 1;
+        // const col = (rendered.split('\n').slice(-1)[0]?.length || 0) + 1;
+      });
     })
 
     // auto-response
@@ -726,51 +576,55 @@ export default async function cliYes({
       return (
         e
           .map((e) => removeControlCharacters(e))
-          .map((e) => e.replaceAll('\r', '')) // remove carriage return
+          .map((e) => e.replaceAll("\r", "")) // remove carriage return
           .by((s) => {
             if (conf.noEOL) return s; // codex use cursor-move csi code insteadof \n to move lines, so the output have no \n at all, this hack prevents stuck on unended line
-            return s.lines({ EOL: 'NONE' }); // other clis use ink, which is rerendering the block based on \n lines
+            return s.lines({ EOL: "NONE" }); // other clis use ink, which is rerendering the block based on \n lines
           })
-          .forEach((e) => yesLog`output|${e}`) // for debugging
+
           // Generic auto-response handler driven by CLI_CONFIGURES
-          .forEach(async (e, i) => {
+          .forEach(async function autoResponseOnChunk(e, i) {
             // ready matcher: if matched, mark stdin ready
             if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
-              await yesLog`ready |${e}`;
-              if (cli === 'gemini' && i <= 80) return; // gemini initial noise, only after many lines
+              logger.debug(`ready |${e}`);
+              if (cli === "gemini" && i <= 80) return; // gemini initial noise, only after many lines
               stdinReady.ready();
               stdinFirstReady.ready();
             }
 
+            const typingResponded = await sflow(Object.entries(conf.typingRespond ?? {}))
+              .filter(([_sendString, onThePatterns]) => onThePatterns.some((rx) => e.match(rx)))
+              .map(async ([sendString]) => await sendMessage(sendString))
+              .toCount();
+            if (typingResponded) return;
+
             // enter matchers: send Enter when any enter regex matches
             if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
-              await yesLog`enter |${e}`;
-              await sendEnter(300); // send Enter after 300ms idle wait
+              logger.debug(`enter |${e}`);
+              await sendEnter(400); // wait for idle for 300ms and then send Enter
               return;
             }
 
             // fatal matchers: set isFatal flag when matched
             if (conf.fatal?.some((rx: RegExp) => e.match(rx))) {
-              await yesLog`fatal |${e}`;
+              logger.debug(`fatal |${e}`);
               isFatal = true;
               await exitAgent();
             }
 
             // restartWithoutContinueArg matchers: set flag to restart without continue args
-            if (
-              conf.restartWithoutContinueArg?.some((rx: RegExp) => e.match(rx))
-            ) {
-              await yesLog`restart-without-continue|${e}`;
+            if (conf.restartWithoutContinueArg?.some((rx: RegExp) => e.match(rx))) {
+              await logger.debug(`restart-without-continue|${e}`);
               shouldRestartWithoutContinue = true;
               isFatal = true; // also set fatal to trigger exit
               await exitAgent();
             }
 
             // session ID capture for codex
-            if (cli === 'codex') {
+            if (cli === "codex") {
               const sessionId = extractSessionId(e);
               if (sessionId) {
-                await yesLog`session|captured session ID: ${sessionId}`;
+                await logger.debug(`session|captured session ID: ${sessionId}`);
                 await storeSessionForCwd(workingDir, sessionId);
               }
             }
@@ -778,33 +632,19 @@ export default async function cliYes({
           .run()
       );
     })
-    .map((e) =>
-      removeControlCharactersFromStdout ? removeControlCharacters(e) : e,
+    .by((s) => (removeControlCharactersFromStdout ? s.map((e) => removeControlCharacters(e)) : s))
+
+    // terminate whole stream when shell did exited (already crash-handled)
+    .by(
+      new TransformStream({
+        start: function terminator(ctrl) {
+          pendingExitCode.promise.then(() => ctrl.terminate());
+        },
+        transform: (e, ctrl) => ctrl.enqueue(e),
+        flush: (ctrl) => ctrl.terminate(),
+      }),
     )
-    .to(fromWritable(process.stdout))
-    .then(() => null); // run it immediately without await
-
-  // wait for cli ready and send prompt if provided
-  if (cli === 'codex') shell.write(`\u001b[1;1R`); // send cursor position response when stdin is not tty
-  if (prompt) await sendMessage(prompt);
-
-  const exitCode = await pendingExitCode.promise; // wait for the shell to exit
-  logger.info(`[${cli}-yes] ${cli} exited with code ${exitCode}`);
-
-  // Cleanup FIFO stream if it was created
-  if (fifoCleanup) {
-    await fifoCleanup().catch((error) => {
-      logger.debug(`[${cli}-yes] Error during FIFO cleanup:`, { error });
-    });
-  }
-
-  // Update task status and release lock
-  if (queue && shouldUseLock(workingDir)) {
-    await updateCurrentTaskStatus(
-      exitCode === 0 ? 'completed' : 'failed',
-    ).catch(() => null);
-    await releaseLock().catch(() => null);
-  }
+    .to(fromWritable(process.stdout));
 
   if (logPath) {
     await mkdir(path.dirname(logPath), { recursive: true }).catch(() => null);
@@ -812,13 +652,18 @@ export default async function cliYes({
     logger.info(`[${cli}-yes] Full logs saved to ${logPath}`);
   }
 
+  // and then get its exitcode
+  const exitCode = await pendingExitCode.promise;
+  logger.info(`[${cli}-yes] ${cli} exited with code ${exitCode}`);
+
+  // Update task status.writable release lock
+  await outputWriter.close();
+
   // deprecated logFile option, we have logPath now, but keep for backward compatibility
   if (logFile) {
-    verbose && logger.info(`[${cli}-yes] Writing rendered logs to ${logFile}`);
+    if (verbose) logger.info(`[${cli}-yes] Writing rendered logs to ${logFile}`);
     const logFilePath = path.resolve(logFile);
-    await mkdir(path.dirname(logFilePath), { recursive: true }).catch(
-      () => null,
-    );
+    await mkdir(path.dirname(logFilePath), { recursive: true }).catch(() => null);
     await writeFile(logFilePath, terminalRender.render());
   }
 
@@ -827,19 +672,19 @@ export default async function cliYes({
   async function sendEnter(waitms = 1000) {
     // wait for idle for a bit to let agent cli finish rendering
     const st = Date.now();
-    await exitIdleWaiter.wait(waitms);
+    await idleWaiter.wait(waitms);
     const et = Date.now();
     // process.stdout.write(`\ridleWaiter.wait(${waitms}) took ${et - st}ms\r`);
-    await yesLog`sendEn| idleWaiter.wait(${String(waitms)}) took ${String(et - st)}ms`;
+    await logger.debug(`sendEn| idleWaiter.wait(${String(waitms)}) took ${String(et - st)}ms`);
     nextStdout.unready();
-    shell.write('\r');
+    shell.write("\r");
     // retry once if not received any output in 1 second after sending Enter
     await Promise.race([
       nextStdout.wait(),
       new Promise<void>((resolve) =>
         setTimeout(() => {
           if (!nextStdout.ready) {
-            shell.write('\r');
+            shell.write("\r");
           }
           resolve();
         }, 1000),
@@ -850,22 +695,22 @@ export default async function cliYes({
   async function sendMessage(message: string) {
     await stdinReady.wait();
     // show in-place message: write msg and move cursor back start
-    yesLog`send  |${message}`;
+    logger.debug(`send  |${message}`);
     nextStdout.unready();
     shell.write(message);
-    exitIdleWaiter.ping(); // just sent a message, wait for echo
-    yesLog`waiting next stdout|${message}`;
+    idleWaiter.ping(); // just sent a message, wait for echo
+    logger.debug(`waiting next stdout|${message}`);
     await nextStdout.wait();
-    yesLog`sending enter`;
+    logger.debug(`sending enter`);
     await sendEnter(1000);
-    yesLog`sent enter`;
+    logger.debug(`sent enter`);
   }
 
   async function exitAgent() {
     robust = false; // disable robust to avoid auto restart
 
     // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
-    for (const cmd of cliConf.exitCommands ?? ['/exit']) await sendMessage(cmd);
+    for (const cmd of cliConf.exitCommands ?? ["/exit"]) await sendMessage(cmd);
 
     // wait for shell to exit or kill it with a timeout
     let exited = false;
