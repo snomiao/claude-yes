@@ -197,10 +197,7 @@ export default async function agentYes({
     name: "xterm-color",
     ...getTerminalDimensions(),
     cwd: cwd ?? process.cwd(),
-    env: {
-      ...(env ?? (process.env as Record<string, string>)),
-      CLAUDE_PPID: String(process.ppid),
-    },
+    env: { ...(env ?? (process.env as Record<string, string>)) },
   });
 
   // Apply CLI specific configurations (moved to CLI_CONFIGURES)
@@ -383,11 +380,9 @@ export default async function agentYes({
     stdinReady.unready(); // start buffer stdin
     const agentCrashed = exitCode !== 0;
 
-    await sleep(300)
     // Handle restart without continue args (e.g., "No conversation found to continue")
     // logger.debug(``, { shouldRestartWithoutContinue, robust })
     if (shouldRestartWithoutContinue) {
-      logger.info(`${cli} needs restart without continue args, restarting...`);
       shouldRestartWithoutContinue = false; // reset flag
       isFatal = false; // reset fatal flag to allow restart
 
@@ -397,6 +392,7 @@ export default async function agentYes({
         ...parseCommandString(cliCommand),
         ...cliArgs.filter((arg) => !["--continue", "--resume"].includes(arg)),
       ];
+      logger.info(`Restarting ${cli} ${JSON.stringify([bin, ...args])}`);
 
       shell = pty.spawn(bin!, args, getPtyOptions());
       shell.onData(onData);
@@ -425,9 +421,9 @@ export default async function agentYes({
         if (storedSessionId) {
           // Use specific session ID instead of --last
           restoreArgs = ["resume", storedSessionId];
-          await logger.debug(`restore|using stored session ID: ${storedSessionId}`);
+          logger.debug(`restore|using stored session ID: ${storedSessionId}`);
         } else {
-          await logger.debug(`restore|no stored session, using default restore args`);
+          logger.debug(`restore|no stored session, using default restore args`);
         }
       }
 
