@@ -19,39 +19,47 @@ A wrapper tool that automates interactions with various AI CLI tools by automati
 Install the AI CLI tool(s) you want to use:
 
 ### Claude
+
 ```bash
 npm install -g @anthropic-ai/claude-code
 ```
+
 Learn more: https://www.anthropic.com/claude-code
 
 ### Gemini
+
 ```bash
 # Install Gemini CLI (if available)
 # Check Google's documentation for installation instructions
 ```
 
 ### Codex
+
 ```bash
 # Install Codex CLI (if available)
 # Check Microsoft's documentation for installation instructions
 ```
 
 ### GitHub Copilot
+
 ```bash
 # Install GitHub Copilot CLI
 # Check GitHub's documentation for installation instructions
 ```
 
 ### Cursor
+
 ```bash
 # Install Cursor agent CLI
 # Check Cursor's documentation for installation instructions
 ```
 
 ### Grok
+
 ```bash
 npm install -g @vibe-kit/grok-cli
 ```
+
 Learn more: https://github.com/vibe-kit/grok-cli
 
 Then install this project:
@@ -71,12 +79,14 @@ claude-yes [--exit-on-idle=60s] [tool-command] [prompts]
 #### Examples
 
 **Claude (default):**
+
 ```bash
 claude-yes -- run all tests and commit current changes
 bunx claude-yes "Solve TODO.md"
 ```
 
 **Other AI tools:**
+
 ```bash
 # Use Codex directly
 codex-yes -- refactor this function
@@ -98,26 +108,28 @@ claude-yes "optimize performance"
 ```
 
 **Auto-exit when idle (useful for automation):**
+
 ```bash
 claude-yes --exit-on-idle=60s "run all tests and commit current changes"
 ```
 
 **Alternative with claude-code-execute:**
+
 ```bash
 claude-code-execute claude-yes "your task here"
 ```
 
 ### Supported CLI Tools
 
-| Tool | CLI Name | Description | Installation/Update |
-|------|----------|-------------|---------------------|
-| Claude | `claude` | Anthropic's Claude Code (default) | `npm install -g @anthropic-ai/claude-code@latest` |
-| Gemini | `gemini` | Google's Gemini CLI | `npm install -g @google/gemini-cli@latest` |
-| Codex | `codex` | OpenAI's Codex CLI | `npm install -g @openai/codex-cli@latest` |
-| Copilot | `copilot` | GitHub Copilot CLI | `npm install -g @github/copilot@latest` |
-| Cursor | `cursor` | Cursor agent CLI | See https://cursor.com/ja/docs/cli/installation |
-| Grok | `grok` | Vibe Kit's Grok CLI | `npm install -g @vibe-kit/grok-cli@latest` |
-| Qwen | `qwen` | Alibaba's Qwen Code CLI | `npm install -g @qwen-code/qwen-code@latest` |
+| Tool    | CLI Name  | Description                       | Installation/Update                               |
+| ------- | --------- | --------------------------------- | ------------------------------------------------- |
+| Claude  | `claude`  | Anthropic's Claude Code (default) | `npm install -g @anthropic-ai/claude-code@latest` |
+| Gemini  | `gemini`  | Google's Gemini CLI               | `npm install -g @google/gemini-cli@latest`        |
+| Codex   | `codex`   | OpenAI's Codex CLI                | `npm install -g @openai/codex-cli@latest`         |
+| Copilot | `copilot` | GitHub Copilot CLI                | `npm install -g @github/copilot@latest`           |
+| Cursor  | `cursor`  | Cursor agent CLI                  | See https://cursor.com/ja/docs/cli/installation   |
+| Grok    | `grok`    | Vibe Kit's Grok CLI               | `npm install -g @vibe-kit/grok-cli@latest`        |
+| Qwen    | `qwen`    | Alibaba's Qwen Code CLI           | `npm install -g @qwen-code/qwen-code@latest`      |
 
 The tool will:
 
@@ -131,7 +143,9 @@ The tool will:
 ### Pros & Cons Analysis
 
 #### Claude Code CLI (Anthropic)
+
 **Pros:**
+
 - Industry-leading performance on SWE-bench (72.5%) and Terminal-bench (43.2%)
 - Advanced checkpointing feature for code state management
 - Deep terminal integration with Unix philosophy support
@@ -139,13 +153,16 @@ The tool will:
 - Excellent at complex refactoring and debugging tasks
 
 **Cons:**
+
 - Higher cost compared to alternatives ($5+ per session)
 - Terminal-based interface may not suit all developers
 - Closed ecosystem with limited community plugins
 - Requires API subscription for full features
 
 #### Gemini CLI (Google)
+
 **Pros:**
+
 - Free tier with generous limits (60 requests/min, 1,000/day)
 - Fully open source (Apache 2.0 license)
 - 1 million token context window
@@ -153,13 +170,16 @@ The tool will:
 - GitHub Actions integration at no cost
 
 **Cons:**
+
 - Currently in preview with potential stability issues
 - Shared quotas between CLI and Code Assist
 - May produce factually incorrect outputs
 - Limited to English language support
 
 #### Codex CLI (OpenAI/Microsoft)
+
 **Pros:**
+
 - Cloud-based scalability for team collaboration
 - Powers GitHub Copilot ecosystem
 - Supports multimodal input (images, diagrams)
@@ -167,13 +187,16 @@ The tool will:
 - Flexible API for custom implementations
 
 **Cons:**
+
 - Requires more setup and technical knowledge
 - Internet dependency for all operations
 - Less mature/polished than competitors
 - Higher computational requirements
 
 #### Copilot CLI (GitHub)
+
 **Pros:**
+
 - Seamless GitHub integration
 - Terminal-native development experience
 - Wide language and model support
@@ -181,13 +204,16 @@ The tool will:
 - Enterprise policy controls available
 
 **Cons:**
+
 - Requires active subscription
 - English-only support
 - May struggle with complex/uncommon commands
 - Organization admin approval needed for business users
 
 #### Cursor CLI
+
 **Pros:**
+
 - Superior performance in setup and deployment
 - Multi-model support from various providers
 - Excellent context awareness with RAG system
@@ -195,13 +221,16 @@ The tool will:
 - Can run multiple agents in parallel
 
 **Cons:**
+
 - Steeper learning curve
 - UI/UX can be clunky with cramped interface
 - Manual context management required
 - Screen real estate limitations
 
 #### Grok CLI (xAI/Vibe Kit)
+
 **Pros:**
+
 - Open source and free for basic use
 - Cost-effective premium tier ($30/month)
 - Real-time data access via X integration
@@ -209,13 +238,16 @@ The tool will:
 - Cross-platform compatibility
 
 **Cons:**
+
 - Requires API key for advanced features
 - Internet dependency for AI features
 - Additional setup and authentication needed
 - Newer with less mature ecosystem
 
 #### Qwen Code CLI (Alibaba)
+
 **Pros:**
+
 - Fully open source (Apache 2.0)
 - Exceptional benchmark performance (87.9 on MultiPL-E)
 - 256K-1M token context support
@@ -223,6 +255,7 @@ The tool will:
 - Enterprise-ready with full infrastructure control
 
 **Cons:**
+
 - Newer entrant with developing ecosystem
 - Geopolitical considerations for adoption
 - Less established tooling and integrations
@@ -251,12 +284,14 @@ The tool will:
 On Linux systems, `agent-yes` automatically creates a named pipe (FIFO) for additional input streams. This allows you to send input to the CLI from multiple sources simultaneously.
 
 **How it works:**
+
 - When started on Linux, a FIFO is created at `/tmp/agent-yes-YYYYMMDDHHMMSSXXX.stdin`
 - The FIFO path is displayed in the console output
 - You can write to this FIFO from another terminal or script
 - Input from both the FIFO and standard stdin are merged together
 
 **Example usage:**
+
 ```bash
 # Terminal 1: Start the CLI
 claude-yes "help me with my code"
@@ -267,6 +302,7 @@ echo "also check the tests" > /tmp/agent-yes-20260109123456abc.stdin
 ```
 
 This feature is useful for:
+
 - Scripting complex interactions
 - Sending input from multiple sources
 - Integrating with other tools and automation systems
@@ -276,22 +312,22 @@ This feature is useful for:
 You can also use this as a library in your Node.js projects:
 
 ```typescript
-import claudeYes from 'claude-yes';
+import claudeYes from "claude-yes";
 
 // Use Claude
 await claudeYes({
-  prompt: 'help me solve all todos in my codebase',
-  cli: 'claude',
-  cliArgs: ['--verbose'],
+  prompt: "help me solve all todos in my codebase",
+  cli: "claude",
+  cliArgs: ["--verbose"],
   exitOnIdle: 30000, // exit after 30 seconds of idle
   continueOnCrash: true,
-  logFile: 'claude.log',
+  logFile: "claude.log",
 });
 
 // Use other tools
 await claudeYes({
-  prompt: 'debug this function',
-  cli: 'gemini',
+  prompt: "debug this function",
+  cli: "gemini",
   exitOnIdle: 60000,
 });
 ```
@@ -306,8 +342,9 @@ The tool uses `node-pty` to spawn and manage AI CLI processes, with a sophistica
 4. **Manages Process Lifecycle**: Handles crashes, restarts, and graceful exits
 
 Each supported CLI has its own configuration defining:
+
 - **Ready patterns**: Regex patterns that indicate the tool is ready for input
-- **Enter patterns**: Patterns that trigger automatic "Yes" responses  
+- **Enter patterns**: Patterns that trigger automatic "Yes" responses
 - **Fatal patterns**: Patterns that indicate fatal errors requiring exit
 - **Binary mapping**: Maps logical names to actual executable names
 - **Argument handling**: Special argument processing (e.g., adding `--search` to Codex)

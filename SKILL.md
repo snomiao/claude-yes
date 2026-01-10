@@ -17,7 +17,9 @@ This skill helps you work with the `agent-yes` wrapper tool, which automates int
 ## Key Capabilities
 
 ### Multi-CLI Support
+
 Works with multiple AI coding assistants:
+
 - Claude Code (Anthropic) - Industry-leading performance
 - Gemini CLI (Google) - Free tier with generous limits
 - Codex CLI (OpenAI/Microsoft) - Cloud-based collaboration
@@ -27,6 +29,7 @@ Works with multiple AI coding assistants:
 - Qwen Code CLI (Alibaba) - Open source, high performance
 
 ### Automation Features
+
 - **Auto-Response**: Automatically responds "Yes" to common prompts
 - **Continuous Operation**: Keeps AI running until task completion
 - **Crash Recovery**: Automatic process restart on crashes
@@ -57,22 +60,22 @@ agent-yes claude --exit-on-idle=60s "run all tests and commit current changes"
 ### Library Usage in Node.js
 
 ```typescript
-import cliYes from 'agent-yes';
+import cliYes from "agent-yes";
 
 // Use Claude
 await cliYes({
-  prompt: 'help me solve all todos in my codebase',
-  cli: 'claude',
-  cliArgs: ['--verbose'],
+  prompt: "help me solve all todos in my codebase",
+  cli: "claude",
+  cliArgs: ["--verbose"],
   exitOnIdle: 30000, // exit after 30 seconds of idle
   continueOnCrash: true,
-  logFile: 'claude.log',
+  logFile: "claude.log",
 });
 
 // Use other tools
 await cliYes({
-  prompt: 'debug this function',
-  cli: 'gemini',
+  prompt: "debug this function",
+  cli: "gemini",
   exitOnIdle: 60000,
 });
 ```
@@ -86,6 +89,7 @@ await cliYes({
 ## Security Considerations
 
 ⚠️ **Important**: Only run on trusted repositories. This tool:
+
 - Automatically responds to prompts without user confirmation
 - Can execute commands automatically
 - May be vulnerable to prompt injection attacks in malicious code/files
@@ -95,6 +99,7 @@ Always review repositories before running automated tools.
 ## Implementation Details
 
 Uses `node-pty` or `bun-pty` to manage AI CLI processes with:
+
 - **Pattern matching**: Detects ready states, prompts, and errors
 - **Auto-response system**: Sends "Yes" to common prompts
 - **Process lifecycle management**: Handles crashes and graceful exits

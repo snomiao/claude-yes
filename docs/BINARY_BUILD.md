@@ -13,6 +13,7 @@ bunj run build:binary
 ```
 
 This will create binaries in `dist/bin/`:
+
 - `agent-yes` (main binary)
 - `claude-yes` (symlink/copy)
 - `codex-yes` (symlink/copy)
@@ -31,6 +32,7 @@ bun run build:binaries
 ```
 
 This will create binaries in `dist/binaries/` organized by platform:
+
 - `linux-x64/`
 - `linux-arm64/`
 - `darwin-x64/`

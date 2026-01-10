@@ -39,6 +39,7 @@ The package includes a postinstall script that automatically rebuilds the `bun-p
 If the automatic rebuild fails, you can manually rebuild:
 
 #### Linux/macOS:
+
 ```bash
 # Clone bun-pty source
 git clone https://github.com/sursaone/bun-pty.git /tmp/bun-pty-build
@@ -57,6 +58,7 @@ cp rust-pty/target/release/librust_pty.dylib \
 ```
 
 #### Windows:
+
 ```powershell
 # Clone bun-pty source
 git clone https://github.com/sursaone/bun-pty.git C:\Temp\bun-pty-build

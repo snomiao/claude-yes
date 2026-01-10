@@ -1,17 +1,20 @@
 # Running Lock Usage Examples
 
 ## Overview
+
 The running lock feature prevents multiple claude-yes agents from running concurrently in the same directory or git repository. This ensures that agents don't interfere with each other when working on the same codebase.
 
 ## How It Works
 
 ### Git Repository Detection
+
 When you start an agent, the system checks if the current directory is inside a git repository:
 
 - **In a Git Repo**: The lock is based on the git repository root. This means if you start two agents anywhere within the same git repo, the second one will queue.
 - **Not in a Git Repo**: The lock is based on the exact directory path.
 
 ### Lock File Location
+
 Lock information is stored in: `~/.claude-yes/running.lock.json`
 
 ## Usage Examples
@@ -70,16 +73,21 @@ claude-yes "cleanup old files"
 ## Features
 
 ### Automatic Stale Lock Cleanup
+
 If an agent crashes or is killed, the lock is automatically cleaned up when the next agent checks the lock file. The system verifies that the process ID is still running.
 
 ### Queue Management
+
 When an agent needs to wait:
+
 - It's added to the queue with status 'queued'
 - Progress indicators show it's waiting
 - Once the blocking agent completes, the queued agent automatically starts
 
 ### Process Status Tracking
+
 Each task in the lock file includes:
+
 - `cwd`: Current working directory
 - `gitRoot`: Git repository root (if applicable)
 - `task`: Description of what the agent is doing
@@ -97,6 +105,7 @@ cat ~/.claude-yes/running.lock.json
 ```
 
 Example output:
+
 ```json
 {
   "tasks": [
@@ -118,12 +127,12 @@ Example output:
 If you're using claude-yes as a library:
 
 ```typescript
-import claudeYes from 'claude-yes';
+import claudeYes from "claude-yes";
 
 // The lock is automatically managed
 await claudeYes({
-  cli: 'claude',
-  prompt: 'help me with this task',
+  cli: "claude",
+  prompt: "help me with this task",
   cwd: process.cwd(),
 });
 // Lock is automatically released when done
@@ -132,21 +141,16 @@ await claudeYes({
 ### Manual Lock Management
 
 ```typescript
-import {
-  acquireLock,
-  releaseLock,
-  cleanStaleLocks,
-  shouldUseLock,
-} from 'claude-yes/runningLock';
+import { acquireLock, releaseLock, cleanStaleLocks, shouldUseLock } from "claude-yes/runningLock";
 
 // Check if lock should be used
 if (shouldUseLock(process.cwd())) {
   // Acquire lock (will wait if locked)
-  await acquireLock(process.cwd(), 'My task description');
-  
+  await acquireLock(process.cwd(), "My task description");
+
   try {
     // Do your work here
-    console.log('Working...');
+    console.log("Working...");
   } finally {
     // Always release the lock
     await releaseLock();
@@ -172,11 +176,11 @@ claude-yes --disable-lock "help me with this task"
 Or when using as a library:
 
 ```typescript
-import claudeYes from 'claude-yes';
+import claudeYes from "claude-yes";
 
 await claudeYes({
-  cli: 'claude',
-  prompt: 'help me with this task',
+  cli: "claude",
+  prompt: "help me with this task",
   disableLock: true, // Disable the lock
 });
 ```
@@ -186,13 +190,17 @@ await claudeYes({
 ## Troubleshooting
 
 ### Lock Not Releasing
+
 If a lock seems stuck:
+
 1. Check if the process is actually running: `ps aux | grep <pid>`
 2. Manually clean stale locks: `echo '{"tasks":[]}' > ~/.claude-yes/running.lock.json`
 3. The next agent will automatically clean invalid locks
 
 ### Multiple Agents Not Queueing
+
 Verify you're in the same git repository:
+
 ```bash
 git rev-parse --show-toplevel
 ```
@@ -200,4 +208,5 @@ git rev-parse --show-toplevel
 Both agents should show the same git root.
 
 ### Disable Locking (Not Recommended)
+
 If you need to disable locking for testing, you can modify the lock file to always return empty tasks, but this is not recommended for production use.
