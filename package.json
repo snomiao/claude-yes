@@ -120,6 +120,9 @@
       "optional": true
     }
   },
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "_release": {
     "branches": [
       "main"
