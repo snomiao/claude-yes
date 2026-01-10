@@ -19,7 +19,7 @@ import { logger } from "./logger.ts";
 // its recommened to use bun-pty in windows, since node-pty is super complex to install there, requires a 10G M$ build tools
 export const pty = await (async () => {
   if (globalThis.Bun) {
-    logger.debug("Bun detected, using bun-pty");
+    logger.info("Bun detected, using bun-pty");
     return await import("bun-pty");
   }
   return await import("node-pty");
