@@ -335,7 +335,7 @@ export default async function agentYes({
 
       const isNotFound = isCommandNotFoundError(error);
       if (cliConf?.install && isNotFound) {
-        logger.info(`Please install the cli by run ${cliConf.install}`)
+        logger.info(`Please install the cli by run ${cliConf.install}`);
 
         if (install) {
           logger.info(`Attempting to install ${cli}...`);

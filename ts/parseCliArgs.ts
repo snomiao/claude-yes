@@ -78,8 +78,8 @@ export function parseCliArgs(argv: string[]) {
     })
     .option("install", {
       type: "boolean",
-      description: "Install/Update the CLI if not found or outdated",
-      default: true,
+      description: "Automatically Install/Update the CLI if not found or outdated",
+      default: false,
     })
     .option("continue", {
       type: "boolean",

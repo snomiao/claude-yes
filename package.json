@@ -30,14 +30,14 @@
   },
   "bin": {
     "agent-yes": "ts/cli.ts",
-    "auggie-yes": "ts/cli.ts",
-    "claude-yes": "ts/cli.ts",
-    "codex-yes": "ts/cli.ts",
-    "copilot-yes": "ts/cli.ts",
-    "cursor-yes": "ts/cli.ts",
-    "gemini-yes": "ts/cli.ts",
-    "grok-yes": "ts/cli.ts",
-    "qwen-yes": "ts/cli.tss"
+    "auggie-yes": "dist/auggie-yes.js",
+    "claude-yes": "dist/claude-yes.js",
+    "codex-yes": "dist/codex-yes.js",
+    "copilot-yes": "dist/copilot-yes.js",
+    "cursor-yes": "dist/cursor-yes.js",
+    "gemini-yes": "dist/gemini-yes.js",
+    "grok-yes": "dist/grok-yes.js",
+    "qwen-yes": "dist/qwen-yes.js"
   },
   "directories": {
     "doc": "docs"
