@@ -70,7 +70,7 @@ export default defineCliYesConfig({
       typeRespond: {
         "2\n": /2. Yes/,
       },
-      enter: [/❯ +1\. Yes/, /❯ +1\. Dark mode✔/, /Press Enter to continue…/],
+      enter: [/❯ +1\. Yes/, /❯ +1\. Dark mode✔/, /Press Enter to continue…/ , /❯ 1\. Dark mode ✔/],
       fatal: [/⎿  Claude usage limit reached\./, /^error: unknown option/],
       restoreArgs: ["--continue"], // restart with --continue when crashed
       restartWithoutContinueArg: [/No conversation found to continue/],
