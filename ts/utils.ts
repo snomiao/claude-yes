@@ -3,12 +3,8 @@ export function sleepms(ms: number) {
 }
 export function deepMixin<T>(target: T, source: DeepPartial<T>): T {
   for (const key in source) {
-    if (
-      source[key] &&
-      typeof source[key] === 'object' &&
-      !Array.isArray(source[key])
-    ) {
-      if (!target[key] || typeof target[key] !== 'object') {
+    if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
+      if (!target[key] || typeof target[key] !== "object") {
         (target as any)[key] = {};
       }
       deepMixin(target[key], source[key] as any);

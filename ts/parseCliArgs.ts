@@ -1,8 +1,8 @@
-import ms from 'ms';
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-import pkg from '../package.json';
-import { SUPPORTED_CLIS } from '.';
+import ms from "ms";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
+import pkg from "../package.json";
+import { SUPPORTED_CLIS } from ".";
 
 /**
  * Parse CLI arguments the same way cli.ts does
@@ -10,89 +10,84 @@ import { SUPPORTED_CLIS } from '.';
  */
 export function parseCliArgs(argv: string[]) {
   // Detect cli name from script name (same logic as cli.ts:10-14)
-  const scriptName = argv[1]?.split(/[\/\\]/).pop();
+  const scriptName = argv[1]?.split(/[/\\]/).pop();
   const cliName = ((e?: string) => {
-    if (e === 'cli' || e === 'cli.ts' || e === 'cli.js' || e === 'agent-yes')
-      return undefined;
-    return e?.replace(/-yes(\.[jt]s)?$/, '');
+    if (e === "cli" || e === "cli.ts" || e === "cli.js" || e === "agent-yes") return undefined;
+    return e?.replace(/-yes(\.[jt]s)?$/, "");
   })(scriptName);
 
   // Parse args with yargs (same logic as cli.ts:16-73)
   const parsedArgv = yargs(hideBin(argv))
-    .usage(
-      'Usage: $0 [cli] [agent-yes args] [agent-cli args] [--] [prompts...]',
-    )
+    .usage("Usage: $0 [cli] [agent-yes args] [agent-cli args] [--] [prompts...]")
     .example(
-      '$0 claude --idle=30s -- solve all todos in my codebase, commit one by one',
-      'Run Claude with a 30 seconds idle timeout, and the prompt is everything after `--`',
+      "$0 claude --idle=30s -- solve all todos in my codebase, commit one by one",
+      "Run Claude with a 30 seconds idle timeout, and the prompt is everything after `--`",
     )
-    .option('robust', {
-      type: 'boolean',
+    // TODO: add a --docker option, will tell cli.ts to start docker process with tty and handles all stdio forwarding
+
+    .option("robust", {
+      type: "boolean",
       default: true,
-      description:
-        're-spawn Claude with --continue if it crashes, only works for claude yet',
-      alias: 'r',
+      description: "re-spawn Claude with --continue if it crashes, only works for claude yet",
+      alias: "r",
     })
-    .option('logFile', {
-      type: 'string',
-      description: 'Rendered log file to write to.',
+    .option("logFile", {
+      type: "string",
+      description: "Rendered log file to write to.",
     })
-    .option('prompt', {
-      type: 'string',
-      description: 'Prompt to send to Claude (also can be passed after --)',
-      alias: 'p',
+    .option("prompt", {
+      type: "string",
+      description: "Prompt to send to Claude (also can be passed after --)",
+      alias: "p",
     })
-    .option('verbose', {
-      type: 'boolean',
-      description: 'Enable verbose logging, will emit ./agent-yes.log',
+    .option("verbose", {
+      type: "boolean",
+      description: "Enable verbose logging, will emit ./agent-yes.log",
       default: false,
     })
-    .option('use-skills', {
-      type: 'boolean',
+    .option("use-skills", {
+      type: "boolean",
       description:
-        'Prepend SKILL.md header from current directory to the prompt (helpful for non-Claude agents)',
+        "Prepend SKILL.md header from current directory to the prompt (helpful for non-Claude agents)",
       default: false,
     })
-    .option('exit-on-idle', {
-      type: 'string',
+    .option("exit-on-idle", {
+      type: "string",
       description: 'Exit after a period of inactivity, e.g., "5s" or "1m"',
-      deprecated: 'use --idle instead',
-      default: '60s',
-      alias: 'e',
+      deprecated: "use --idle instead",
+      default: "60s",
+      alias: "e",
     })
-    .option('idle', {
-      type: 'string',
-      description:
-        'short idle time, will perform idle action when reached, e.g., "5s" or "1m"',
-      alias: 'i',
+    .option("idle", {
+      type: "string",
+      description: 'short idle time, will perform idle action when reached, e.g., "5s" or "1m"',
+      alias: "i",
     })
-    .option('idle-action', {
-      type: 'string',
-      description:
-        'Idle action to perform when idle time is reached, e.g., "exit" or "TODO.md"',
+    .option("idle-action", {
+      type: "string",
+      description: 'Idle action to perform when idle time is reached, e.g., "exit" or "TODO.md"',
     })
-    .option('queue', {
-      type: 'boolean',
+    .option("queue", {
+      type: "boolean",
       description:
-        'Queue Agent Commands when spawning multiple agents in the same directory/repo, can be disabled with --no-queue',
+        "Queue Agent Commands when spawning multiple agents in the same directory/repo, can be disabled with --no-queue",
       default: false,
     })
-    .option('install', {
-      type: 'boolean',
-      description: 'Install/Update the CLI if not found or outdated',
+    .option("install", {
+      type: "boolean",
+      description: "Install/Update the CLI if not found or outdated",
       default: true,
     })
-    .option('continue', {
-      type: 'boolean',
+    .option("continue", {
+      type: "boolean",
       description:
-        'Resume previous session in current cwd if any, note: will exit if no previous session found',
+        "Resume previous session in current cwd if any, note: will exit if no previous session found",
       default: false,
-      alias: 'c',
+      alias: "c",
     })
-    .positional('cli', {
-      describe:
-        'The AI CLI to run, e.g., claude, codex, copilot, cursor, gemini',
-      type: 'string',
+    .positional("cli", {
+      describe: "The AI CLI to run, e.g., claude, codex, copilot, cursor, gemini",
+      type: "string",
       choices: SUPPORTED_CLIS,
       demandOption: false,
       default: cliName,
@@ -100,8 +95,8 @@ export function parseCliArgs(argv: string[]) {
     .help()
     .version(pkg.version)
     .parserConfiguration({
-      'unknown-options-as-args': true,
-      'halt-at-non-option': true,
+      "unknown-options-as-args": true,
+      "halt-at-non-option": true,
     })
     .parseSync();
 
@@ -109,25 +104,21 @@ export function parseCliArgs(argv: string[]) {
   const optionalIndex = (e: number) => (0 <= e ? e : undefined);
   const rawArgs = argv.slice(2);
   const cliArgIndex = optionalIndex(rawArgs.indexOf(String(parsedArgv._[0])));
-  const dashIndex = optionalIndex(rawArgs.indexOf('--'));
+  const dashIndex = optionalIndex(rawArgs.indexOf("--"));
 
   // Reconstruct what yargs consumed vs what it didn't
   const yargsConsumed = new Set<string>();
 
   // Add consumed flags
   Object.keys(parsedArgv).forEach((key) => {
-    if (
-      key !== '_' &&
-      key !== '$0' &&
-      parsedArgv[key as keyof typeof parsedArgv] !== undefined
-    ) {
+    if (key !== "_" && key !== "$0" && parsedArgv[key as keyof typeof parsedArgv] !== undefined) {
       yargsConsumed.add(`--${key}`);
       // Add short aliases
-      if (key === 'prompt') yargsConsumed.add('-p');
-      if (key === 'robust') yargsConsumed.add('-r');
-      if (key === 'idle') yargsConsumed.add('-i');
-      if (key === 'exitOnIdle') yargsConsumed.add('-e');
-      if (key === 'continue') yargsConsumed.add('-c');
+      if (key === "prompt") yargsConsumed.add("-p");
+      if (key === "robust") yargsConsumed.add("-r");
+      if (key === "idle") yargsConsumed.add("-i");
+      if (key === "exitOnIdle") yargsConsumed.add("-e");
+      if (key === "continue") yargsConsumed.add("-c");
     }
   });
 
@@ -144,13 +135,13 @@ export function parseCliArgs(argv: string[]) {
         const arg = argsToCheck[i];
         if (!arg) continue;
 
-        const [flag] = arg.split('=');
+        const [flag] = arg.split("=");
 
         if (flag && yargsConsumed.has(flag)) {
           // Skip consumed flag and its value if separate
-          if (!arg.includes('=') && i + 1 < argsToCheck.length) {
+          if (!arg.includes("=") && i + 1 < argsToCheck.length) {
             const nextArg = argsToCheck[i + 1];
-            if (nextArg && !nextArg.startsWith('-')) {
+            if (nextArg && !nextArg.startsWith("-")) {
               i++; // Skip value
             }
           }
@@ -163,9 +154,7 @@ export function parseCliArgs(argv: string[]) {
     return [];
   })();
   const dashPrompt: string | undefined =
-    dashIndex === undefined
-      ? undefined
-      : rawArgs.slice(dashIndex + 1).join(' ');
+    dashIndex === undefined ? undefined : rawArgs.slice(dashIndex + 1).join(" ");
 
   // Return the config object that would be passed to cliYes (same logic as cli.ts:99-121)
   return {
@@ -173,12 +162,9 @@ export function parseCliArgs(argv: string[]) {
     env: process.env as Record<string, string>,
     cli: (cliName ||
       parsedArgv.cli ||
-      parsedArgv._[0]
-        ?.toString()
-        ?.replace?.(/-yes$/, '')) as (typeof SUPPORTED_CLIS)[number],
+      parsedArgv._[0]?.toString()?.replace?.(/-yes$/, "")) as (typeof SUPPORTED_CLIS)[number],
     cliArgs: cliArgsForSpawn,
-    prompt:
-      [parsedArgv.prompt, dashPrompt].filter(Boolean).join(' ') || undefined,
+    prompt: [parsedArgv.prompt, dashPrompt].filter(Boolean).join(" ") || undefined,
     install: parsedArgv.install,
     exitOnIdle: Number(
       (parsedArgv.idle || parsedArgv.exitOnIdle)?.replace(/.*/, (e) =>

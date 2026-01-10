@@ -1,15 +1,15 @@
-import { execSync } from 'child_process';
-import { existsSync } from 'fs';
-import { mkdir, readFile, rename, unlink, writeFile } from 'fs/promises';
-import { homedir } from 'os';
-import path from 'path';
+import { execSync } from "child_process";
+import { existsSync } from "fs";
+import { mkdir, readFile, rename, writeFile } from "fs/promises";
+import { homedir } from "os";
+import path from "path";
 
 export interface Task {
   cwd: string;
   gitRoot?: string;
   task: string;
   pid: number;
-  status: 'running' | 'queued' | 'completed' | 'failed';
+  status: "running" | "queued" | "completed" | "failed";
   startedAt: number;
   lockedAt: number;
 }
@@ -24,9 +24,8 @@ interface LockCheckResult {
   lockKey: string;
 }
 
-const getLockDir = () =>
-  path.join(process.env.CLAUDE_YES_HOME || homedir(), '.claude-yes');
-const getLockFile = () => path.join(getLockDir(), 'running.lock.json');
+const getLockDir = () => path.join(process.env.CLAUDE_YES_HOME || homedir(), ".claude-yes");
+const getLockFile = () => path.join(getLockDir(), "running.lock.json");
 const MAX_RETRIES = 5;
 const RETRY_DELAYS = [50, 100, 200, 400, 800]; // exponential backoff in ms
 const POLL_INTERVAL = 2000; // 2 seconds
@@ -49,10 +48,10 @@ function isProcessRunning(pid: number): boolean {
  */
 function getGitRoot(cwd: string): string | null {
   try {
-    const result = execSync('git rev-parse --show-toplevel', {
+    const result = execSync("git rev-parse --show-toplevel", {
       cwd,
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'ignore'],
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "ignore"],
     });
     return result.trim();
   } catch {
@@ -103,7 +102,7 @@ async function readLockFile(): Promise<LockFile> {
       return { tasks: [] };
     }
 
-    const content = await readFile(lockFilePath, 'utf8');
+    const content = await readFile(lockFilePath, "utf8");
     const lockFile = JSON.parse(content) as LockFile;
 
     // Clean stale locks while reading
@@ -113,7 +112,7 @@ async function readLockFile(): Promise<LockFile> {
     });
 
     return lockFile;
-  } catch (error) {
+  } catch {
     // If file is corrupted or doesn't exist, return empty lock file
     return { tasks: [] };
   }
@@ -122,17 +121,14 @@ async function readLockFile(): Promise<LockFile> {
 /**
  * Write lock file atomically with retry logic
  */
-async function writeLockFile(
-  lockFile: LockFile,
-  retryCount = 0,
-): Promise<void> {
+async function writeLockFile(lockFile: LockFile, retryCount = 0): Promise<void> {
   try {
     const lockDir = getLockDir();
     const lockFilePath = getLockFile();
     await mkdir(lockDir, { recursive: true });
 
     const tempFile = `${lockFilePath}.tmp.${process.pid}`;
-    await writeFile(tempFile, JSON.stringify(lockFile, null, 2), 'utf8');
+    await writeFile(tempFile, JSON.stringify(lockFile, null, 2), "utf8");
 
     // Atomic rename
     await rename(tempFile, lockFilePath);
@@ -149,10 +145,7 @@ async function writeLockFile(
 /**
  * Check if lock exists for the current working directory
  */
-async function checkLock(
-  cwd: string,
-  prompt: string,
-): Promise<LockCheckResult> {
+async function checkLock(cwd: string, _prompt: string): Promise<LockCheckResult> {
   const resolvedCwd = resolveRealPath(cwd);
   const gitRoot = isGitRepo(resolvedCwd) ? getGitRoot(resolvedCwd) : null;
   const lockKey = gitRoot || resolvedCwd;
@@ -162,7 +155,7 @@ async function checkLock(
   // Find running tasks for this location
   const blockingTasks = lockFile.tasks.filter((task) => {
     if (!isProcessRunning(task.pid)) return false; // Skip stale locks
-    if (task.status !== 'running') return false; // Only check running tasks
+    if (task.status !== "running") return false; // Only check running tasks
 
     if (gitRoot && task.gitRoot) {
       // In git repo: check by git root
@@ -196,10 +189,7 @@ async function addTask(task: Task): Promise<void> {
 /**
  * Update task status
  */
-async function updateTaskStatus(
-  pid: number,
-  status: Task['status'],
-): Promise<void> {
+async function updateTaskStatus(pid: number, status: Task["status"]): Promise<void> {
   const lockFile = await readLockFile();
   const task = lockFile.tasks.find((t) => t.pid === pid);
 
@@ -221,17 +211,14 @@ async function removeTask(pid: number): Promise<void> {
 /**
  * Wait for lock to be released
  */
-async function waitForUnlock(
-  blockingTasks: Task[],
-  currentTask: Task,
-): Promise<void> {
+async function waitForUnlock(blockingTasks: Task[], currentTask: Task): Promise<void> {
   const blockingTask = blockingTasks[0];
   if (!blockingTask) return;
   console.log(`⏳ Queueing for unlock of: ${blockingTask.task}`);
   console.log(`   Press 'b' to bypass queue, 'k' to kill previous instance`);
 
   // Add current task as 'queued'
-  await addTask({ ...currentTask, status: 'queued' });
+  await addTask({ ...currentTask, status: "queued" });
 
   // Set up keyboard input handling
   const stdin = process.stdin;
@@ -244,30 +231,30 @@ async function waitForUnlock(
 
   const keyHandler = (key: Buffer) => {
     const char = key.toString();
-    if (char === 'b' || char === 'B') {
-      console.log('\n⚡ Bypassing queue...');
+    if (char === "b" || char === "B") {
+      console.log("\n⚡ Bypassing queue...");
       bypassed = true;
-    } else if (char === 'k' || char === 'K') {
-      console.log('\n🔪 Killing previous instance...');
+    } else if (char === "k" || char === "K") {
+      console.log("\n🔪 Killing previous instance...");
       killed = true;
     }
   };
 
-  stdin.on('data', keyHandler);
+  stdin.on("data", keyHandler);
 
   let dots = 0;
   while (true) {
     if (bypassed) {
       // Force bypass - update status to running immediately
-      await updateTaskStatus(currentTask.pid, 'running');
-      console.log('✓ Queue bypassed, starting task...');
+      await updateTaskStatus(currentTask.pid, "running");
+      console.log("✓ Queue bypassed, starting task...");
       break;
     }
 
     if (killed && blockingTask) {
       // Kill the blocking task's process
       try {
-        process.kill(blockingTask.pid, 'SIGTERM');
+        process.kill(blockingTask.pid, "SIGTERM");
         console.log(`✓ Killed process ${blockingTask.pid}`);
         // Wait a bit for the process to be killed
         await sleep(1000);
@@ -283,20 +270,18 @@ async function waitForUnlock(
 
     if (!lockCheck.isLocked) {
       // Lock released, update status to running
-      await updateTaskStatus(currentTask.pid, 'running');
+      await updateTaskStatus(currentTask.pid, "running");
       console.log(`\n✓ Lock released, starting task...`);
       break;
     }
 
     // Show progress indicator
     dots = (dots + 1) % 4;
-    process.stdout.write(
-      `\r⏳ Queueing${'.'.repeat(dots)}${' '.repeat(3 - dots)}`,
-    );
+    process.stdout.write(`\r⏳ Queueing${".".repeat(dots)}${" ".repeat(3 - dots)}`);
   }
 
   // Clean up keyboard handler
-  stdin.off('data', keyHandler);
+  stdin.off("data", keyHandler);
   stdin.setRawMode?.(wasRaw);
   if (!wasRaw) stdin.pause();
 }
@@ -325,7 +310,7 @@ export async function cleanStaleLocks(): Promise<void> {
  */
 export async function acquireLock(
   cwd: string,
-  prompt: string = 'no prompt provided',
+  prompt: string = "no prompt provided",
 ): Promise<void> {
   const resolvedCwd = resolveRealPath(cwd);
   const gitRoot = isGitRepo(resolvedCwd) ? getGitRoot(resolvedCwd) : null;
@@ -335,7 +320,7 @@ export async function acquireLock(
     gitRoot: gitRoot || undefined,
     task: prompt.substring(0, 100), // Limit task description length
     pid: process.pid,
-    status: 'running',
+    status: "running",
     startedAt: Date.now(),
     lockedAt: Date.now(),
   };
@@ -360,7 +345,7 @@ export async function releaseLock(pid: number = process.pid): Promise<void> {
  * Update status of current task
  */
 export async function updateCurrentTaskStatus(
-  status: Task['status'],
+  status: Task["status"],
   pid: number = process.pid,
 ): Promise<void> {
   await updateTaskStatus(pid, status);
@@ -370,8 +355,7 @@ export async function updateCurrentTaskStatus(
  * Check if we should use locking for this directory
  * Only use locking if we're in a git repository
  */
-export function shouldUseLock(cwd: string): boolean {
-  const resolvedCwd = resolveRealPath(cwd);
+export function shouldUseLock(_cwd: string): boolean {
   // Only use lock if in git repo OR if explicitly requested
   // For now, use lock for all cases to handle same-dir conflicts
   return true;
