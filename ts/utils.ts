@@ -1,7 +1,7 @@
 export function sleepms(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-export function deepMixin<T>(target: T, source: DeepPartial<T>): T {
+export function deepMixin<T>(target: T, source: DeepPartial<T>, ...more: DeepPartial<T>[]): T {
   for (const key in source) {
     if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
       if (!target[key] || typeof target[key] !== "object") {
@@ -11,6 +11,10 @@ export function deepMixin<T>(target: T, source: DeepPartial<T>): T {
     } else if (source[key] !== undefined) {
       (target as any)[key] = source[key];
     }
+  }
+
+  for (const moreSource of more) {
+    deepMixin(target, moreSource);
   }
   return target;
 }

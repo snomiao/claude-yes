@@ -14,6 +14,7 @@ import { ReadyManager } from "./ReadyManager.ts";
 import { removeControlCharacters } from "./removeControlCharacters.ts";
 import { acquireLock, releaseLock, shouldUseLock } from "./runningLock.ts";
 import { logger } from "./logger.ts";
+import { createFifoStream } from "./fifo.ts";
 
 export { parseCliArgs } from "./parseCliArgs.ts";
 export { removeControlCharacters };
@@ -101,6 +102,7 @@ export default async function agentYes({
   install = false,
   resume = false,
   useSkills = false,
+  useFifo = false,
 }: {
   cli: SUPPORTED_CLIS;
   cliArgs?: string[];
@@ -116,6 +118,7 @@ export default async function agentYes({
   install?: boolean; // if true, install the cli tool if not installed, e.g. will run `npm install -g cursor-agent`
   resume?: boolean; // if true, resume previous session in current cwd if any
   useSkills?: boolean; // if true, prepend SKILL.md header to the prompt for non-Claude agents
+  useFifo?: boolean; // if true, enable FIFO input stream on Linux for additional stdin input
 }) {
   // those overrides seems only works in bun
   // await Promise.allSettled([
@@ -490,12 +493,13 @@ export default async function agentYes({
     })
 
     // read from FIFO if available, e.g. /tmp/agent-yes-*.stdin, which can be used to send additional input from other processes
-    // .by((s) => {
-    //   const fifoResult = createFifoStream(cli);
-    //   if (!fifoResult) return s;
-    //   pendingExitCode.p => fifoResult.cleanup());
-    //   return s.merge(fifoResult.stream);
-    // })
+    .by((s) => {
+      if(!useFifo) return s
+      const fifoResult = createFifoStream(cli);
+      if (!fifoResult) return s;
+      pendingExitCode.promise.finally(() => fifoResult.cleanup());
+      return s.merge(fifoResult.stream);
+    })
 
     // .map((e) => e.replaceAll('\x1a', '')) // remove ctrl+z from user's input, to prevent bug (but this seems bug)
     // .forEach(e => appendFile('.cache/io.log', "input |" + JSON.stringify(e) + '\n')) // for debugging
