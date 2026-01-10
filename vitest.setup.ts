@@ -1,15 +1,5 @@
 // Setup file to provide jest-compatible globals in vitest
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  test,
-  vi,
-} from 'vitest';
+import { vi } from "vitest";
 
 // Make jest globals available
 (globalThis as any).jest = {

@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
-import { IdleWaiter } from './idleWaiter';
+import { describe, expect, it } from "vitest";
+import { IdleWaiter } from "./idleWaiter";
 
-describe('IdleWaiter', () => {
-  it('should initialize with current time', () => {
+describe("IdleWaiter", () => {
+  it("should initialize with current time", () => {
     const waiter = new IdleWaiter();
     expect(waiter.lastActivityTime).toBeCloseTo(Date.now(), -2);
   });
 
-  it('should update lastActivityTime when ping is called', () => {
+  it("should update lastActivityTime when ping is called", () => {
     const waiter = new IdleWaiter();
     const initialTime = waiter.lastActivityTime;
 
@@ -21,12 +21,12 @@ describe('IdleWaiter', () => {
     expect(waiter.lastActivityTime).toBeGreaterThan(initialTime);
   });
 
-  it('should return this when ping is called for chaining', () => {
+  it("should return this when ping is called for chaining", () => {
     const waiter = new IdleWaiter();
     expect(waiter.ping()).toBe(waiter);
   });
 
-  it('should resolve wait immediately when already idle', async () => {
+  it("should resolve wait immediately when already idle", async () => {
     const waiter = new IdleWaiter();
 
     // Wait enough time to be considered idle
@@ -40,14 +40,14 @@ describe('IdleWaiter', () => {
     await expect(waitPromise).resolves.toBeUndefined();
   });
 
-  it('should respect custom check interval', () => {
+  it("should respect custom check interval", () => {
     const waiter = new IdleWaiter();
     waiter.checkInterval = 200;
 
     expect(waiter.checkInterval).toBe(200);
   });
 
-  it('should have ping method that chains', () => {
+  it("should have ping method that chains", () => {
     const waiter = new IdleWaiter();
     const result = waiter.ping().ping().ping();
     expect(result).toBe(waiter);

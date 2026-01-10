@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
-import { ReadyManager } from './ReadyManager';
+import { describe, expect, it } from "vitest";
+import { ReadyManager } from "./ReadyManager";
 
-describe('ReadyManager', () => {
-  it('should start in not ready state', () => {
+describe("ReadyManager", () => {
+  it("should start in not ready state", () => {
     const manager = new ReadyManager();
     expect(manager.wait()).toBeInstanceOf(Promise);
   });
 
-  it('should resolve wait when ready is called', async () => {
+  it("should resolve wait when ready is called", async () => {
     const manager = new ReadyManager();
     const waitPromise = manager.wait();
 
@@ -16,7 +16,7 @@ describe('ReadyManager', () => {
     await expect(waitPromise).resolves.toBeUndefined();
   });
 
-  it('should resolve immediately if already ready', async () => {
+  it("should resolve immediately if already ready", async () => {
     const manager = new ReadyManager();
     manager.ready();
 
@@ -24,7 +24,7 @@ describe('ReadyManager', () => {
     expect(result).toBeUndefined();
   });
 
-  it('should handle multiple waiters', async () => {
+  it("should handle multiple waiters", async () => {
     const manager = new ReadyManager();
     const wait1 = manager.wait();
     const wait2 = manager.wait();
@@ -39,7 +39,7 @@ describe('ReadyManager', () => {
     ]);
   });
 
-  it('should reset to not ready when unready is called', async () => {
+  it("should reset to not ready when unready is called", async () => {
     const manager = new ReadyManager();
     manager.ready();
     manager.unready();
@@ -47,13 +47,13 @@ describe('ReadyManager', () => {
     expect(manager.wait()).toBeInstanceOf(Promise);
   });
 
-  it('should handle ready with no waiting queue', () => {
+  it("should handle ready with no waiting queue", () => {
     const manager = new ReadyManager();
     manager.ready(); // Should not throw even if no one is waiting
     expect(manager.wait()).toBeUndefined(); // Should be ready now
   });
 
-  it('should handle multiple ready/unready cycles', async () => {
+  it("should handle multiple ready/unready cycles", async () => {
     const manager = new ReadyManager();
 
     // First cycle

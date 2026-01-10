@@ -1,21 +1,21 @@
-import { describe, expect, it } from 'vitest';
-import { type DeepPartial, deepMixin, sleepms } from './utils';
+import { describe, expect, it } from "vitest";
+import { type DeepPartial, deepMixin, sleepms } from "./utils";
 
-describe('utils', () => {
-  describe('sleepms', () => {
-    it('should return a promise', () => {
+describe("utils", () => {
+  describe("sleepms", () => {
+    it("should return a promise", () => {
       const result = sleepms(100);
       expect(result).toBeInstanceOf(Promise);
     });
 
-    it('should resolve after some time', async () => {
+    it("should resolve after some time", async () => {
       const start = Date.now();
       await sleepms(10);
       const end = Date.now();
       expect(end - start).toBeGreaterThanOrEqual(5); // Allow some margin
     });
 
-    it('should handle zero milliseconds', async () => {
+    it("should handle zero milliseconds", async () => {
       const start = Date.now();
       await sleepms(0);
       const end = Date.now();
@@ -23,8 +23,8 @@ describe('utils', () => {
     });
   });
 
-  describe('deepMixin', () => {
-    it('should merge simple properties', () => {
+  describe("deepMixin", () => {
+    it("should merge simple properties", () => {
       const target = { a: 1, b: 2 };
       const source = { b: 3, c: 4 };
       const result = deepMixin(target, source);
@@ -33,25 +33,25 @@ describe('utils', () => {
       expect(result).toBe(target); // Should modify original object
     });
 
-    it('should merge nested objects', () => {
+    it("should merge nested objects", () => {
       const target = {
-        user: { name: 'John', age: 30 },
-        settings: { theme: 'dark' },
+        user: { name: "John", age: 30 },
+        settings: { theme: "dark" },
       };
       const source: DeepPartial<typeof target> = {
         user: { age: 31 },
-        settings: { language: 'en' } as any,
+        settings: { language: "en" } as any,
       };
 
       deepMixin(target, source);
 
       expect(target).toEqual({
-        user: { name: 'John', age: 31 },
-        settings: { theme: 'dark', language: 'en' },
+        user: { name: "John", age: 31 },
+        settings: { theme: "dark", language: "en" },
       });
     });
 
-    it('should create nested objects when target property is null', () => {
+    it("should create nested objects when target property is null", () => {
       const target: any = { config: null };
       const source = { config: { enabled: true } };
 
@@ -62,8 +62,8 @@ describe('utils', () => {
       });
     });
 
-    it('should create nested objects when target property is primitive', () => {
-      const target: any = { config: 'string' };
+    it("should create nested objects when target property is primitive", () => {
+      const target: any = { config: "string" };
       const source = { config: { enabled: true } };
 
       deepMixin(target, source);
@@ -73,7 +73,7 @@ describe('utils', () => {
       });
     });
 
-    it('should handle arrays by replacing them', () => {
+    it("should handle arrays by replacing them", () => {
       const target = { items: [1, 2, 3] };
       const source = { items: [4, 5] };
 
@@ -82,7 +82,7 @@ describe('utils', () => {
       expect(target).toEqual({ items: [4, 5] });
     });
 
-    it('should ignore undefined values', () => {
+    it("should ignore undefined values", () => {
       const target = { a: 1, b: 2 };
       const source = { a: undefined, c: 3 };
 
@@ -91,7 +91,7 @@ describe('utils', () => {
       expect(target).toEqual({ a: 1, b: 2, c: 3 });
     });
 
-    it('should handle null values', () => {
+    it("should handle null values", () => {
       const target = { a: 1, b: 2 };
       const source = { a: null, c: 3 };
 
@@ -100,18 +100,18 @@ describe('utils', () => {
       expect(target).toEqual({ a: null, b: 2, c: 3 });
     });
 
-    it('should handle deeply nested structures', () => {
+    it("should handle deeply nested structures", () => {
       const target = {
         level1: {
           level2: {
-            level3: { value: 'old' },
+            level3: { value: "old" },
           },
         },
       };
       const source = {
         level1: {
           level2: {
-            level3: { value: 'new', extra: 'added' },
+            level3: { value: "new", extra: "added" },
           },
         },
       };
@@ -121,13 +121,13 @@ describe('utils', () => {
       expect(target).toEqual({
         level1: {
           level2: {
-            level3: { value: 'new', extra: 'added' },
+            level3: { value: "new", extra: "added" },
           },
         },
       });
     });
 
-    it('should handle empty objects', () => {
+    it("should handle empty objects", () => {
       const target = {};
       const source = {};
 
@@ -137,32 +137,32 @@ describe('utils', () => {
       expect(result).toBe(target);
     });
 
-    it('should handle complex mixed types', () => {
+    it("should handle complex mixed types", () => {
       const target: any = {
-        string: 'value',
+        string: "value",
         number: 42,
         boolean: true,
-        object: { nested: 'value' },
+        object: { nested: "value" },
         array: [1, 2, 3],
       };
       const source: any = {
-        string: 'new value',
+        string: "new value",
         number: 100,
         boolean: false,
-        object: { nested: 'new value', added: 'property' },
+        object: { nested: "new value", added: "property" },
         array: [4, 5],
-        newProp: 'added',
+        newProp: "added",
       };
 
       deepMixin(target, source);
 
       expect(target).toEqual({
-        string: 'new value',
+        string: "new value",
         number: 100,
         boolean: false,
-        object: { nested: 'new value', added: 'property' },
+        object: { nested: "new value", added: "property" },
         array: [4, 5],
-        newProp: 'added',
+        newProp: "added",
       });
     });
   });
