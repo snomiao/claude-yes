@@ -1,7 +1,7 @@
 #! /usr/bin/env bun
 import { execaCommand } from "execa";
 import { copyFile } from "fs/promises";
-import * as pkg from "../package.json";
+import * as pkg from "../package.json" with {type:'json'};
 import { CLIS_CONFIG } from "./index.ts";
 
 const src = "dist/cli.js";

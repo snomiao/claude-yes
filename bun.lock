@@ -41,7 +41,7 @@
         "yargs": "^18.0.0",
       },
       "peerDependencies": {
-        "node-pty": "^1.1.0",
+        "node-pty": "latest",
         "typescript": "^5.8.3",
       },
       "optionalPeers": [

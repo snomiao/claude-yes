@@ -385,7 +385,8 @@ export default async function agentYes({
 
     await sleep(300)
     // Handle restart without continue args (e.g., "No conversation found to continue")
-    if (shouldRestartWithoutContinue && robust) {
+    // logger.debug(``, { shouldRestartWithoutContinue, robust })
+    if (shouldRestartWithoutContinue) {
       logger.info(`${cli} needs restart without continue args, restarting...`);
       shouldRestartWithoutContinue = false; // reset flag
       isFatal = false; // reset fatal flag to allow restart
