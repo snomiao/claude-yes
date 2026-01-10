@@ -333,7 +333,10 @@ export default async function agentYes({
     (error: unknown, _fn, ..._args) => {
       logger.error(`Fatal: Failed to start ${cli}.`);
 
-      if (cliConf?.install && isCommandNotFoundError(error)) {
+      const isNotFound = isCommandNotFoundError(error);
+      if (cliConf?.install && isNotFound) {
+        logger.info(`Please install the cli by run ${cliConf.install}`)
+
         if (install) {
           logger.info(`Attempting to install ${cli}...`);
           execaCommandSync(cliConf.install, { stdio: "inherit" });
