@@ -3,8 +3,8 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { SUPPORTED_CLIS } from "./index.ts";
 import { readFile } from "node:fs/promises";
-import path from 'path'
-import pkg from '../package.json' with {type: 'json'}
+import path from "path";
+import pkg from "../package.json" with { type: "json" };
 
 // const pkg = await JSON.parse(await readFile(path.resolve((import.meta.dir) + "/../package.json"), 'utf8'))
 /**
