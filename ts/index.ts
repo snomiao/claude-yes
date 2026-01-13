@@ -7,14 +7,14 @@ import sflow from "sflow";
 import { TerminalTextRender } from "terminal-render";
 import rawConfig from "../agent-yes.config.ts";
 import { catcher } from "./catcher.ts";
-import { extractSessionId, getSessionForCwd, storeSessionForCwd } from "./codexSessionManager.ts";
+import { extractSessionId, getSessionForCwd, storeSessionForCwd } from "./resume/codexSessionManager.ts";
 import { IdleWaiter } from "./idleWaiter.ts";
 import pty, { ptyPackage } from "./pty.ts";
 import { ReadyManager } from "./ReadyManager.ts";
 import { removeControlCharacters } from "./removeControlCharacters.ts";
 import { acquireLock, releaseLock, shouldUseLock } from "./runningLock.ts";
 import { logger } from "./logger.ts";
-import { createFifoStream } from "./fifo.ts";
+import { createFifoStream } from "./beta/fifo.ts";
 
 export { parseCliArgs } from "./parseCliArgs.ts";
 export { removeControlCharacters };

@@ -4,7 +4,7 @@ import { createReadStream, mkdirSync } from "fs";
 import { unlink } from "fs/promises";
 import { dirname } from "path";
 import sflow from "sflow";
-import { logger } from "./logger.ts";
+import { logger } from "../logger.ts";
 
 /**
  * Creates a FIFO (named pipe) stream on Linux for additional stdin input

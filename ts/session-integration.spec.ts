@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { extractSessionId, extractSessionIdFromSessionMeta } from "./codexSessionManager";
+import { extractSessionId, extractSessionIdFromSessionMeta } from "./resume/codexSessionManager";
 
 describe("Session Extraction Test", () => {
   it("should extract session IDs from various codex output formats", async () => {
