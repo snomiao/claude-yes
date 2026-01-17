@@ -11,14 +11,14 @@ RUN apt-get update -y && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install VS Code with architecture support
-ARG TARGETARCH=amd64
-RUN apt update -y &&\
-    apt install software-properties-common apt-transport-https curl gnupg2 -y &&\
-    curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /usr/share/keyrings/vscode.gpg > /dev/null &&\
-    echo "deb [arch=${TARGETARCH}] https://packages.microsoft.com/repos/vscode stable main" | tee /etc/apt/sources.list.d/vscode.list > /dev/null &&\
-    apt update && apt install code -y &&\
-    rm -rf /var/lib/apt/lists/*
+# VS Code (disabled - uncomment to enable for specific arch)
+# ARG TARGETARCH=amd64
+# RUN apt update -y &&\
+#     apt install software-properties-common apt-transport-https curl gnupg2 -y &&\
+#     curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /usr/share/keyrings/vscode.gpg > /dev/null &&\
+#     echo "deb [arch=${TARGETARCH}] https://packages.microsoft.com/repos/vscode stable main" | tee /etc/apt/sources.list.d/vscode.list > /dev/null &&\
+#     apt update && apt install code -y &&\
+#     rm -rf /var/lib/apt/lists/*
 
 # Install Rust for building bun-pty native module
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
