@@ -4,7 +4,9 @@ import path from "node:path";
 import { defineCliYesConfig } from "./ts/defineConfig.ts";
 import { deepMixin } from "./ts/utils.ts";
 
-if (process.env.VERBOSE) console.log("loading cli-yes.config.ts from " + import.meta.url);
+const debug = process.env.VERBOSE ? console.debug : () => undefined;
+
+debug("loading cli-yes.config.ts from " + import.meta.url);
 
 // For config path,
 // 0. default value is defined here, auto imported
@@ -13,14 +15,6 @@ if (process.env.VERBOSE) console.log("loading cli-yes.config.ts from " + import.
 // 3. can override by workspace-local ./.agent-yes project-specific config
 
 // Helper function to test if we can write to a directory
-async function canWriteToDir(dir: string): Promise<boolean> {
-  try {
-    await mkdir(path.join(dir, "logs"), { recursive: true });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 // Determine config directory with 3-tier fallback
 const configDir = await (async () => {
@@ -33,23 +27,27 @@ const configDir = await (async () => {
   // }
 
   // 2. Try ~/.agent-yes as default
-  // const homeConfigDir = path.resolve(os.homedir(), ".agent-yes");
-  // if (await canWriteToDir(homeConfigDir)) {
-  //   if (process.env.VERBOSE) console.log("[config] Using home directory:", homeConfigDir);
-  //   return homeConfigDir;
-  // } else {
-  //   if (process.env.VERBOSE)
-  //     console.log("[config] Cannot write to home directory, falling back to workspace");
-  // }
+  const homeConfigDir = path.resolve(os.homedir(), ".agent-yes");
+  const isHomeWritable = await mkdir(homeConfigDir, { recursive: true })
+    .then(() => true)
+    .catch(() => false);
+  if (isHomeWritable) {
+    debug("[config] Using home directory:", homeConfigDir);
+    return homeConfigDir;
+  }
 
-  // 3. Fallback to workspace-local ./node_modules/.agent-yes for sandboxed envs
-  const workspaceConfigDir = path.resolve(process.cwd(), "node_modules", ".agent-yes");
-  process.env.VERBOSE && console.debug("[config] Using workspace directory:", workspaceConfigDir);
-  return workspaceConfigDir;
+  // 3. Fallback to tmp dir
+  const tmpConfigDir = path.resolve("/tmp/.agent-yes");
+  const isWritable = await mkdir(tmpConfigDir, { recursive: true });
+  if (isWritable) {
+    debug("[config] Using workspace directory:", tmpConfigDir);
+    return tmpConfigDir;
+  }
+
+  return undefined;
 })();
 
 // For logs, use configDir/logs
-const logsDir = path.resolve(configDir, "logs");
 
 export default deepMixin(
   await getDefaultConfig(),
@@ -67,7 +65,7 @@ export default deepMixin(
 function getDefaultConfig() {
   return defineCliYesConfig({
     configDir,
-    logsDir,
+    logsDir: configDir && path.resolve(configDir, "logs"),
     clis: {
       qwen: {
         install: "npm install -g @qwen-code/qwen-code@latest",

@@ -7,7 +7,11 @@ import sflow from "sflow";
 import { TerminalTextRender } from "terminal-render";
 import rawConfig from "../agent-yes.config.ts";
 import { catcher } from "./catcher.ts";
-import { extractSessionId, getSessionForCwd, storeSessionForCwd } from "./resume/codexSessionManager.ts";
+import {
+  extractSessionId,
+  getSessionForCwd,
+  storeSessionForCwd,
+} from "./resume/codexSessionManager.ts";
 import { IdleWaiter } from "./idleWaiter.ts";
 import pty, { ptyPackage } from "./pty.ts";
 import { ReadyManager } from "./ReadyManager.ts";
@@ -494,7 +498,7 @@ export default async function agentYes({
 
     // read from FIFO if available, e.g. /tmp/agent-yes-*.stdin, which can be used to send additional input from other processes
     .by((s) => {
-      if(!useFifo) return s
+      if (!useFifo) return s;
       const fifoResult = createFifoStream(cli);
       if (!fifoResult) return s;
       pendingExitCode.promise.finally(() => fifoResult.cleanup());

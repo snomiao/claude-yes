@@ -37,3 +37,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 /core
 
 bin
+
+# .agent-yes cache files
+.agent-yes
