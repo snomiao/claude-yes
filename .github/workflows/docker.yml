@@ -71,5 +71,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build local test image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: claude-yes:test
+
+      - name: Test Docker image
+        run: docker run --rm claude-yes:test -h
+
       - name: Image digest
         run: echo ${{ steps.meta.outputs.digest }}
