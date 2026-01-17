@@ -76,11 +76,24 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Detect runner architecture
+        id: arch
+        run: |
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "x86_64" ]; then
+            echo "platform=linux/amd64" >> $GITHUB_OUTPUT
+          elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+            echo "platform=linux/arm64" >> $GITHUB_OUTPUT
+          else
+            echo "platform=linux/amd64" >> $GITHUB_OUTPUT
+          fi
+          echo "Detected architecture: $ARCH, using platform: $(cat $GITHUB_OUTPUT | grep platform | cut -d= -f2)"
+
       - name: Build local test image
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64
+          platforms: ${{ steps.arch.outputs.platform }}
           load: true
           tags: claude-yes:test
 
