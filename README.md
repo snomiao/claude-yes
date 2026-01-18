@@ -130,6 +130,104 @@ claude-yes --exit-on-idle=60s "run all tests and commit current changes"
 claude-code-execute claude-yes "your task here"
 ```
 
+### Docker Usage
+
+You can run `agent-yes` in a Docker container with all AI CLI tools pre-installed.
+
+**Pull the image:**
+
+```bash
+# From GitHub Container Registry (recommended)
+docker pull ghcr.io/snomiao/agent-yes:latest
+
+# Or from Docker Hub
+docker pull snomiao/agent-yes:latest
+```
+
+**Basic usage:**
+
+```bash
+# Run with Claude (default)
+docker run --rm -v $(pwd):/workspace -w /workspace \
+  ghcr.io/snomiao/agent-yes:latest \
+  -- run all tests
+
+# Run with other AI tools
+docker run --rm -v $(pwd):/workspace -w /workspace \
+  ghcr.io/snomiao/agent-yes:latest \
+  --cli=gemini -- debug this code
+```
+
+**Persisting credentials:**
+
+To persist API keys and configuration across container runs, mount the config directories:
+
+```bash
+# For Claude
+docker run --rm \
+  -v $(pwd):/workspace \
+  -v ~/.config/claude:/root/.config/claude \
+  -v ~/.anthropic:/root/.anthropic \
+  -w /workspace \
+  ghcr.io/snomiao/agent-yes:latest \
+  -- help me with this code
+
+# For multiple AI tools (mount all config directories)
+docker run --rm \
+  -v $(pwd):/workspace \
+  -v ~/.config:/root/.config \
+  -v ~/.anthropic:/root/.anthropic \
+  -v ~/.openai:/root/.openai \
+  -v ~/.cursor:/root/.cursor \
+  -w /workspace \
+  ghcr.io/snomiao/agent-yes:latest \
+  --cli=claude -- optimize performance
+```
+
+**Complete example with environment variables:**
+
+```bash
+# Pass API keys via environment variables
+docker run --rm \
+  -v $(pwd):/workspace \
+  -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
+  -e OPENAI_API_KEY=$OPENAI_API_KEY \
+  -e GOOGLE_API_KEY=$GOOGLE_API_KEY \
+  -w /workspace \
+  ghcr.io/snomiao/agent-yes:latest \
+  -- refactor this module
+
+# Or use an env file
+docker run --rm \
+  -v $(pwd):/workspace \
+  --env-file .env \
+  -w /workspace \
+  ghcr.io/snomiao/agent-yes:latest \
+  --exit-on-idle=60s -- run all tests and commit
+```
+
+**Docker Compose example:**
+
+```yaml
+version: '3.8'
+services:
+  agent-yes:
+    image: ghcr.io/snomiao/agent-yes:latest
+    volumes:
+      - .:/workspace
+      - ~/.config/claude:/root/.config/claude
+      - ~/.anthropic:/root/.anthropic
+    working_dir: /workspace
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    command: ["--", "help me solve all todos"]
+```
+
+**Available platforms:**
+
+- `linux/amd64` (x86_64)
+- `linux/arm64` (aarch64)
+
 ### Supported CLI Tools
 
 | Tool    | CLI Name  | Description                       | Installation/Update                                 |
