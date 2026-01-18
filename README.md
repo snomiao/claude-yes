@@ -228,6 +228,10 @@ services:
 - `linux/amd64` (x86_64)
 - `linux/arm64` (aarch64)
 
+**Cloud deployment:**
+
+For deploying to cloud platforms like Google Cloud Run, AWS, Azure, see [Cloud Deployment Guide](./docs/clouds.md).
+
 ### Supported CLI Tools
 
 | Tool    | CLI Name  | Description                       | Installation/Update                                 |
