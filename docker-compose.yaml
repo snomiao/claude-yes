@@ -1,8 +1,8 @@
 services:
   # docker compose run --build -t claude-yes
-  claude-yes:
+  agent-yes:
     build: .
-    image: snomiao/claude-yes
+    # image: snomiao/agent-yes
     stdin_open: true
     tty: true
     volumes:
@@ -15,7 +15,8 @@ services:
       # persist agent credentials
       # you can run seed-credentials.sh to copy from /root
       - ./.agent-yes/home:/root
-
+    command: --help
+    
     # Environment variables for API keys (uncomment and set as needed)
     # environment:
     # OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -36,3 +37,4 @@ services:
           path: docker-compose.yaml
         - action: rebuild
           path: ./Dockerfile
+

@@ -51,7 +51,7 @@ RUN bun run build && bun link
 
 
 # bot user?
-# RUN useradd -ms /bin/bash bot
+RUN useradd -ms /bin/bash bot
 # USER bot
 WORKDIR /home/bot/
 
