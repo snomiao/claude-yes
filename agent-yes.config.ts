@@ -81,7 +81,6 @@ function getDefaultConfig() {
         // ready: [/^> /], // regex matcher for stdin ready
         ready: [/\? for shortcuts/], // regex matcher for stdin ready
         typingRespond: {
-          "2\n": [/2. Yes/],
           "1\n": [/│ Do you want to use this API key\?/],
         },
         enter: [/❯ +1\. Yes/, /❯ +1\. Dark mode✔/, /Press Enter to continue…/, /❯ 1\. Dark mode ✔/],
