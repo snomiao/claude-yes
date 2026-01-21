@@ -89,7 +89,7 @@ export async function handleDbCommand(argv: string[]): Promise<boolean> {
 			case "projects": {
 				switch (subcommand) {
 					case "list": {
-						const limit = Number.parseInt(args[2], 10) || 10;
+						const limit = Number.parseInt(args[2] || "10", 10) || 10;
 						const projects = await getAllProjects();
 						const limited = projects.slice(0, limit);
 
@@ -157,15 +157,14 @@ export async function handleDbCommand(argv: string[]): Promise<boolean> {
 						console.error(
 							`Unknown subcommand: ${subcommand}\n\nAvailable commands:\n  agent-yes projects list [limit]\n  agent-yes projects show [dir]`,
 						);
-						process.exit(1);
+						return false;
 				}
-				break;
 			}
 
 			case "runs": {
 				switch (subcommand) {
 					case "list": {
-						const limit = Number.parseInt(args[2], 10) || 10;
+						const limit = Number.parseInt(args[2] || "10", 10) || 10;
 						const runs = await getAllRuns();
 						const limited = runs.slice(0, limit);
 
@@ -235,9 +234,8 @@ export async function handleDbCommand(argv: string[]): Promise<boolean> {
 						console.error(
 							`Unknown subcommand: ${subcommand}\n\nAvailable commands:\n  agent-yes runs list [limit]\n  agent-yes runs active\n  agent-yes runs crashed`,
 						);
-						process.exit(1);
+						return false;
 				}
-				break;
 			}
 
 			case "help":
