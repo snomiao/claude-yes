@@ -5,8 +5,10 @@ volumes:
 
 
 services:
+  # docker compose run --build -t agent-yes
   agent-yes:
     build: .
+    # image: snomiao/agent-yes
     stdin_open: true
     tty: true
     volumes:
@@ -16,7 +18,7 @@ services:
       - ./ws:/ws
     working_dir: /ws
     command: claude-yes -- hello
-    
+
     # Environment variables for API keys
     # The env_file will load these automatically, no need to duplicate in environment section
     env_file:
@@ -36,3 +38,4 @@ services:
           path: docker-compose.yaml
         - action: rebuild
           path: ./Dockerfile
+
