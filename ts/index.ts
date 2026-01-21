@@ -192,14 +192,12 @@ export default async function agentYes({
 
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;
-  if (isSubAgent) {
+  if (isSubAgent)
     logger.info(`[${cli}-yes] Running as sub-agent (CLAUDE_PPID=${process.env.CLAUDE_PPID})`);
-  }
+
 
   const getPtyOptions = () => {
     const ptyEnv = { ...(env ?? (process.env as Record<string, string>)) };
-    logger.info(`[DEBUG] PTY Environment - ANTHROPIC_API_KEY: ${ptyEnv.ANTHROPIC_API_KEY ? 'SET (length: ' + ptyEnv.ANTHROPIC_API_KEY.length + ')' : 'NOT SET'}`);
-    logger.info(`[DEBUG] process.env.ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? 'SET (length: ' + process.env.ANTHROPIC_API_KEY.length + ')' : 'NOT SET'}`);
     return {
       name: "xterm-color",
       ...getTerminalDimensions(),

@@ -73,10 +73,3 @@ echo "========================================="
 echo "View in console:"
 echo "  https://console.cloud.google.com/run/jobs/details/$REGION/$JOB_NAME?project=$PROJECT_ID"
 
-
-gcloud run jobs create agent-yes-job \
-  --image ghcr.io/snomiao/agent-yes:latest \
-  --region us-central1 \
-  --set-env-vars ANTHROPIC_API_KEY=your-key-here \
-  --args="claude","--","hello"
-
