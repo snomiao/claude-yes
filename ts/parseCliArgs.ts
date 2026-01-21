@@ -1,9 +1,7 @@
 import ms from "ms";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { SUPPORTED_CLIS } from "./index.ts";
-import { readFile } from "node:fs/promises";
-import path from "path";
+import { SUPPORTED_CLIS } from "./SUPPORTED_CLIS.ts";
 import pkg from "../package.json" with { type: "json" };
 
 // const pkg = await JSON.parse(await readFile(path.resolve((import.meta.dir) + "/../package.json"), 'utf8'))
@@ -13,11 +11,11 @@ import pkg from "../package.json" with { type: "json" };
  */
 export function parseCliArgs(argv: string[]) {
   // Detect cli name from script name (same logic as cli.ts:10-14)
-  const scriptName = argv[1]?.split(/[/\\]/).pop();
-  const cliName = ((e?: string) => {
-    if (e === "cli" || e === "cli.ts" || e === "cli.js" || e === "agent-yes") return undefined;
-    return e?.replace(/-yes(\.[jt]s)?$/, "");
-  })(scriptName);
+  const cliName = (argv[1]?.split(/[/\\]/).at(-1)
+    ?.replace(/(\.[jt]s)?$/, "")
+    .replace(/^(cli|agent)(-yes$)?/, "")
+    .replace(/-yes$/, "") || undefined
+  );
 
   // Parse args with yargs (same logic as cli.ts:16-73)
   const parsedArgv = yargs(hideBin(argv))

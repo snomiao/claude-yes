@@ -18,26 +18,15 @@
     "qwen",
     "wrapper"
   ],
-  "homepage": "https://github.com/snomiao/claude-yes#readme",
+  "homepage": "https://github.com/snomiao/agent-yes#readme",
   "bugs": {
-    "url": "https://github.com/snomiao/claude-yes/issues"
+    "url": "https://github.com/snomiao/agent-yes/issues"
   },
   "license": "MIT",
   "author": "snomiao <snomiao@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/snomiao/claude-yes.git"
-  },
-  "bin": {
-    "agent-yes": "dist/agent-yes.js",
-    "auggie-yes": "dist/agent-yes.js",
-    "claude-yes": "dist/agent-yes.js",
-    "codex-yes": "dist/agent-yes.js",
-    "copilot-yes": "dist/agent-yes.js",
-    "cursor-yes": "dist/agent-yes.js",
-    "gemini-yes": "dist/agent-yes.js",
-    "grok-yes": "dist/agent-yes.js",
-    "qwen-yes": "dist/agent-yes.js"
+    "url": "git+https://github.com/snomiao/agent-yes.git"
   },
   "directories": {
     "doc": "docs"
@@ -59,8 +48,8 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
+    "build": "bun build ./ts/cli.ts ./ts/index.ts --outdir=dist --target=node --sourcemap --external=@snomiao/bun-pty --external=bun-pty --external=node-pty --external=from-node-stream --external=bun",
     "postbuild": "bun ./ts/postbuild.ts",
-    "build": "bun build ts/cli.ts ts/index.ts --outdir=dist --target=bun --sourcemap --external=@snomiao/bun-pty --external=bun-pty --external=node-pty --external=from-node-stream --external=bun",
     "demo": "bun run build && bun link && claude-yes -- demo",
     "dev": "bun ts/index.ts",
     "fmt": "oxlint --fix --fix-suggestions && oxfmt",
@@ -72,8 +61,7 @@
   },
   "dependencies": {
     "@snomiao/bun-pty": "^0.3.4",
-    "bun": "^1.3.6",
-    "bun-pty": "^0.4.6",
+    "bun-pty": "^0.4.8",
     "cpu-wait": "^0.0.10",
     "execa": "^9.6.0",
     "from-node-stream": "^0.1.2",
@@ -138,5 +126,16 @@
       "@semantic-release/git",
       "@semantic-release/github"
     ]
+  },
+  "bin": {
+    "qwen-yes": "./dist/qwen-yes.js",
+    "grok-yes": "./dist/grok-yes.js",
+    "claude-yes": "./dist/claude-yes.js",
+    "gemini-yes": "./dist/gemini-yes.js",
+    "codex-yes": "./dist/codex-yes.js",
+    "copilot-yes": "./dist/copilot-yes.js",
+    "cursor-yes": "./dist/cursor-yes.js",
+    "auggie-yes": "./dist/auggie-yes.js",
+    "agent-yes": "./dist/agent-yes.js"
   }
 }

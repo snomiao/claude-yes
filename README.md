@@ -14,7 +14,7 @@ A wrapper tool that automates interactions with various AI CLI tools by automati
 - **Idle Detection**: Optional auto-exit when the AI becomes idle
 - **Named Pipe Input (Linux)**: On Linux systems, automatically creates a FIFO (named pipe) at `/tmp/agent-yes-YYYYMMDDHHMMSSXXX.stdin` for additional input streams
 
-## Prerequisites
+## Agent Clis
 
 Install the AI CLI tool(s) you want to use:
 

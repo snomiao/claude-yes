@@ -3,10 +3,9 @@ import os from "node:os";
 import path from "node:path";
 import { defineCliYesConfig } from "./ts/defineConfig.ts";
 import { deepMixin } from "./ts/utils.ts";
+import { logger } from "./ts/logger.ts";
 
-const debug = process.env.VERBOSE ? console.debug : () => undefined;
-
-debug("loading cli-yes.config.ts from " + import.meta.url);
+logger.debug("loading cli-yes.config.ts from " + import.meta.url);
 
 // For config path,
 // 0. default value is defined here, auto imported
@@ -32,7 +31,7 @@ const configDir = await (async () => {
     .then(() => true)
     .catch(() => false);
   if (isHomeWritable) {
-    debug("[config] Using home directory:", homeConfigDir);
+    logger.debug("[config] Using home directory:", homeConfigDir);
     return homeConfigDir;
   }
 
@@ -40,7 +39,7 @@ const configDir = await (async () => {
   const tmpConfigDir = path.resolve("/tmp/.agent-yes");
   const isWritable = await mkdir(tmpConfigDir, { recursive: true });
   if (isWritable) {
-    debug("[config] Using workspace directory:", tmpConfigDir);
+    logger.debug("[config] Using workspace directory:", tmpConfigDir);
     return tmpConfigDir;
   }
 
@@ -81,8 +80,9 @@ function getDefaultConfig() {
         install: "npm install -g @anthropic-ai/claude-code@latest",
         // ready: [/^> /], // regex matcher for stdin ready
         ready: [/\? for shortcuts/], // regex matcher for stdin ready
-        typeRespond: {
-          "2\n": /2. Yes/,
+        typingRespond: {
+          "2\n": [/2. Yes/],
+          "1\n": [/│ Do you want to use this API key\?/],
         },
         enter: [/❯ +1\. Yes/, /❯ +1\. Dark mode✔/, /Press Enter to continue…/, /❯ 1\. Dark mode ✔/],
         fatal: [/⎿  Claude usage limit reached\./, /^error: unknown option/],

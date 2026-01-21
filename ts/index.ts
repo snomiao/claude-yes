@@ -5,7 +5,6 @@ import path from "path";
 import DIE from "phpdie";
 import sflow from "sflow";
 import { TerminalTextRender } from "terminal-render";
-import rawConfig from "../agent-yes.config.ts";
 import { catcher } from "./catcher.ts";
 import {
   extractSessionId,
@@ -19,8 +18,8 @@ import { removeControlCharacters } from "./removeControlCharacters.ts";
 import { acquireLock, releaseLock, shouldUseLock } from "./runningLock.ts";
 import { logger } from "./logger.ts";
 import { createFifoStream } from "./beta/fifo.ts";
+import { SUPPORTED_CLIS } from "./SUPPORTED_CLIS.ts";
 
-export { parseCliArgs } from "./parseCliArgs.ts";
 export { removeControlCharacters };
 
 export type AgentCliConfig = {
@@ -54,14 +53,11 @@ export type AgentYesConfig = {
 };
 
 // load user config from agent-yes.config.ts if exists
-export const config = await rawConfig;
-
+export const config = await import("../agent-yes.config.ts").then((mod) => mod.default || mod);
 export const CLIS_CONFIG = config.clis as Record<
   keyof Awaited<typeof config>["clis"],
   AgentCliConfig
 >;
-export type SUPPORTED_CLIS = keyof typeof CLIS_CONFIG;
-export const SUPPORTED_CLIS = Object.keys(CLIS_CONFIG) as SUPPORTED_CLIS[];
 
 /**
  * Main function to run agent-cli with automatic yes/no responses
@@ -200,12 +196,17 @@ export default async function agentYes({
     logger.info(`[${cli}-yes] Running as sub-agent (CLAUDE_PPID=${process.env.CLAUDE_PPID})`);
   }
 
-  const getPtyOptions = () => ({
-    name: "xterm-color",
-    ...getTerminalDimensions(),
-    cwd: cwd ?? process.cwd(),
-    env: { ...(env ?? (process.env as Record<string, string>)) },
-  });
+  const getPtyOptions = () => {
+    const ptyEnv = { ...(env ?? (process.env as Record<string, string>)) };
+    logger.info(`[DEBUG] PTY Environment - ANTHROPIC_API_KEY: ${ptyEnv.ANTHROPIC_API_KEY ? 'SET (length: ' + ptyEnv.ANTHROPIC_API_KEY.length + ')' : 'NOT SET'}`);
+    logger.info(`[DEBUG] process.env.ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? 'SET (length: ' + process.env.ANTHROPIC_API_KEY.length + ')' : 'NOT SET'}`);
+    return {
+      name: "xterm-color",
+      ...getTerminalDimensions(),
+      cwd: cwd ?? process.cwd(),
+      env: ptyEnv,
+    };
+  };
 
   // Apply CLI specific configurations (moved to CLI_CONFIGURES)
   const cliConf = (CLIS_CONFIG as Record<string, AgentCliConfig>)[cli] || {};
@@ -328,6 +329,7 @@ export default async function agentYes({
     let [bin, ...args] = [...parseCommandString(cliCommand), ...cliArgs];
     if (verbose) logger.info(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
     logger.info(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
+    // throw new Error(JSON.stringify([bin!, args, getPtyOptions()]))
     const spawned = pty.spawn(bin!, args, getPtyOptions());
     logger.info(`[${cli}-yes] Spawned ${bin} with PID ${spawned.pid}`);
     // if (globalThis.Bun)
@@ -593,6 +595,13 @@ export default async function agentYes({
 
           // Generic auto-response handler driven by CLI_CONFIGURES
           .forEach(async function autoResponseOnChunk(e, i) {
+            // typingRespond matcher: if matched, send the specified message
+            const typingResponded = await sflow(Object.entries(conf.typingRespond ?? {}))
+              .filter(([_sendString, onThePatterns]) => onThePatterns.some((rx) => e.match(rx)))
+              .map(async ([sendString]) => await sendMessage(sendString, { waitForReady: false }))
+              .toCount();
+            if (typingResponded) return;
+
             // ready matcher: if matched, mark stdin ready
             if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
               logger.debug(`ready |${e}`);
@@ -601,11 +610,6 @@ export default async function agentYes({
               stdinFirstReady.ready();
             }
 
-            const typingResponded = await sflow(Object.entries(conf.typingRespond ?? {}))
-              .filter(([_sendString, onThePatterns]) => onThePatterns.some((rx) => e.match(rx)))
-              .map(async ([sendString]) => await sendMessage(sendString))
-              .toCount();
-            if (typingResponded) return;
 
             // enter matchers: send Enter when any enter regex matches
             if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
@@ -701,8 +705,8 @@ export default async function agentYes({
     ]);
   }
 
-  async function sendMessage(message: string) {
-    await stdinReady.wait();
+  async function sendMessage(message: string, { waitForReady = true } = {}) {
+    if (waitForReady) await stdinReady.wait();
     // show in-place message: write msg and move cursor back start
     logger.debug(`send  |${message}`);
     nextStdout.unready();

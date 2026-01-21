@@ -1,29 +1,29 @@
+# persist agent credentials, you can run seed-credentials.sh to copy from /root
+volumes:
+  home:
+
+
+
 services:
-  # docker compose run --build -t claude-yes
-  claude-yes:
+  agent-yes:
     build: .
-    image: snomiao/claude-yes
     stdin_open: true
     tty: true
     volumes:
-      # Note: Not mounting ./:/app to avoid overwriting built files including fixed bun-pty
-      # For development with hot reload, use: docker compose up --watch
-      # - ./:/app
+      # Persist home directory for credentials
+      - home:/root
+      # Mount current workspace
+      - ./ws:/ws
+    working_dir: /ws
+    command: claude-yes -- hello
+    
+    # Environment variables for API keys
+    # The env_file will load these automatically, no need to duplicate in environment section
+    env_file:
+      - ./.env.local
 
-      # CLI credentials (mount with :ro for read-only security)
-
-      # persist agent credentials
-      # you can run seed-credentials.sh to copy from /root
-      - ./.agent-yes/home:/root
-
-    # Environment variables for API keys (uncomment and set as needed)
-    # environment:
-    # OPENAI_API_KEY: ${OPENAI_API_KEY}
-    # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-    # GOOGLE_API_KEY: ${GOOGLE_API_KEY}
-    # XAI_API_KEY: ${XAI_API_KEY}  # For Grok
-    # QWEN_API_KEY: ${QWEN_API_KEY}
-    # AUGMENT_API_KEY: ${AUGMENT_API_KEY}
+    environment:
+      - TERM=xterm-color
 
     # Use bun to run the built binary (node has ES module issues with node-pty)
     # command: hello
