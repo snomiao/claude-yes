@@ -130,6 +130,50 @@ claude-yes --exit-on-idle=60s "run all tests and commit current changes"
 claude-code-execute claude-yes "your task here"
 ```
 
+### Database Query Commands
+
+Agent-yes tracks your projects and runs in a local database. Query them with built-in commands:
+
+```bash
+# List recent projects
+agent-yes projects list
+
+# Show current project details with statistics
+agent-yes projects show
+
+# List recent runs
+agent-yes runs list
+
+# Check what's currently running
+agent-yes runs active
+
+# Find crashed runs
+agent-yes runs crashed
+
+# Get help
+agent-yes help db
+```
+
+**Example output:**
+
+```bash
+$ agent-yes projects show
+# Project: /home/user/my-project
+project:
+  cmd: claude
+  prompt: run all tests and commit changes
+  last_run: "1/21/2026, 12:30:00 PM"
+statistics:
+  total_runs: 15
+  completed: 12
+  failed: 2
+  crashed: 1
+```
+
+See [Database CLI Documentation](docs/cli-database.md) for complete guide.
+
+**Note:** Database commands don't interfere with normal usage. Commands like `agent-yes claude --` still work as expected.
+
 ### Docker Usage
 
 You can run `agent-yes` in a Docker container with all AI CLI tools pre-installed.
