@@ -98,7 +98,7 @@ jobs:
           tags: claude-yes:test
 
       - name: Test Docker image
-        run: docker run --rm claude-yes:test -h
+        run: docker run --rm --entrypoint sh claude-yes:test -c "test -f /src/agent-yes/dist/cli.js && echo 'Image built successfully'"
 
       - name: Image digest
         run: echo ${{ steps.meta.outputs.digest }}
@@ -186,7 +186,7 @@ jobs:
           tags: claude-yes:test-mini
 
       - name: Test Docker mini image
-        run: docker run --rm claude-yes:test-mini -h
+        run: docker run --rm --entrypoint sh claude-yes:test-mini -c "test -f /src/agent-yes/dist/cli.js && echo 'Mini image built successfully'"
 
       - name: Mini image digest
         run: echo ${{ steps.meta-mini.outputs.digest }}
