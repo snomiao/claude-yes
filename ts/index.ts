@@ -593,13 +593,7 @@ export default async function agentYes({
 
           // Generic auto-response handler driven by CLI_CONFIGURES
           .forEach(async function autoResponseOnChunk(e, i) {
-            // typingRespond matcher: if matched, send the specified message
-            const typingResponded = await sflow(Object.entries(conf.typingRespond ?? {}))
-              .filter(([_sendString, onThePatterns]) => onThePatterns.some((rx) => e.match(rx)))
-              .map(async ([sendString]) => await sendMessage(sendString, { waitForReady: false }))
-              .toCount();
-            if (typingResponded) return;
-
+            
             // ready matcher: if matched, mark stdin ready
             if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
               logger.debug(`ready |${e}`);
@@ -607,14 +601,20 @@ export default async function agentYes({
               stdinReady.ready();
               stdinFirstReady.ready();
             }
-
-
+            
             // enter matchers: send Enter when any enter regex matches
             if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
               logger.debug(`enter |${e}`);
               await sendEnter(400); // wait for idle for 300ms and then send Enter
               return;
             }
+            
+            // typingRespond matcher: if matched, send the specified message
+            const typingResponded = await sflow(Object.entries(conf.typingRespond ?? {}))
+              .filter(([_sendString, onThePatterns]) => onThePatterns.some((rx) => e.match(rx)))
+              .map(async ([sendString]) => await sendMessage(sendString, { waitForReady: false }))
+              .toCount();
+            if (typingResponded) return;
 
             // fatal matchers: set isFatal flag when matched
             if (conf.fatal?.some((rx: RegExp) => e.match(rx))) {
