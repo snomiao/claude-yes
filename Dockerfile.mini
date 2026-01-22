@@ -18,7 +18,8 @@ RUN apk add --no-cache \
 WORKDIR /src/agent-yes
 COPY package.json bun.lock ./
 # Install all dependencies (including dev deps needed for build)
-RUN HUSKY=0 bun install && bun pm cache clean
+# Use --ignore-scripts to prevent prepare script from running before source is copied
+RUN bun install --ignore-scripts && bun pm cache clean
 
 # Copy source and build
 COPY . .

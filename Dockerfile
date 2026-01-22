@@ -50,7 +50,8 @@ RUN npm i -g \
 WORKDIR /src/agent-yes
 COPY package.json bun.lock ./
 # Install dependencies - node-pty will build its native modules (needs build-essential, python3)
-RUN bun install
+# Use --ignore-scripts to prevent prepare script from running before source is copied
+RUN bun install --ignore-scripts
 
 # build and link
 COPY . .
