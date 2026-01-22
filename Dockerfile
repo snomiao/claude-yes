@@ -38,36 +38,28 @@ RUN npm i -g \
     @google/gemini-cli \
     @openai/codex \
     @github/copilot \
-    @augmentcode/auggie \
-    opencode-ai
-
-# install bun seems not working
-# RUN curl -fsSL https://bun.com/install | bash && \
-#   export BUN_INSTALL="$HOME/.bun" && \
-#   export PATH="$BUN_INSTALL/bin:$PATH"
+    @augmentcode/auggie
 
 # install this project
-WORKDIR /src/agent-yes
-COPY package.json bun.lock ./
-# Install dependencies - node-pty will build its native modules (needs build-essential, python3)
-# Use --ignore-scripts to prevent prepare script from running before source is copied
-RUN bun install --ignore-scripts
+WORKDIR /src/claude-yes
+# TODO: replace with COPY package.json bun.lock ./
+COPY package.json bun.lock* ./
+RUN bun i --skip-scripts
 
-# build and link
 COPY . .
 RUN bun run build && bun link
+
 
 # bot user?
 RUN useradd -ms /bin/bash bot
 # USER bot
-# WORKDIR /home/bot/
+WORKDIR /home/bot/
 
 # specify a workdir is recommended
 WORKDIR /root/
-
-# Use node to run (uses node-pty which properly passes environment variables)
-ENTRYPOINT ["bash", "-c", "exec node /src/agent-yes/dist/agent-yes.js $@", "bash"]
+# 
+ENTRYPOINT ["bun","/src/claude-yes/dist/claude-yes.js"]
 # ENTRYPOINT bash -c " \
 # cp -r /root /root/bo && \
-# bun /src/agent-yes/dist/agent-yes.js $* \
+# bun /src/claude-yes/dist/claude-yes.js $* \
 # "
