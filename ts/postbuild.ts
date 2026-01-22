@@ -16,7 +16,7 @@ await sflow([...Object.keys(CLIS_CONFIG), 'agent'])
     const wrapperPath = `./dist/${cliName}.js`;
     await writeFile(wrapperPath, `
 #!/usr/bin/env bun
-await import('../dist/cli.js')
+await import('./cli.js')
 `.trim());
     await chmod(wrapperPath, 0o755);
 

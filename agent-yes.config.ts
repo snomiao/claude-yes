@@ -83,7 +83,15 @@ function getDefaultConfig() {
         typingRespond: {
           "1\n": [/│ Do you want to use this API key\?/],
         },
-        enter: [/❯ +1\. Yes/, /❯ +1\. Dark mode✔/, /Press Enter to continue…/, /❯ 1\. Dark mode ✔/],
+        enter: [
+          /^.{0,3} 1\. Yes/m,
+          /^.{0,3} 1\. Yes, continue/m,
+          /^.{0,3} 1\. Dark mode ?✔/m,
+          /❯ 1\. Yes/m,
+          /❯ 1\. Yes, continue/m,
+          /❯ 1\. Dark mode ?✔/m,
+          /Press Enter to continue…/m,
+        ],
         fatal: [/⎿  Claude usage limit reached\./, /^error: unknown option/],
         restoreArgs: ["--continue"], // restart with --continue when crashed
         restartWithoutContinueArg: [/No conversation found to continue/],
@@ -146,6 +154,10 @@ function getDefaultConfig() {
         enter: [], // auggie seems not to ask for permission currently, which is super nice
         fatal: [], // no fatal patterns known yet
       },
+      amp: {
+        help: '',
+        install: 'npm i -g @sourcegraph/amp',
+      }
     },
   });
 }

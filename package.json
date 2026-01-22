@@ -60,12 +60,15 @@
     "test": "bun test --coverage"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "@snomiao/bun-pty": "^0.3.4",
     "bun-pty": "^0.4.8",
     "cpu-wait": "^0.0.10",
     "execa": "^9.6.0",
     "from-node-stream": "^0.1.2",
+    "ink": "^6.6.0",
     "ms": "^2.1.3",
+    "openai": "^6.16.0",
     "p-map": "^7.0.3",
     "phpdie": "^1.7.0",
     "rambda": "^10.3.2",
@@ -136,6 +139,7 @@
     "copilot-yes": "./dist/copilot-yes.js",
     "cursor-yes": "./dist/cursor-yes.js",
     "auggie-yes": "./dist/auggie-yes.js",
-    "agent-yes": "./dist/agent-yes.js"
+    "agent-yes": "./dist/agent-yes.js",
+    "amp-yes": "./dist/amp-yes.js"
   }
 }

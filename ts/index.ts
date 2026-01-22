@@ -19,6 +19,8 @@ import { acquireLock, releaseLock, shouldUseLock } from "./runningLock.ts";
 import { logger } from "./logger.ts";
 import { createFifoStream } from "./beta/fifo.ts";
 import { SUPPORTED_CLIS } from "./SUPPORTED_CLIS.ts";
+import winston from "winston";
+import { mapObject, pipe } from "rambda";
 
 export { removeControlCharacters };
 
@@ -189,6 +191,16 @@ export default async function agentYes({
   const logPath = config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.log`);
   const rawLogPath =
     config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.raw.log`);
+  const rawLinesLogPath =
+    config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.lines.log`);
+  const debuggingLogsPath =
+    config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.debug.log`);
+
+  // add 
+  if (debuggingLogsPath) logger.add(new winston.transports.File({
+    filename: debuggingLogsPath,
+    level: "debug",
+  }))
 
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;
@@ -585,15 +597,30 @@ export default async function agentYes({
       return (
         e
           .map((e) => removeControlCharacters(e))
-          .map((e) => e.replaceAll("\r", "")) // remove carriage return
+          // .map((e) => e.replaceAll("\r", "")) // remove carriage return
           .by((s) => {
             if (conf.noEOL) return s; // codex use cursor-move csi code insteadof \n to move lines, so the output have no \n at all, this hack prevents stuck on unended line
             return s.lines({ EOL: "NONE" }); // other clis use ink, which is rerendering the block based on \n lines
           })
+          
+          // .forkTo(async function rawLinesLogger(f) {
+          //   if (!rawLinesLogPath) return f.run(); // no stream
+          //   // try stream the raw log for realtime debugging, including control chars, note: it will be a huge file
+          //   return await mkdir(path.dirname(rawLinesLogPath), { recursive: true })
+          //     .then(() => {
+          //       logger.debug(`[${cli}-yes] raw lines logs streaming to ${rawLinesLogPath}`);
+          //       return f
+          //         .forEach(async (chars, i) => {
+          //           await writeFile(rawLinesLogPath, `L${i}|` + chars, { flag: "a" }).catch(() => null);
+          //         })
+          //         .run();
+          //     })
+          //     .catch(() => f.run());
+          // })
 
           // Generic auto-response handler driven by CLI_CONFIGURES
           .forEach(async function autoResponseOnChunk(e, i) {
-            
+            logger.debug(`stdout|${e}`);
             // ready matcher: if matched, mark stdin ready
             if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
               logger.debug(`ready |${e}`);
@@ -601,14 +628,13 @@ export default async function agentYes({
               stdinReady.ready();
               stdinFirstReady.ready();
             }
-            
             // enter matchers: send Enter when any enter regex matches
+
             if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
               logger.debug(`enter |${e}`);
-              await sendEnter(400); // wait for idle for 300ms and then send Enter
-              return;
+              return await sendEnter(400); // wait for idle for a short while and then send Enter
             }
-            
+
             // typingRespond matcher: if matched, send the specified message
             const typingResponded = await sflow(Object.entries(conf.typingRespond ?? {}))
               .filter(([_sendString, onThePatterns]) => onThePatterns.some((rx) => e.match(rx)))
@@ -683,12 +709,14 @@ export default async function agentYes({
   async function sendEnter(waitms = 1000) {
     // wait for idle for a bit to let agent cli finish rendering
     const st = Date.now();
-    await idleWaiter.wait(waitms);
+    await idleWaiter.wait(waitms); // wait for idle a while
     const et = Date.now();
     // process.stdout.write(`\ridleWaiter.wait(${waitms}) took ${et - st}ms\r`);
-    await logger.debug(`sendEn| idleWaiter.wait(${String(waitms)}) took ${String(et - st)}ms`);
+    logger.debug(`sendEn| idleWaiter.wait(${String(waitms)}) took ${String(et - st)}ms`);
     nextStdout.unready();
+    // send the enter key
     shell.write("\r");
+
     // retry once if not received any output in 1 second after sending Enter
     await Promise.race([
       nextStdout.wait(),
