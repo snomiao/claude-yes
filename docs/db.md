@@ -24,6 +24,7 @@ The module provides a unified API through [Kysely](https://kysely.dev/) ORM, mak
 ## Database Location
 
 The SQLite database is stored at:
+
 ```
 <project-dir>/.agent-yes/store.sqlite
 ```
@@ -36,32 +37,33 @@ WAL (Write-Ahead Logging) mode is enabled for better concurrency. The `.agent-ye
 
 Stores project configurations:
 
-| Column        | Type    | Description                                    |
-|---------------|---------|------------------------------------------------|
-| `id`          | INTEGER | Auto-incrementing primary key                  |
-| `dir`         | TEXT    | Project directory path (unique, required)      |
-| `cmd`         | TEXT    | Command to run (e.g., "claude", "gemini")      |
-| `prompt`      | TEXT    | Default prompt for this project (nullable)     |
-| `created_at`  | INTEGER | Unix timestamp (auto-generated)                |
-| `updated_at`  | INTEGER | Unix timestamp (auto-updated)                  |
-| `last_run_at` | INTEGER | Unix timestamp of last run (nullable)          |
+| Column        | Type    | Description                                |
+| ------------- | ------- | ------------------------------------------ |
+| `id`          | INTEGER | Auto-incrementing primary key              |
+| `dir`         | TEXT    | Project directory path (unique, required)  |
+| `cmd`         | TEXT    | Command to run (e.g., "claude", "gemini")  |
+| `prompt`      | TEXT    | Default prompt for this project (nullable) |
+| `created_at`  | INTEGER | Unix timestamp (auto-generated)            |
+| `updated_at`  | INTEGER | Unix timestamp (auto-updated)              |
+| `last_run_at` | INTEGER | Unix timestamp of last run (nullable)      |
 
 ### `runs` Table
 
 Tracks individual runs:
 
-| Column       | Type    | Description                                     |
-|--------------|---------|------------------------------------------------|
-| `id`         | INTEGER | Auto-incrementing primary key                   |
-| `pid`        | INTEGER | Process ID (required)                           |
-| `project_id` | INTEGER | Foreign key to projects.id (cascade delete)     |
-| `status`     | TEXT    | "running", "completed", "failed", "crashed"     |
-| `exit_code`  | INTEGER | Process exit code (nullable)                    |
-| `started_at` | INTEGER | Unix timestamp (auto-generated)                 |
-| `ended_at`   | INTEGER | Unix timestamp when run ended (nullable)        |
-| `args`       | TEXT    | JSON-encoded array of additional arguments      |
+| Column       | Type    | Description                                 |
+| ------------ | ------- | ------------------------------------------- |
+| `id`         | INTEGER | Auto-incrementing primary key               |
+| `pid`        | INTEGER | Process ID (required)                       |
+| `project_id` | INTEGER | Foreign key to projects.id (cascade delete) |
+| `status`     | TEXT    | "running", "completed", "failed", "crashed" |
+| `exit_code`  | INTEGER | Process exit code (nullable)                |
+| `started_at` | INTEGER | Unix timestamp (auto-generated)             |
+| `ended_at`   | INTEGER | Unix timestamp when run ended (nullable)    |
+| `args`       | TEXT    | JSON-encoded array of additional arguments  |
 
 **Indexes:**
+
 - `idx_runs_project_id` on `project_id`
 - `idx_runs_status` on `status`
 - `idx_runs_pid` on `pid`
@@ -75,11 +77,11 @@ Tracks individual runs:
 Get or create the database instance. This function is synchronous and safe to call multiple times (returns cached instance).
 
 ```typescript
-import { getDb } from './db';
+import { getDb } from "./db";
 
 const db = getDb();
 // Or specify a custom base directory
-const db = getDb('/path/to/project');
+const db = getDb("/path/to/project");
 ```
 
 #### `closeDb(): Promise<void>`
@@ -87,7 +89,7 @@ const db = getDb('/path/to/project');
 Close the database connection and clean up resources.
 
 ```typescript
-import { closeDb } from './db';
+import { closeDb } from "./db";
 
 await closeDb();
 ```
@@ -101,6 +103,7 @@ await closeDb();
 Create a new project or update existing one by directory.
 
 **Parameters:**
+
 ```typescript
 {
   dir: string;         // Project directory (unique identifier)
@@ -110,15 +113,16 @@ Create a new project or update existing one by directory.
 ```
 
 **Example:**
+
 ```typescript
-import { upsertProject } from './db';
+import { upsertProject } from "./db";
 
 const result = await upsertProject({
-  dir: '/path/to/project',
-  cmd: 'claude',
-  prompt: 'run all tests and commit changes'
+  dir: "/path/to/project",
+  cmd: "claude",
+  prompt: "run all tests and commit changes",
 });
-console.log('Project ID:', result.insertId);
+console.log("Project ID:", result.insertId);
 ```
 
 ### `getProjectByDir(dir): Promise<Project | undefined>`
@@ -126,12 +130,13 @@ console.log('Project ID:', result.insertId);
 Retrieve a project by its directory path.
 
 **Example:**
+
 ```typescript
-import { getProjectByDir } from './db';
+import { getProjectByDir } from "./db";
 
 const project = await getProjectByDir(process.cwd());
 if (project) {
-  console.log('Found project:', project.cmd);
+  console.log("Found project:", project.cmd);
 }
 ```
 
@@ -140,8 +145,9 @@ if (project) {
 Retrieve a project by its ID.
 
 **Example:**
+
 ```typescript
-import { getProjectById } from './db';
+import { getProjectById } from "./db";
 
 const project = await getProjectById(1);
 ```
@@ -151,8 +157,9 @@ const project = await getProjectById(1);
 Get all projects, ordered by most recently run.
 
 **Example:**
+
 ```typescript
-import { getAllProjects } from './db';
+import { getAllProjects } from "./db";
 
 const projects = await getAllProjects();
 for (const project of projects) {
@@ -165,8 +172,9 @@ for (const project of projects) {
 Update a project's `last_run_at` timestamp.
 
 **Example:**
+
 ```typescript
-import { updateProjectLastRun } from './db';
+import { updateProjectLastRun } from "./db";
 
 await updateProjectLastRun(1);
 ```
@@ -176,8 +184,9 @@ await updateProjectLastRun(1);
 Delete a project and all its runs (cascade).
 
 **Example:**
+
 ```typescript
-import { deleteProject } from './db';
+import { deleteProject } from "./db";
 
 await deleteProject(1);
 ```
@@ -191,6 +200,7 @@ await deleteProject(1);
 Create a new run and update project's last_run_at timestamp.
 
 **Parameters:**
+
 ```typescript
 {
   pid: number;        // Process ID
@@ -200,15 +210,16 @@ Create a new run and update project's last_run_at timestamp.
 ```
 
 **Example:**
+
 ```typescript
-import { createRun } from './db';
+import { createRun } from "./db";
 
 const run = await createRun({
   pid: process.pid,
   project_id: 1,
-  args: ['--exit-on-idle=60s']
+  args: ["--exit-on-idle=60s"],
 });
-console.log('Run ID:', run.insertId);
+console.log("Run ID:", run.insertId);
 ```
 
 ### `getRunById(id): Promise<Run | null>`
@@ -216,6 +227,7 @@ console.log('Run ID:', run.insertId);
 Get a run by its ID. Automatically parses JSON args.
 
 **Returns:**
+
 ```typescript
 {
   id: number;
@@ -230,8 +242,9 @@ Get a run by its ID. Automatically parses JSON args.
 ```
 
 **Example:**
+
 ```typescript
-import { getRunById } from './db';
+import { getRunById } from "./db";
 
 const run = await getRunById(1);
 if (run) {
@@ -244,12 +257,13 @@ if (run) {
 Get the most recent run by process ID.
 
 **Example:**
+
 ```typescript
-import { getRunByPid } from './db';
+import { getRunByPid } from "./db";
 
 const run = await getRunByPid(12345);
 if (run) {
-  console.log('Found run:', run.status);
+  console.log("Found run:", run.status);
 }
 ```
 
@@ -258,8 +272,9 @@ if (run) {
 Get all runs for a project, ordered by most recent first.
 
 **Example:**
+
 ```typescript
-import { getProjectRuns } from './db';
+import { getProjectRuns } from "./db";
 
 const runs = await getProjectRuns(1);
 console.log(`Project has ${runs.length} runs`);
@@ -270,8 +285,9 @@ console.log(`Project has ${runs.length} runs`);
 Get all currently running runs.
 
 **Example:**
+
 ```typescript
-import { getRunningRuns } from './db';
+import { getRunningRuns } from "./db";
 
 const active = await getRunningRuns();
 for (const run of active) {
@@ -284,8 +300,9 @@ for (const run of active) {
 Get all runs, ordered by most recent first.
 
 **Example:**
+
 ```typescript
-import { getAllRuns } from './db';
+import { getAllRuns } from "./db";
 
 const allRuns = await getAllRuns();
 ```
@@ -295,6 +312,7 @@ const allRuns = await getAllRuns();
 Update a run's status and optionally its exit code. Automatically sets `ended_at` for non-running states.
 
 **Parameters:**
+
 ```typescript
 runId: number
 status: "running" | "completed" | "failed" | "crashed"
@@ -302,14 +320,15 @@ exitCode?: number | null
 ```
 
 **Example:**
+
 ```typescript
-import { updateRunStatus } from './db';
+import { updateRunStatus } from "./db";
 
 // Mark as completed
-await updateRunStatus(1, 'completed', 0);
+await updateRunStatus(1, "completed", 0);
 
 // Mark as failed
-await updateRunStatus(2, 'failed', 1);
+await updateRunStatus(2, "failed", 1);
 ```
 
 ### `markRunAsCrashed(runId): Promise<UpdateResult>`
@@ -317,8 +336,9 @@ await updateRunStatus(2, 'failed', 1);
 Convenience function to mark a run as crashed.
 
 **Example:**
+
 ```typescript
-import { markRunAsCrashed } from './db';
+import { markRunAsCrashed } from "./db";
 
 await markRunAsCrashed(1);
 ```
@@ -328,8 +348,9 @@ await markRunAsCrashed(1);
 Delete a specific run.
 
 **Example:**
+
 ```typescript
-import { deleteRun } from './db';
+import { deleteRun } from "./db";
 
 await deleteRun(1);
 ```
@@ -339,8 +360,9 @@ await deleteRun(1);
 Delete all runs for a project.
 
 **Example:**
+
 ```typescript
-import { deleteProjectRuns } from './db';
+import { deleteProjectRuns } from "./db";
 
 await deleteProjectRuns(1);
 ```
@@ -354,6 +376,7 @@ await deleteProjectRuns(1);
 Get a project with its latest run and total run count.
 
 **Returns:**
+
 ```typescript
 {
   project: Project;
@@ -363,8 +386,9 @@ Get a project with its latest run and total run count.
 ```
 
 **Example:**
+
 ```typescript
-import { getProjectWithLatestRun } from './db';
+import { getProjectWithLatestRun } from "./db";
 
 const info = await getProjectWithLatestRun(process.cwd());
 if (info) {
@@ -381,6 +405,7 @@ if (info) {
 Get all crashed runs with their project information.
 
 **Returns:**
+
 ```typescript
 {
   run_id: number;
@@ -390,12 +415,14 @@ Get all crashed runs with their project information.
   project_id: number;
   dir: string;
   cmd: string;
-}[]
+}
+[];
 ```
 
 **Example:**
+
 ```typescript
-import { getCrashedRuns } from './db';
+import { getCrashedRuns } from "./db";
 
 const crashed = await getCrashedRuns();
 for (const run of crashed) {
@@ -410,32 +437,26 @@ for (const run of crashed) {
 ### Complete Workflow
 
 ```typescript
-import {
-  upsertProject,
-  createRun,
-  updateRunStatus,
-  getProjectWithLatestRun,
-  closeDb
-} from './db';
+import { upsertProject, createRun, updateRunStatus, getProjectWithLatestRun, closeDb } from "./db";
 
 // 1. Register project
 const project = await upsertProject({
   dir: process.cwd(),
-  cmd: 'claude',
-  prompt: 'Implement new feature'
+  cmd: "claude",
+  prompt: "Implement new feature",
 });
 
 // 2. Start a run
 const run = await createRun({
   pid: process.pid,
   project_id: Number(project.insertId),
-  args: process.argv.slice(2)
+  args: process.argv.slice(2),
 });
 
 // 3. ... do work ...
 
 // 4. Mark as completed
-await updateRunStatus(Number(run.insertId), 'completed', 0);
+await updateRunStatus(Number(run.insertId), "completed", 0);
 
 // 5. Check project status
 const info = await getProjectWithLatestRun(process.cwd());
@@ -448,7 +469,7 @@ await closeDb();
 ### Crash Recovery
 
 ```typescript
-import { getRunningRuns, markRunAsCrashed } from './db';
+import { getRunningRuns, markRunAsCrashed } from "./db";
 
 // On startup, check for crashed runs
 const running = await getRunningRuns();
@@ -467,15 +488,15 @@ for (const run of running) {
 ### Project Dashboard
 
 ```typescript
-import { getAllProjects, getProjectRuns } from './db';
+import { getAllProjects, getProjectRuns } from "./db";
 
 const projects = await getAllProjects();
 for (const project of projects) {
   const runs = await getProjectRuns(project.id);
 
-  const completed = runs.filter(r => r.status === 'completed').length;
-  const failed = runs.filter(r => r.status === 'failed').length;
-  const crashed = runs.filter(r => r.status === 'crashed').length;
+  const completed = runs.filter((r) => r.status === "completed").length;
+  const failed = runs.filter((r) => r.status === "failed").length;
+  const crashed = runs.filter((r) => r.status === "crashed").length;
 
   console.log(`\n${project.dir}`);
   console.log(`  Command: ${project.cmd}`);
@@ -487,7 +508,7 @@ for (const project of projects) {
 ### Resume Last Project
 
 ```typescript
-import { getAllProjects } from './db';
+import { getAllProjects } from "./db";
 
 const projects = await getAllProjects();
 const lastProject = projects[0]; // Already sorted by last_run_at
@@ -530,7 +551,7 @@ export interface RunsTable {
   exit_code: number | null;
   started_at: Generated<number>;
   ended_at: number | null;
-  args: string;  // JSON string internally
+  args: string; // JSON string internally
 }
 ```
 
@@ -552,39 +573,33 @@ export interface DatabaseSchema {
 For complex queries, use Kysely directly:
 
 ```typescript
-import { getDb } from './db';
+import { getDb } from "./db";
 
 const db = getDb();
 
 // Get success rate by project
 const stats = await db
-  .selectFrom('runs')
-  .innerJoin('projects', 'projects.id', 'runs.project_id')
+  .selectFrom("runs")
+  .innerJoin("projects", "projects.id", "runs.project_id")
   .select([
-    'projects.dir',
-    (eb) => eb.fn.count('runs.id').as('total'),
-    (eb) => eb.fn
-      .count('runs.id')
-      .filterWhere('runs.status', '=', 'completed')
-      .as('successful')
+    "projects.dir",
+    (eb) => eb.fn.count("runs.id").as("total"),
+    (eb) => eb.fn.count("runs.id").filterWhere("runs.status", "=", "completed").as("successful"),
   ])
-  .groupBy('projects.id')
+  .groupBy("projects.id")
   .execute();
 ```
 
 ### Migration Example
 
 ```typescript
-import { getDb } from './db';
+import { getDb } from "./db";
 
 const db = getDb();
 
 // Add new column (if not exists)
 try {
-  await db.schema
-    .alterTable('projects')
-    .addColumn('description', 'text')
-    .execute();
+  await db.schema.alterTable("projects").addColumn("description", "text").execute();
 } catch {
   // Column might already exist
 }
@@ -601,6 +616,7 @@ bun examples/db-usage.ts
 ```
 
 This will:
+
 - Create a project
 - Start and complete a run
 - Simulate a crash
@@ -645,21 +661,21 @@ Potential additions:
 ## Example: Integrate with agent-yes CLI
 
 ```typescript
-import { upsertProject, createRun, updateRunStatus } from './db';
+import { upsertProject, createRun, updateRunStatus } from "./db";
 
 async function runAgent(cmd: string, prompt: string) {
   // 1. Register project
   const project = await upsertProject({
     dir: process.cwd(),
     cmd,
-    prompt
+    prompt,
   });
 
   // 2. Start tracking
   const run = await createRun({
     pid: process.pid,
     project_id: Number(project.insertId),
-    args: process.argv.slice(2)
+    args: process.argv.slice(2),
   });
 
   try {
@@ -667,10 +683,10 @@ async function runAgent(cmd: string, prompt: string) {
     // ... your agent logic ...
 
     // 4. Mark as completed
-    await updateRunStatus(Number(run.insertId), 'completed', 0);
+    await updateRunStatus(Number(run.insertId), "completed", 0);
   } catch (err) {
     // 5. Mark as failed
-    await updateRunStatus(Number(run.insertId), 'failed', 1);
+    await updateRunStatus(Number(run.insertId), "failed", 1);
     throw err;
   }
 }
@@ -683,6 +699,7 @@ async function runAgent(cmd: string, prompt: string) {
 ### Database locked errors
 
 If you see "database is locked" errors:
+
 - Ensure proper connection cleanup with `closeDb()`
 - WAL mode reduces locking but concurrent writes may still conflict
 - Consider retry logic with exponential backoff
@@ -690,6 +707,7 @@ If you see "database is locked" errors:
 ### Permission errors
 
 The database is in `<project>/.agent-yes/`. Ensure:
+
 - Directory is writable
 - No conflicts with other processes
 - `.agent-yes` is in `.gitignore`
@@ -697,6 +715,7 @@ The database is in `<project>/.agent-yes/`. Ensure:
 ### Schema changes
 
 When modifying the schema:
+
 1. Consider migration strategy for existing data
 2. Test with both Bun and Node runtimes
 3. Update type definitions

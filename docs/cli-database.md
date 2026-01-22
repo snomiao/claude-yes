@@ -27,6 +27,7 @@ agent-yes help db                   # Show database command help
 List recently used projects in YAML format. Default limit is 10.
 
 **Example:**
+
 ```bash
 $ agent-yes projects list 5
 # Recent 3 Projects
@@ -49,6 +50,7 @@ $ agent-yes projects list 5
 ```
 
 **Fields:**
+
 - `id`: Project database ID
 - `dir`: Project directory (unique identifier)
 - `cmd`: AI CLI command (claude, gemini, etc.)
@@ -64,9 +66,11 @@ $ agent-yes projects list 5
 Show detailed information about a specific project, including statistics and recent runs.
 
 **Arguments:**
+
 - `dir`: Project directory (default: current directory)
 
 **Example:**
+
 ```bash
 $ agent-yes projects show
 # Project: /home/user/my-project
@@ -104,6 +108,7 @@ recent_runs:
 ```
 
 **Statistics:**
+
 - `total_runs`: Total number of runs for this project
 - `completed`: Successfully completed runs
 - `failed`: Runs that failed with non-zero exit code
@@ -119,6 +124,7 @@ recent_runs:
 List recent runs across all projects. Default limit is 10.
 
 **Example:**
+
 ```bash
 $ agent-yes runs list 3
 # Recent 3 Runs
@@ -146,6 +152,7 @@ $ agent-yes runs list 3
 ```
 
 **Fields:**
+
 - `id`: Run database ID
 - `pid`: Process ID
 - `project_id`: Associated project ID
@@ -163,6 +170,7 @@ $ agent-yes runs list 3
 List all currently running processes.
 
 **Example:**
+
 ```bash
 $ agent-yes runs active
 # Active Runs (2)
@@ -181,6 +189,7 @@ No active runs
 ```
 
 **Use cases:**
+
 - Check what's currently running
 - Find processes to kill
 - Monitor active sessions
@@ -193,6 +202,7 @@ No active runs
 List all runs that crashed unexpectedly, with project information.
 
 **Example:**
+
 ```bash
 $ agent-yes runs crashed
 # Crashed Runs (2)
@@ -215,6 +225,7 @@ $ agent-yes runs crashed
 ```
 
 **Use cases:**
+
 - Debug crash patterns
 - Identify problematic projects
 - Review recent failures
@@ -229,17 +240,20 @@ All commands output YAML format for easy parsing and readability.
 ### Parse YAML in Scripts
 
 **Using yq:**
+
 ```bash
 agent-yes projects list | yq '.[0].dir'
 # Output: /home/user/my-project
 ```
 
 **Using Python:**
+
 ```bash
 agent-yes projects list | python -c 'import yaml, sys; print(yaml.safe_load(sys.stdin)[0]["dir"])'
 ```
 
 **Using jq (convert to JSON first):**
+
 ```bash
 agent-yes projects list | yq -o json | jq '.[0].dir'
 ```
@@ -287,6 +301,7 @@ agent-yes projects list | grep -E "(dir|crashed)"
 ### Integration with Scripts
 
 **Resume last project:**
+
 ```bash
 #!/bin/bash
 LAST_PROJECT=$(agent-yes projects list 1 | yq '.[0]')
@@ -299,6 +314,7 @@ agent-yes "$CMD" -- "$PROMPT"
 ```
 
 **Clean up old runs:**
+
 ```bash
 #!/bin/bash
 # Check crashed runs older than 7 days
@@ -329,11 +345,13 @@ The CLI checks for database commands first, and only handles them if the first a
 ## Database Location
 
 The database is stored at:
+
 ```
 <project-dir>/.agent-yes/store.sqlite
 ```
 
 Each project directory has its own database. This keeps project data isolated and makes it easy to:
+
 - Delete project history (just remove `.agent-yes/`)
 - Version control settings (add `.agent-yes/` to git if desired)
 - Share databases (copy `.agent-yes/` between machines)
@@ -347,6 +365,7 @@ The `.agent-yes` directory is git-ignored by default.
 ### No data returned
 
 If commands return empty results:
+
 1. Check you're in the right directory
 2. Run `agent-yes` normally first to create project data
 3. Verify `.agent-yes/store.sqlite` exists
@@ -354,6 +373,7 @@ If commands return empty results:
 ### Permission errors
 
 If you get permission errors:
+
 ```bash
 # Check directory permissions
 ls -la .agent-yes/
@@ -366,6 +386,7 @@ chmod 644 .agent-yes/store.sqlite
 ### Database corruption
 
 If the database is corrupted:
+
 ```bash
 # Backup first
 cp -r .agent-yes .agent-yes.backup

@@ -155,6 +155,7 @@ agent-yes help db
 ```
 
 **Example output:**
+
 ```bash
 $ agent-yes projects show
 # Project: /home/user/my-project
