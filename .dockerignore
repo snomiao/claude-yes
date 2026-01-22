@@ -7,30 +7,6 @@ core
 
 # Development
 .git
-.github
-.husky
-.vscode
-.cache
-.claude
-.grok
-
-# Tests
-tests
-vitest.config.ts
-vitest.setup.ts
-
-# Documentation
-docs
-*.md
-index.html
-
-# Scripts
-scripts
-seed-credentials.sh
-
-# Examples and workspace
-examples
-ws
 
 # Logs
 *.log
@@ -39,12 +15,8 @@ logs
 # Environment
 .env*
 
-# TypeScript config (not needed in runtime)
-tsconfig.json
-
 # OS
 .DS_Store
 
-# Docker files
 Dockerfile
 docker-compose.yaml
