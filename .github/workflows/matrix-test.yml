@@ -32,10 +32,9 @@ jobs:
           node-version: ${{ matrix.runtime-version }}
 
       - name: Setup Bun
-        if: matrix.runtime == 'bun'
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ matrix.runtime-version }}
+          bun-version: latest
 
       - name: Install dependencies (Node)
         if: matrix.runtime == 'node'
