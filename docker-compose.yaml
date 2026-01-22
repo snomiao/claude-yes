@@ -20,7 +20,8 @@ services:
     # Environment variables for API keys
     # The env_file will load these automatically, no need to duplicate in environment section
     env_file:
-      - ./.env.local
+      - path: ./.env.local
+        required: false # This file is optional
 
     environment:
       - TERM=xterm-color
