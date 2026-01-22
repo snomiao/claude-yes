@@ -28,6 +28,18 @@
     "type": "git",
     "url": "git+https://github.com/snomiao/agent-yes.git"
   },
+  "bin": {
+    "agent-yes": "./dist/agent-yes.js",
+    "amp-yes": "./dist/amp-yes.js",
+    "auggie-yes": "./dist/auggie-yes.js",
+    "claude-yes": "./dist/claude-yes.js",
+    "codex-yes": "./dist/codex-yes.js",
+    "copilot-yes": "./dist/copilot-yes.js",
+    "cursor-yes": "./dist/cursor-yes.js",
+    "gemini-yes": "./dist/gemini-yes.js",
+    "grok-yes": "./dist/grok-yes.js",
+    "qwen-yes": "./dist/qwen-yes.js"
+  },
   "directories": {
     "doc": "docs"
   },
@@ -129,17 +141,5 @@
       "@semantic-release/git",
       "@semantic-release/github"
     ]
-  },
-  "bin": {
-    "qwen-yes": "./dist/qwen-yes.js",
-    "grok-yes": "./dist/grok-yes.js",
-    "claude-yes": "./dist/claude-yes.js",
-    "gemini-yes": "./dist/gemini-yes.js",
-    "codex-yes": "./dist/codex-yes.js",
-    "copilot-yes": "./dist/copilot-yes.js",
-    "cursor-yes": "./dist/cursor-yes.js",
-    "auggie-yes": "./dist/auggie-yes.js",
-    "agent-yes": "./dist/agent-yes.js",
-    "amp-yes": "./dist/amp-yes.js"
   }
 }

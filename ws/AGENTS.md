@@ -5,6 +5,7 @@ This document describes the environment available in the agent-yes Docker contai
 ## Image Variants
 
 ### Full Image (`snomiao/agent-yes:latest`)
+
 - **Size**: ~2.2 GB
 - **Base**: `node:latest` (Debian Bookworm)
 - **Includes**:
@@ -22,6 +23,7 @@ This document describes the environment available in the agent-yes Docker contai
     - `opencode-ai`
 
 ### Mini Image (`snomiao/agent-yes:mini`) ⚡
+
 - **Size**: ~200-300 MB
 - **Base**: `node:alpine`
 - **Includes**:
@@ -30,6 +32,7 @@ This document describes the environment available in the agent-yes Docker contai
   - agent-yes CLI only
 
 **What's NOT included in mini:**
+
 - Rust toolchain
 - Python3 and build tools
 - AI agent CLIs (need manual installation)
@@ -37,12 +40,14 @@ This document describes the environment available in the agent-yes Docker contai
 ## When to Use Which Image?
 
 ### Use Mini Image When:
+
 - You only need agent-yes CLI
 - You want fast pod creation (~10-30s vs 2-5min)
 - You're on bandwidth/storage constrained environments
 - You'll install additional tools on-demand
 
 ### Use Full Image When:
+
 - You need all AI agent CLIs immediately available
 - You're building projects that require compilation (Rust/C++)
 - You want a complete development environment

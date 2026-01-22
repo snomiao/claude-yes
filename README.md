@@ -209,7 +209,7 @@ docker run --rm \
 **Docker Compose example:**
 
 ```yaml
-version: '3.8'
+version: "3.8"
 services:
   agent-yes:
     image: ghcr.io/snomiao/agent-yes:latest

@@ -2,8 +2,6 @@
 volumes:
   home:
 
-
-
 services:
   # docker compose run --build -t agent-yes
   agent-yes:
@@ -38,4 +36,3 @@ services:
           path: docker-compose.yaml
         - action: rebuild
           path: ./Dockerfile
-

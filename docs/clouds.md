@@ -190,11 +190,13 @@ gcloud run jobs executions logs read EXECUTION_NAME \
 ### Pricing Considerations
 
 Cloud Run pricing is based on:
+
 - **CPU and Memory**: Charged per 100ms of usage
 - **Requests**: $0.40 per million requests
 - **Networking**: Standard egress rates apply
 
 For AI CLI tools, consider:
+
 - Use `--timeout` to limit execution time
 - Set `--max-instances` to control costs
 - Use Jobs for non-HTTP workloads (cheaper than services)
@@ -203,6 +205,7 @@ For AI CLI tools, consider:
 ### Multi-Platform Support
 
 The `agent-yes` image supports both architectures available on Cloud Run:
+
 - `linux/amd64` (x86_64) - Default on Cloud Run
 - `linux/arm64` (aarch64) - Not yet available on Cloud Run
 
@@ -237,26 +240,31 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
 ## Other Cloud Platforms
 
 ### AWS (Coming Soon)
+
 - AWS Fargate
 - Amazon ECS
 - AWS Lambda (with container support)
 
 ### Azure (Coming Soon)
+
 - Azure Container Instances
 - Azure Container Apps
 - Azure Kubernetes Service
 
 ### DigitalOcean (Coming Soon)
+
 - App Platform
 - Kubernetes
 
 ### Fly.io (Coming Soon)
+
 - Fly Machines
 - Fly Apps
 
 ## Contributing
 
 Have experience deploying to other cloud platforms? Please contribute by adding documentation for:
+
 - AWS deployment guides
 - Azure deployment guides
 - Other cloud providers

@@ -11,9 +11,11 @@ const config = parseCliArgs(process.argv);
 
 // Validate CLI name
 if (!config.cli) {
-  logger.error(process.argv)
+  logger.error(process.argv);
   logger.error("Error: No CLI name provided.");
-  throw new Error(`missing cli def, available clis: ${Object.keys((await cliYesConfig).clis).join(", ")}`);
+  throw new Error(
+    `missing cli def, available clis: ${Object.keys((await cliYesConfig).clis).join(", ")}`,
+  );
 }
 
 // console.log(`Using CLI: ${config.cli}`);

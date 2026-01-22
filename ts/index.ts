@@ -196,17 +196,19 @@ export default async function agentYes({
   const debuggingLogsPath =
     config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.debug.log`);
 
-  // add 
-  if (debuggingLogsPath) logger.add(new winston.transports.File({
-    filename: debuggingLogsPath,
-    level: "debug",
-  }))
+  // add
+  if (debuggingLogsPath)
+    logger.add(
+      new winston.transports.File({
+        filename: debuggingLogsPath,
+        level: "debug",
+      }),
+    );
 
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;
   if (isSubAgent)
     logger.info(`[${cli}-yes] Running as sub-agent (CLAUDE_PPID=${process.env.CLAUDE_PPID})`);
-
 
   const getPtyOptions = () => {
     const ptyEnv = { ...(env ?? (process.env as Record<string, string>)) };
@@ -602,7 +604,7 @@ export default async function agentYes({
             if (conf.noEOL) return s; // codex use cursor-move csi code insteadof \n to move lines, so the output have no \n at all, this hack prevents stuck on unended line
             return s.lines({ EOL: "NONE" }); // other clis use ink, which is rerendering the block based on \n lines
           })
-          
+
           // .forkTo(async function rawLinesLogger(f) {
           //   if (!rawLinesLogPath) return f.run(); // no stream
           //   // try stream the raw log for realtime debugging, including control chars, note: it will be a huge file

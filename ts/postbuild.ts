@@ -9,15 +9,18 @@ import sflow from "sflow";
 import pkg from "../package.json";
 
 // Create copies for each CLI variant (all use the same wrapper logic)
-await sflow([...Object.keys(CLIS_CONFIG), 'agent'])
+await sflow([...Object.keys(CLIS_CONFIG), "agent"])
   .map(async (cli) => {
     const cliName = `${cli}-yes`;
 
     const wrapperPath = `./dist/${cliName}.js`;
-    await writeFile(wrapperPath, `
+    await writeFile(
+      wrapperPath,
+      `
 #!/usr/bin/env bun
 await import('./cli.js')
-`.trim());
+`.trim(),
+    );
     await chmod(wrapperPath, 0o755);
 
     if (!(pkg.bin as Record<string, string>)?.[cliName]) {

@@ -155,9 +155,9 @@ function getDefaultConfig() {
         fatal: [], // no fatal patterns known yet
       },
       amp: {
-        help: '',
-        install: 'npm i -g @sourcegraph/amp',
-      }
+        help: "",
+        install: "npm i -g @sourcegraph/amp",
+      },
     },
   });
 }

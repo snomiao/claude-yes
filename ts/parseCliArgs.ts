@@ -11,11 +11,13 @@ import pkg from "../package.json" with { type: "json" };
  */
 export function parseCliArgs(argv: string[]) {
   // Detect cli name from script name (same logic as cli.ts:10-14)
-  const cliName = (argv[1]?.split(/[/\\]/).at(-1)
-    ?.replace(/(\.[jt]s)?$/, "")
-    .replace(/^(cli|agent)(-yes$)?/, "")
-    .replace(/-yes$/, "") || undefined
-  );
+  const cliName =
+    argv[1]
+      ?.split(/[/\\]/)
+      .at(-1)
+      ?.replace(/(\.[jt]s)?$/, "")
+      .replace(/^(cli|agent)(-yes$)?/, "")
+      .replace(/-yes$/, "") || undefined;
 
   // Parse args with yargs (same logic as cli.ts:16-73)
   const parsedArgv = yargs(hideBin(argv))

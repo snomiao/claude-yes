@@ -3,11 +3,13 @@
 ## Quick Start
 
 ### 1. Set your API key
+
 ```bash
 export ANTHROPIC_API_KEY='your-api-key-here'
 ```
 
 ### 2. Run the deployment script
+
 ```bash
 cd demo
 ./gcp.sh "hello"

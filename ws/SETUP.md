@@ -40,6 +40,7 @@ npm i -g \
 ### Build Tools (Required for native modules)
 
 **Alpine Linux:**
+
 ```bash
 apk add --no-cache \
     build-base \
@@ -51,6 +52,7 @@ apk add --no-cache \
 ```
 
 **Debian/Ubuntu:**
+
 ```bash
 apt-get update && apt-get install -y \
     build-essential \
@@ -79,54 +81,63 @@ cargo --version
 Install AI agent command-line interfaces individually or all at once:
 
 #### Claude Code (Anthropic)
+
 ```bash
 npm i -g @anthropic-ai/claude-code
 # Requires: ANTHROPIC_API_KEY
 ```
 
 #### Qwen Code
+
 ```bash
 npm i -g @qwen-code/qwen-code
 # Requires: QWEN_API_KEY
 ```
 
 #### Grok CLI
+
 ```bash
 npm i -g @vibe-kit/grok-cli
 # Requires: GROQ_API_KEY
 ```
 
 #### Gemini CLI (Google)
+
 ```bash
 npm i -g @google/gemini-cli
 # Requires: GEMINI_API_KEY
 ```
 
 #### Codex (OpenAI)
+
 ```bash
 npm i -g @openai/codex
 # Requires: OPENAI_API_KEY
 ```
 
 #### GitHub Copilot
+
 ```bash
 npm i -g @github/copilot
 # Requires: GitHub authentication
 ```
 
 #### Auggie (AugmentCode)
+
 ```bash
 npm i -g @augmentcode/auggie
 # Requires: AUGMENT_API_KEY
 ```
 
 #### OpenCode AI
+
 ```bash
 npm i -g opencode-ai
 # Requires: OPENAI_API_KEY
 ```
 
 #### Install All Agents at Once
+
 ```bash
 npm i -g \
     @anthropic-ai/claude-code \
@@ -142,23 +153,29 @@ npm i -g \
 ### Optional: Database CLIs
 
 #### PostgreSQL Client
+
 **Alpine:**
+
 ```bash
 apk add --no-cache postgresql-client
 ```
 
 **Debian/Ubuntu:**
+
 ```bash
 apt-get update && apt-get install -y postgresql-client
 ```
 
 ### Optional: Go Language
+
 **Alpine:**
+
 ```bash
 apk add --no-cache go
 ```
 
 **Debian/Ubuntu:**
+
 ```bash
 apt-get update && apt-get install -y golang-go
 ```
@@ -215,24 +232,31 @@ opencode --version
 ## Troubleshooting
 
 ### "Command not found" after npm install
+
 Make sure npm's global bin directory is in your PATH:
+
 ```bash
 export PATH="$(npm config get prefix)/bin:$PATH"
 ```
 
 ### Rust not found after installation
+
 Load the Rust environment:
+
 ```bash
 source $HOME/.cargo/env
 ```
 
 Or add to your shell profile:
+
 ```bash
 echo 'source $HOME/.cargo/env' >> ~/.bashrc
 ```
 
 ### Build failures with native modules
+
 Make sure you have build tools installed:
+
 ```bash
 # Alpine
 apk add build-base python3-dev
