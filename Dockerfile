@@ -44,10 +44,11 @@ RUN npm i -g \
     
 
 # install bun seems not working
-# RUN curl -fsSL https://bun.com/install | bash && \
-#   export BUN_INSTALL="$HOME/.bun" && \
-#   export PATH="$BUN_INSTALL/bin:$PATH"
-
+RUN curl -fsSL https://bun.com/install | bash && \
+    echo 'export BUN_INSTALL="$HOME/.bun"' >> /root/.bashrc && \
+    echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> /root/.bashrc && \
+    . /root/.bashrc
+    
 # install this project
 WORKDIR /src/agent-yes
 COPY package.json bun.lock ./
@@ -67,7 +68,8 @@ RUN useradd -ms /bin/bash bot
 WORKDIR /root/
 
 # Use node to run (uses node-pty which properly passes environment variables)
-ENTRYPOINT ["bash", "-c", "exec node /src/agent-yes/dist/agent-yes.js $@", "bash"]
+# ENTRYPOINT ["bash", "-c", "exec node /src/agent-yes/dist/agent-yes.js $@", "bash"]
+ENTRYPOINT claude-yes
 # ENTRYPOINT bash -c " \
 # cp -r /root /root/bo && \
 # bun /src/agent-yes/dist/agent-yes.js $* \
