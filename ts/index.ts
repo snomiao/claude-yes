@@ -175,6 +175,17 @@ export default async function agentYes({
   const stdinReady = new ReadyManager();
   const stdinFirstReady = new ReadyManager(); // if user send ctrl+c before
 
+  // Early Ctrl+C handler for immediate responsiveness during startup
+  let earlyAborted = false;
+  const earlyCtrlCHandler = (chunk: Buffer) => {
+    if (!earlyAborted && chunk.toString() === "\u0003") {
+      logger.error("User aborted during startup: SIGINT");
+      earlyAborted = true;
+      process.exit(130);
+    }
+  };
+  process.stdin.on("data", earlyCtrlCHandler);
+
   // force ready after 10s to avoid stuck forever if the ready-word mismatched
   sleep(10e3).then(() => {
     if (!stdinReady.isReady) stdinReady.ready();
@@ -492,6 +503,9 @@ export default async function agentYes({
     .map((buffer) => buffer.toString())
 
     .by(function handleTerminateSignals(s) {
+      // Remove early Ctrl+C handler now that main stream is active
+      process.stdin.off("data", earlyCtrlCHandler);
+
       let aborted = false;
       return s.map((chunk) => {
         // handle CTRL+Z and filter it out, as I dont know how to support it yet
@@ -623,13 +637,15 @@ export default async function agentYes({
           // Generic auto-response handler driven by CLI_CONFIGURES
           .forEach(async function autoResponseOnChunk(e, i) {
             logger.debug(`stdout|${e}`);
-            // ready matcher: if matched, mark stdin ready
-            if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
+
+            // ready matcher: check for ready signal
+            if (!stdinReady.isReady && conf.ready?.some((rx: RegExp) => e.match(rx))) {
               logger.debug(`ready |${e}`);
               if (cli === "gemini" && i <= 80) return; // gemini initial noise, only after many lines
               stdinReady.ready();
               stdinFirstReady.ready();
             }
+
             // enter matchers: send Enter when any enter regex matches
 
             if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
