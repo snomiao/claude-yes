@@ -175,6 +175,9 @@ export default async function agentYes({
   const stdinReady = new ReadyManager();
   const stdinFirstReady = new ReadyManager(); // if user send ctrl+c before
 
+  // Track when user sends Ctrl+C to avoid treating intentional exit as crash
+  let userSentCtrlC = false;
+
   // force ready after 10s to avoid stuck forever if the ready-word mismatched
   sleep(10e3).then(() => {
     if (!stdinReady.isReady) stdinReady.ready();
@@ -402,7 +405,10 @@ export default async function agentYes({
   shell.onData(onData);
   shell.onExit(async function onExit({ exitCode }) {
     stdinReady.unready(); // start buffer stdin
-    const agentCrashed = exitCode !== 0;
+    // Exit codes 130 (SIGINT/Ctrl+C) and 143 (SIGTERM) are intentional exits, not crashes
+    // Also check if user sent Ctrl+C recently (within last 2 seconds)
+    const intentionalExit = exitCode === 130 || exitCode === 143 || userSentCtrlC;
+    const agentCrashed = exitCode !== 0 && !intentionalExit;
 
     // Handle restart without continue args (e.g., "No conversation found to continue")
     // logger.debug(``, { shouldRestartWithoutContinue, robust })
@@ -436,7 +442,7 @@ export default async function agentYes({
       }
       if (isFatal) return pendingExitCode.resolve(exitCode);
 
-      logger.info(`${cli} crashed, restarting...`);
+      logger.info(`${cli} crashed (exit code: ${exitCode}), restarting...`);
 
       // For codex, try to use stored session ID for this directory
       let restoreArgs = conf.restoreArgs;
@@ -505,6 +511,12 @@ export default async function agentYes({
           pendingExitCode.resolve(130); // SIGINT
           aborted = true;
           return chunk; // still pass into agent, but they prob be killed XD
+        }
+        // Track Ctrl+C when stdin is ready (user is interrupting running CLI)
+        if (chunk === "\u0003") {
+          userSentCtrlC = true;
+          // Reset flag after 2 seconds in case CLI doesn't exit immediately
+          setTimeout(() => { userSentCtrlC = false; }, 2000);
         }
         return chunk; // normal inputs
       });
