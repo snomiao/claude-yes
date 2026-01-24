@@ -17,6 +17,7 @@ export function parseCliArgs(argv: string[]) {
       .at(-1)
       ?.replace(/(\.[jt]s)?$/, "")
       .replace(/^(cli|agent)(-yes$)?/, "")
+      .replace(/^ay$/, "") // treat standalone "ay" same as "agent-yes"
       .replace(/-yes$/, "") || undefined;
 
   // Parse args with yargs (same logic as cli.ts:16-73)
@@ -174,7 +175,7 @@ export function parseCliArgs(argv: string[]) {
     env: process.env as Record<string, string>,
     cli: (cliName ||
       parsedArgv.cli ||
-      parsedArgv._[0]?.toString()?.replace?.(/-yes$/, "")) as (typeof SUPPORTED_CLIS)[number],
+      (dashIndex !== 0 ? parsedArgv._[0]?.toString()?.replace?.(/-yes$/, "") : undefined)) as (typeof SUPPORTED_CLIS)[number],
     cliArgs: cliArgsForSpawn,
     prompt: [parsedArgv.prompt, dashPrompt].filter(Boolean).join(" ") || undefined,
     install: parsedArgv.install,
