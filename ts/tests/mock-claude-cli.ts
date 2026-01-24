@@ -27,7 +27,10 @@ function logReceived(source: string, message: string) {
 }
 
 // Handle positional prompt arg (mimics claude's promptArg: "last-arg")
-const promptArg = process.argv.slice(2).filter((a) => !a.startsWith("-")).at(-1);
+const promptArg = process.argv
+  .slice(2)
+  .filter((a) => !a.startsWith("-"))
+  .at(-1);
 if (promptArg) {
   logReceived("argv", promptArg);
   process.stdout.write(`Received prompt arg: ${promptArg}\n`);

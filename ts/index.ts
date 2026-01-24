@@ -21,13 +21,14 @@ import { createFifoStream } from "./beta/fifo.ts";
 import { PidStore } from "./pidStore.ts";
 import { SUPPORTED_CLIS } from "./SUPPORTED_CLIS.ts";
 import winston from "winston";
-import { mapObject, pipe } from "rambda";
 
 export { removeControlCharacters };
 
 export type AgentCliConfig = {
   // cli
-  install?: string; // hint user for install command if not installed
+  install?:
+    | string
+    | { powershell?: string; bash?: string; npm?: string; unix?: string; windows?: string }; // hint user for install command if not installed
   version?: string; // hint user for version command to check if installed
   binary?: string; // actual binary name if different from cli, e.g. cursor -> cursor-agent
   defaultArgs?: string[]; // function to ensure certain args are present
@@ -328,6 +329,41 @@ export default async function agentYes({
   }
   // Determine the actual cli command to run
 
+  // Helper function to get install command based on platform/availability
+  const getInstallCommand = (
+    installConfig:
+      | string
+      | { powershell?: string; bash?: string; npm?: string; unix?: string; windows?: string },
+  ): string | null => {
+    if (typeof installConfig === "string") {
+      return installConfig;
+    }
+
+    const isWindows = process.platform === "win32";
+    const platform = isWindows ? "windows" : "unix";
+
+    // Try platform-specific commands first
+    if (installConfig[platform]) {
+      return installConfig[platform];
+    }
+
+    // Try shell-specific commands
+    if (isWindows && installConfig.powershell) {
+      return installConfig.powershell;
+    }
+
+    if (!isWindows && installConfig.bash) {
+      return installConfig.bash;
+    }
+
+    // Fallback to npm if available
+    if (installConfig.npm) {
+      return installConfig.npm;
+    }
+
+    return null;
+  };
+
   const spawn = () => {
     const cliCommand = cliConf?.binary || cli;
     let [bin, ...args] = [...parseCommandString(cliCommand), ...cliArgs];
@@ -348,17 +384,21 @@ export default async function agentYes({
 
       const isNotFound = isCommandNotFoundError(error);
       if (cliConf?.install && isNotFound) {
-        logger.info(`Please install the cli by run ${cliConf.install}`);
+        const installCmd = getInstallCommand(cliConf.install);
+        if (!installCmd) {
+          logger.error(`No suitable install command found for ${cli} on this platform`);
+          throw error;
+        }
+
+        logger.info(`Please install the cli by run ${installCmd}`);
 
         if (install) {
           logger.info(`Attempting to install ${cli}...`);
-          execaCommandSync(cliConf.install, { stdio: "inherit" });
+          execaCommandSync(installCmd, { stdio: "inherit" });
           logger.info(`${cli} installed successfully. Please rerun the command.`);
           return spawn();
         } else {
-          logger.error(
-            `If you did not installed it yet, Please install it first: ${cliConf.install}`,
-          );
+          logger.error(`If you did not installed it yet, Please install it first: ${installCmd}`);
           throw error;
         }
       }
@@ -415,7 +455,10 @@ export default async function agentYes({
     // Handle restart without continue args (e.g., "No conversation found to continue")
     // logger.debug(``, { shouldRestartWithoutContinue, robust })
     if (shouldRestartWithoutContinue) {
-      await pidStore.updateStatus(shell.pid, "exited", { exitReason: "restarted", exitCode: exitCode ?? undefined });
+      await pidStore.updateStatus(shell.pid, "exited", {
+        exitReason: "restarted",
+        exitCode: exitCode ?? undefined,
+      });
       shouldRestartWithoutContinue = false; // reset flag
       isFatal = false; // reset fatal flag to allow restart
 
@@ -445,11 +488,17 @@ export default async function agentYes({
         return;
       }
       if (isFatal) {
-        await pidStore.updateStatus(shell.pid, "exited", { exitReason: "fatal", exitCode: exitCode ?? undefined });
+        await pidStore.updateStatus(shell.pid, "exited", {
+          exitReason: "fatal",
+          exitCode: exitCode ?? undefined,
+        });
         return pendingExitCode.resolve(exitCode);
       }
 
-      await pidStore.updateStatus(shell.pid, "exited", { exitReason: "restarted", exitCode: exitCode ?? undefined });
+      await pidStore.updateStatus(shell.pid, "exited", {
+        exitReason: "restarted",
+        exitCode: exitCode ?? undefined,
+      });
       logger.info(`${cli} crashed, restarting...`);
 
       // For codex, try to use stored session ID for this directory
@@ -472,7 +521,10 @@ export default async function agentYes({
       return;
     }
     const exitReason = agentCrashed ? "crash" : "normal";
-    await pidStore.updateStatus(shell.pid, "exited", { exitReason, exitCode: exitCode ?? undefined });
+    await pidStore.updateStatus(shell.pid, "exited", {
+      exitReason,
+      exitCode: exitCode ?? undefined,
+    });
     return pendingExitCode.resolve(exitCode);
   });
 

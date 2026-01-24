@@ -52,9 +52,13 @@ describe("FIFO append-prompt integration", () => {
     require("fs").writeFileSync(join(configDir, "config.ts"), configContent);
 
     // Start agent-yes with mock claude CLI and --fifo
-    const agentProc = spawn("bun", [AGENT_YES_CLI, "--fifo", "claude", "--", "initial test prompt"], {
-      cwd: TEST_DIR,
-    });
+    const agentProc = spawn(
+      "bun",
+      [AGENT_YES_CLI, "--fifo", "claude", "--", "initial test prompt"],
+      {
+        cwd: TEST_DIR,
+      },
+    );
 
     let stdout = "";
     let stderr = "";

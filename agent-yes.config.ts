@@ -77,9 +77,16 @@ function getDefaultConfig() {
       },
       claude: {
         promptArg: "last-arg",
-        install: "npm install -g @anthropic-ai/claude-code@latest",
+        install: {
+          // try this first if powershell available and its windows
+          powershell: "irm https://claude.ai/install.ps1 | iex", // powershell
+          // or bash if found
+          bash: "curl -fsSL https://claude.ai/install.sh | bash",
+          // fallback to npm if bash not found
+          npm: "npm i -g @anthropic-ai/claude-code@latest",
+        },
         // ready: [/^> /], // regex matcher for stdin ready
-        ready: [/\? for shortcuts/], // regex matcher for stdin ready
+        ready: [/^\? for shortcuts/, /^> /], // regex matcher for stdin ready
         typingRespond: {
           "1\n": [/│ Do you want to use this API key\?/],
         },
