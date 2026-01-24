@@ -808,6 +808,19 @@ export default async function agentYes({
         }, 1000),
       ),
     ]);
+
+    // retry the second time if not received any output in 3 second after sending Enter
+    await Promise.race([
+      nextStdout.wait(),
+      new Promise<void>((resolve) =>
+        setTimeout(() => {
+          if (!nextStdout.ready) {
+            shell.write("\r");
+          }
+          resolve();
+        }, 3000),
+      ),
+    ]);
   }
 
   async function sendMessage(message: string, { waitForReady = true } = {}) {
