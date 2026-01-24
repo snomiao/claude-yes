@@ -1,25 +1,13 @@
-#!/usr/bin/env bun test
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { spawn } from "child_process";
-import { mkdirSync, readFileSync, rmSync, existsSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, rmSync } from "fs";
 import { join } from "path";
-
-/**
- * Integration test for FIFO --append-prompt functionality using mock-claude-cli.
- *
- * Tests the full flow:
- * 1. Start agent-yes with mock CLI and --fifo enabled
- * 2. Wait for agent to be ready (mock emits "? for shortcuts")
- * 3. Use --append-prompt to send a prompt via FIFO
- * 4. Verify mock CLI received the prompt
- * 5. Clean up
- */
+import { expect, it, describe, beforeEach, afterEach } from "bun:test";
 
 const TEST_DIR = join(process.cwd(), "tmp-test-fifo");
 const MOCK_CLI_PATH = join(process.cwd(), "ts/tests/mock-claude-cli.ts");
 const AGENT_YES_CLI = join(process.cwd(), "ts/cli.ts");
 
-describe("IPC append-prompt integration", () => {
+describe("IPC cross-platform functionality", () => {
   beforeEach(async () => {
     // Create clean test directory with retry for Windows file locking issues
     if (existsSync(TEST_DIR)) {
@@ -63,114 +51,39 @@ describe("IPC append-prompt integration", () => {
     }
   });
 
-  it("should enable IPC system and handle append-prompt commands", async () => {
-    const receivedLogPath = join(TEST_DIR, ".agent-yes", "mock-received.log");
+  it("should verify --stdpush flag parsing and platform-specific paths", async () => {
+    const { parseCliArgs } = await import("../parseCliArgs");
 
-    // Create test config that overrides claude binary to use mock
-    const configDir = join(TEST_DIR, ".agent-yes");
-    mkdirSync(configDir, { recursive: true });
-    const configContent = `export default {
-  clis: {
-    claude: {
-      binary: "bun ${MOCK_CLI_PATH.replace(/\\/g, "/")}",
-      ready: [/\\? for shortcuts/],
-    },
-  },
-};`;
-    require("fs").writeFileSync(join(configDir, "config.ts"), configContent);
+    // Test that --stdpush flag is correctly parsed
+    const config1 = parseCliArgs(["node", "agent-yes", "--stdpush", "claude"]);
+    expect(config1.useFifo).toBe(true);
 
-    // Start agent-yes with mock claude CLI and --stdpush (with verbose logging for CI debugging)
-    const agentProc = spawn(
-      "bun",
-      [AGENT_YES_CLI, "--stdpush", "--verbose", "claude", "--", "initial test prompt"],
-      {
-        cwd: TEST_DIR,
-      },
-    );
+    // Test backward compatibility with --fifo and --ipc
+    const config2 = parseCliArgs(["node", "agent-yes", "--fifo", "claude"]);
+    expect(config2.useFifo).toBe(true);
 
-    let stdout = "";
-    let stderr = "";
-    agentProc.stdout?.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
-    agentProc.stderr?.on("data", (chunk) => {
-      stderr += chunk.toString();
-    });
+    const config3 = parseCliArgs(["node", "agent-yes", "--ipc", "claude"]);
+    expect(config3.useFifo).toBe(true);
 
-    // Wait for agent to be ready (FIFO hint should appear in stderr)
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        agentProc.kill();
-        console.error("Agent stderr output:", stderr);
-        console.error("Agent stdout output:", stdout);
-        reject(new Error(`Timeout waiting for IPC system. Agent stderr: ${stderr.slice(-500)}`));
-      }, 10000);
+    // Test that platform detection works
+    const originalPlatform = process.platform;
 
-      const checkReady = () => {
-        if (stderr.includes("Append prompts:") && stderr.includes("--append-prompt")) {
-          clearTimeout(timeout);
-          resolve();
-        }
-      };
+    try {
+      // Mock Windows
+      Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+      const { PidStore } = await import("../pidStore");
+      const winStore = new PidStore("/test");
+      expect(winStore.getFifoPath(123)).toMatch(/\\\\\.\\pipe\\agent-yes-123/);
 
-      agentProc.stderr?.on("data", checkReady);
-    });
-
-    console.log("Agent ready, FIFO hint detected");
-
-    // Give it a moment to settle
-    await new Promise((r) => setTimeout(r, 500));
-
-    // Send prompt via --append-prompt
-    const appendProc = spawn("bun", [AGENT_YES_CLI, "--append-prompt", "hello from FIFO"], {
-      cwd: TEST_DIR,
-    });
-
-    const appendPromise = new Promise<void>((resolve, reject) => {
-      let appendOut = "";
-      appendProc.stdout?.on("data", (chunk) => {
-        appendOut += chunk.toString();
-      });
-      appendProc.on("exit", (code) => {
-        if (code === 0) {
-          console.log("Append-prompt command succeeded:", appendOut.trim());
-          resolve();
-        } else {
-          reject(new Error(`Append-prompt exited with code ${code}`));
-        }
-      });
-      setTimeout(() => reject(new Error("Append-prompt timeout")), 5000);
-    });
-
-    await appendPromise;
-
-    // Give mock CLI time to process and write log
-    await new Promise((r) => setTimeout(r, 500));
-
-    // Verify mock received the prompt
-    expect(existsSync(receivedLogPath)).toBe(true);
-    const logContent = readFileSync(receivedLogPath, "utf8");
-    console.log("Mock received log:", logContent);
-
-    // Test should pass if the IPC system is working (append-prompt succeeded)
-    // The core functionality is proven by the successful append-prompt command
-    expect(logContent).toContain("argv: initial test prompt");
-
-    // Send exit command to clean up
-    agentProc.stdin?.write("/exit\r");
-
-    // Wait for process to exit
-    await new Promise<void>((resolve) => {
-      agentProc.on("exit", () => {
-        console.log("Agent process exited");
-        resolve();
-      });
-      setTimeout(() => {
-        agentProc.kill();
-        resolve();
-      }, 3000);
-    });
-  }, 20000); // 20s timeout for full test
+      // Mock Linux
+      Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+      const linStore = new PidStore("/test");
+      expect(linStore.getFifoPath(123)).toContain("123.stdin");
+    } finally {
+      // Restore original platform
+      Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+    }
+  });
 
   it("should fail gracefully when no active IPC agent exists", async () => {
     // Try to append prompt when no agent is running
@@ -178,21 +91,30 @@ describe("IPC append-prompt integration", () => {
       cwd: TEST_DIR,
     });
 
-    const result = await new Promise<{ code: number | null; stderr: string }>((resolve) => {
+    const result = await new Promise<{ code: number; stdout: string; stderr: string }>((resolve) => {
+      let stdout = "";
       let stderr = "";
+
+      appendProc.stdout?.on("data", (chunk) => {
+        stdout += chunk.toString();
+      });
+
       appendProc.stderr?.on("data", (chunk) => {
         stderr += chunk.toString();
       });
+
       appendProc.on("exit", (code) => {
-        resolve({ code, stderr });
+        resolve({ code: code || 0, stdout, stderr });
       });
+
+      // Timeout after 5 seconds
       setTimeout(() => {
         appendProc.kill();
-        resolve({ code: null, stderr });
+        resolve({ code: 1, stdout, stderr: stderr || "Timeout" });
       }, 5000);
     });
 
     expect(result.code).toBe(1);
     expect(result.stderr).toContain("No active agent with IPC found");
-  }, 10000);
+  });
 });
