@@ -79,10 +79,10 @@ describe("IPC append-prompt integration", () => {
 };`;
     require("fs").writeFileSync(join(configDir, "config.ts"), configContent);
 
-    // Start agent-yes with mock claude CLI and --stdpush
+    // Start agent-yes with mock claude CLI and --stdpush (with verbose logging for CI debugging)
     const agentProc = spawn(
       "bun",
-      [AGENT_YES_CLI, "--stdpush", "claude", "--", "initial test prompt"],
+      [AGENT_YES_CLI, "--stdpush", "--verbose", "claude", "--", "initial test prompt"],
       {
         cwd: TEST_DIR,
       },
@@ -101,7 +101,9 @@ describe("IPC append-prompt integration", () => {
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         agentProc.kill();
-        reject(new Error("Timeout waiting for FIFO hint"));
+        console.error("Agent stderr output:", stderr);
+        console.error("Agent stdout output:", stdout);
+        reject(new Error(`Timeout waiting for IPC system. Agent stderr: ${stderr.slice(-500)}`));
       }, 10000);
 
       const checkReady = () => {

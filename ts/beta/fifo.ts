@@ -133,6 +133,8 @@ function createLinuxFifo(
   let fifoPath: string | null = null;
   let fifoStream: ReturnType<typeof createReadStream> | null = null;
 
+  logger.debug(`[${cli}-yes] Creating Linux FIFO with customPath: ${customPath}`);
+
   try {
     if (customPath) {
       fifoPath = customPath;
@@ -141,15 +143,24 @@ function createLinuxFifo(
       const randomSuffix = Math.random().toString(36).substring(2, 5);
       fifoPath = `/tmp/agent-yes-${timestamp}${randomSuffix}.stdin`;
     }
-    mkdirSync(dirname(fifoPath), { recursive: true });
 
-    // Create the named pipe using mkfifo
-    const mkfifoResult = execaCommandSync(`mkfifo ${fifoPath}`, {
+    // Ensure the directory exists
+    try {
+      mkdirSync(dirname(fifoPath), { recursive: true });
+    } catch (dirError) {
+      logger.warn(`[${cli}-yes] Failed to create FIFO directory: ${dirError}`);
+      return null;
+    }
+
+    // Create the named pipe using mkfifo with proper shell escaping
+    const escapedPath = fifoPath.replace(/'/g, "'\"'\"'");
+    const mkfifoResult = execaCommandSync(`mkfifo '${escapedPath}'`, {
       reject: false,
     });
 
     if (mkfifoResult.exitCode !== 0) {
       logger.warn(`[${cli}-yes] mkfifo command failed with exit code ${mkfifoResult.exitCode}`);
+      logger.warn(`[${cli}-yes] Command: mkfifo '${escapedPath}'`);
       if (mkfifoResult.stderr) {
         logger.warn(`[${cli}-yes] mkfifo stderr: ${mkfifoResult.stderr}`);
       }
