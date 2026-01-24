@@ -162,8 +162,11 @@ function getDefaultConfig() {
         fatal: [], // no fatal patterns known yet
       },
       amp: {
-        help: "",
-        install: "npm i -g @sourcegraph/amp",
+        help: "https://ampcode.com/",
+        install: {
+          bash: "curl -fsSL https://ampcode.com/install.sh | bash",
+          npm: "npm i -g @sourcegraph/amp",
+        },
         enter: [
           /^.{0,4} Approve /
         ]
