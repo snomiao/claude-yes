@@ -28,8 +28,8 @@ export function parseCliArgs(argv: string[]) {
       "Run Claude with a 30 seconds idle timeout, and the prompt is everything after `--`",
     )
     .example(
-      "$0 claude --ipc",
-      "Run Claude with IPC enabled for external input via --append-prompt",
+      "$0 claude --stdpush",
+      "Run Claude with external stdin input enabled via --append-prompt",
     )
     // TODO: add a --docker option, will tell cli.ts to start docker process with tty and handles all stdio forwarding
 
@@ -95,13 +95,13 @@ export function parseCliArgs(argv: string[]) {
     })
     .option("append-prompt", {
       type: "string",
-      description: "Send a prompt to the active agent's IPC stdin in current directory",
+      description: "Send a prompt to the active agent's stdin in current directory",
     })
-    .option("ipc", {
+    .option("stdpush", {
       type: "boolean",
-      description: "Enable IPC input stream for additional stdin input (FIFO on Linux, Named Pipes on Windows)",
+      description: "Enable external input stream to push additional data to stdin",
       default: false,
-      alias: "fifo", // backward compatibility
+      alias: ["ipc", "fifo"], // backward compatibility
     })
     .positional("cli", {
       describe: "The AI CLI to run, e.g., claude, codex, copilot, cursor, gemini",
@@ -196,6 +196,6 @@ export function parseCliArgs(argv: string[]) {
     resume: parsedArgv.continue, // Note: intentional use resume here to avoid preserved keyword (continue)
     useSkills: parsedArgv.useSkills,
     appendPrompt: parsedArgv.appendPrompt,
-    useFifo: parsedArgv.ipc || parsedArgv.fifo, // Support both --ipc and --fifo (backward compatibility)
+    useFifo: parsedArgv.stdpush || parsedArgv.ipc || parsedArgv.fifo, // Support --stdpush, --ipc, and --fifo (backward compatibility)
   };
 }

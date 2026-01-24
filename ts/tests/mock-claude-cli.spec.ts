@@ -51,10 +51,10 @@ describe("IPC append-prompt integration", () => {
 };`;
     require("fs").writeFileSync(join(configDir, "config.ts"), configContent);
 
-    // Start agent-yes with mock claude CLI and --ipc
+    // Start agent-yes with mock claude CLI and --stdpush
     const agentProc = spawn(
       "bun",
-      [AGENT_YES_CLI, "--ipc", "claude", "--", "initial test prompt"],
+      [AGENT_YES_CLI, "--stdpush", "claude", "--", "initial test prompt"],
       {
         cwd: TEST_DIR,
       },
