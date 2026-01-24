@@ -18,6 +18,7 @@ import { removeControlCharacters } from "./removeControlCharacters.ts";
 import { acquireLock, releaseLock, shouldUseLock } from "./runningLock.ts";
 import { logger } from "./logger.ts";
 import { createFifoStream } from "./beta/fifo.ts";
+import { PidStore } from "./pidStore.ts";
 import { SUPPORTED_CLIS } from "./SUPPORTED_CLIS.ts";
 import winston from "winston";
 import { mapObject, pipe } from "rambda";
@@ -167,6 +168,10 @@ export default async function agentYes({
     });
   }
 
+  // Initialize process registry
+  const pidStore = new PidStore(workingDir);
+  await pidStore.init();
+
   process.stdin.setRawMode?.(true); // must be called any stdout/stdin usage
 
   let isFatal = false; // when true, do not restart on crash, and exit agent
@@ -187,23 +192,10 @@ export default async function agentYes({
 
   logger.debug(`Using ${ptyPackage} for pseudo terminal management.`);
 
-  const datetime = new Date().toISOString().replace(/\D/g, "").slice(0, 17);
-  const logPath = config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.log`);
-  const rawLogPath =
-    config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.raw.log`);
-  const rawLinesLogPath =
-    config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.lines.log`);
-  const debuggingLogsPath =
-    config.logsDir && path.resolve(config.logsDir, `${cli}-yes-${datetime}.debug.log`);
-
-  // add
-  if (debuggingLogsPath)
-    logger.add(
-      new winston.transports.File({
-        filename: debuggingLogsPath,
-        level: "debug",
-      }),
-    );
+  let logPath: string | false = false;
+  let rawLogPath: string | false = false;
+  let rawLinesLogPath: string | false = false;
+  let debuggingLogsPath: string | false = false;
 
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;
@@ -392,6 +384,22 @@ export default async function agentYes({
     },
     spawn,
   )();
+
+  // Register process in pidStore and compute log paths
+  await pidStore.registerProcess({ pid: shell.pid, cli, args: cliArgs, prompt });
+  logPath = pidStore.getLogPath(shell.pid);
+  rawLogPath = path.resolve(path.dirname(logPath), `${shell.pid}.raw.log`);
+  rawLinesLogPath = path.resolve(path.dirname(logPath), `${shell.pid}.lines.log`);
+  debuggingLogsPath = path.resolve(path.dirname(logPath), `${shell.pid}.debug.log`);
+
+  if (debuggingLogsPath)
+    logger.add(
+      new winston.transports.File({
+        filename: debuggingLogsPath,
+        level: "debug",
+      }),
+    );
+
   const pendingExitCode = Promise.withResolvers<number | null>();
 
   async function onData(data: string) {
@@ -407,6 +415,7 @@ export default async function agentYes({
     // Handle restart without continue args (e.g., "No conversation found to continue")
     // logger.debug(``, { shouldRestartWithoutContinue, robust })
     if (shouldRestartWithoutContinue) {
+      await pidStore.updateStatus(shell.pid, "exited", { exitReason: "restarted", exitCode: exitCode ?? undefined });
       shouldRestartWithoutContinue = false; // reset flag
       isFatal = false; // reset fatal flag to allow restart
 
@@ -419,6 +428,7 @@ export default async function agentYes({
       logger.info(`Restarting ${cli} ${JSON.stringify([bin, ...args])}`);
 
       shell = pty.spawn(bin!, args, getPtyOptions());
+      await pidStore.registerProcess({ pid: shell.pid, cli, args, prompt });
       shell.onData(onData);
       shell.onExit(onExit);
       return;
@@ -434,8 +444,12 @@ export default async function agentYes({
         );
         return;
       }
-      if (isFatal) return pendingExitCode.resolve(exitCode);
+      if (isFatal) {
+        await pidStore.updateStatus(shell.pid, "exited", { exitReason: "fatal", exitCode: exitCode ?? undefined });
+        return pendingExitCode.resolve(exitCode);
+      }
 
+      await pidStore.updateStatus(shell.pid, "exited", { exitReason: "restarted", exitCode: exitCode ?? undefined });
       logger.info(`${cli} crashed, restarting...`);
 
       // For codex, try to use stored session ID for this directory
@@ -452,10 +466,13 @@ export default async function agentYes({
       }
 
       shell = pty.spawn(cli, restoreArgs, getPtyOptions());
+      await pidStore.registerProcess({ pid: shell.pid, cli, args: restoreArgs, prompt });
       shell.onData(onData);
       shell.onExit(onExit);
       return;
     }
+    const exitReason = agentCrashed ? "crash" : "normal";
+    await pidStore.updateStatus(shell.pid, "exited", { exitReason, exitCode: exitCode ?? undefined });
     return pendingExitCode.resolve(exitCode);
   });
 
@@ -475,6 +492,7 @@ export default async function agentYes({
   const idleWaiter = new IdleWaiter();
   if (exitOnIdle)
     idleWaiter.wait(exitOnIdle).then(async () => {
+      await pidStore.updateStatus(shell.pid, "idle").catch(() => null);
       if (isStillWorkingQ()) {
         logger.warn("[${cli}-yes] ${cli} is idle, but seems still working, not exiting yet");
         return;
@@ -513,9 +531,10 @@ export default async function agentYes({
     // read from FIFO if available, e.g. /tmp/agent-yes-*.stdin, which can be used to send additional input from other processes
     .by((s) => {
       if (!useFifo) return s;
-      const fifoResult = createFifoStream(cli);
+      const fifoResult = createFifoStream(cli, pidStore.getFifoPath(shell.pid));
       if (!fifoResult) return s;
       pendingExitCode.promise.finally(() => fifoResult.cleanup());
+      process.stderr.write(`\n  Append prompts: ${cli}-yes --append-prompt '...'\n\n`);
       return s.merge(fifoResult.stream);
     })
 
@@ -539,7 +558,10 @@ export default async function agentYes({
       readable: shellOutputStream.readable,
     })
 
-    .forEach(() => idleWaiter.ping())
+    .forEach(() => {
+      idleWaiter.ping();
+      pidStore.updateStatus(shell.pid, "active").catch(() => null);
+    })
     .forEach(() => nextStdout.ready())
 
     .forkTo(async function rawLogger(f) {
@@ -694,6 +716,9 @@ export default async function agentYes({
   // and then get its exitcode
   const exitCode = await pendingExitCode.promise;
   logger.info(`[${cli}-yes] ${cli} exited with code ${exitCode}`);
+
+  // Final pidStore cleanup
+  await pidStore.close();
 
   // Update task status.writable release lock
   await outputWriter.close();

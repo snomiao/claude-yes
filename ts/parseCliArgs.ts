@@ -88,6 +88,15 @@ export function parseCliArgs(argv: string[]) {
       default: false,
       alias: "c",
     })
+    .option("append-prompt", {
+      type: "string",
+      description: "Send a prompt to the active agent's FIFO stdin in current directory",
+    })
+    .option("fifo", {
+      type: "boolean",
+      description: "Enable FIFO input stream for additional stdin input (Linux only)",
+      default: false,
+    })
     .positional("cli", {
       describe: "The AI CLI to run, e.g., claude, codex, copilot, cursor, gemini",
       type: "string",
@@ -180,5 +189,7 @@ export function parseCliArgs(argv: string[]) {
     verbose: parsedArgv.verbose,
     resume: parsedArgv.continue, // Note: intentional use resume here to avoid preserved keyword (continue)
     useSkills: parsedArgv.useSkills,
+    appendPrompt: parsedArgv.appendPrompt,
+    useFifo: parsedArgv.fifo,
   };
 }
