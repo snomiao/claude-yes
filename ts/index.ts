@@ -21,6 +21,14 @@ import { createFifoStream } from "./beta/fifo.ts";
 import { PidStore } from "./pidStore.ts";
 import { SUPPORTED_CLIS } from "./SUPPORTED_CLIS.ts";
 import winston from "winston";
+import { sendEnter, sendMessage, type MessageContext } from "./core/messaging.ts";
+import {
+  initializeLogPaths,
+  setupDebugLogging,
+  saveLogFile,
+  saveDeprecatedLogFile,
+  type LogPaths,
+} from "./core/logging.ts";
 
 export { removeControlCharacters };
 
@@ -193,10 +201,12 @@ export default async function agentYes({
 
   logger.debug(`Using ${ptyPackage} for pseudo terminal management.`);
 
-  let logPath: string | false = false;
-  let rawLogPath: string | false = false;
-  let rawLinesLogPath: string | false = false;
-  let debuggingLogsPath: string | false = false;
+  let logPaths: LogPaths = {
+    logPath: false,
+    rawLogPath: false,
+    rawLinesLogPath: false,
+    debuggingLogsPath: false,
+  };
 
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;
@@ -427,20 +437,18 @@ export default async function agentYes({
 
   // Register process in pidStore and compute log paths
   await pidStore.registerProcess({ pid: shell.pid, cli, args: cliArgs, prompt });
-  logPath = pidStore.getLogPath(shell.pid);
-  rawLogPath = path.resolve(path.dirname(logPath), `${shell.pid}.raw.log`);
-  rawLinesLogPath = path.resolve(path.dirname(logPath), `${shell.pid}.lines.log`);
-  debuggingLogsPath = path.resolve(path.dirname(logPath), `${shell.pid}.debug.log`);
-
-  if (debuggingLogsPath)
-    logger.add(
-      new winston.transports.File({
-        filename: debuggingLogsPath,
-        level: "debug",
-      }),
-    );
+  logPaths = initializeLogPaths(pidStore, shell.pid);
+  setupDebugLogging(logPaths.debuggingLogsPath);
 
   const pendingExitCode = Promise.withResolvers<number | null>();
+
+  // Create message context for sendMessage/sendEnter helpers
+  const messageContext: MessageContext = {
+    shell,
+    idleWaiter,
+    stdinReady,
+    nextStdout,
+  };
 
   async function onData(data: string) {
     // append data to the buffer, so we can process it later
@@ -596,7 +604,7 @@ export default async function agentYes({
     .onStart(async function promptOnStart() {
       // send prompt when start
       logger.debug("Sending prompt message: " + JSON.stringify(prompt));
-      if (prompt) await sendMessage(prompt);
+      if (prompt) await sendMessage(messageContext, prompt);
     })
 
     // pipe content by shell
@@ -617,15 +625,15 @@ export default async function agentYes({
     .forEach(() => nextStdout.ready())
 
     .forkTo(async function rawLogger(f) {
-      if (!rawLogPath) return f.run(); // no stream
+      if (!logPaths.rawLogPath) return f.run(); // no stream
 
       // try stream the raw log for realtime debugging, including control chars, note: it will be a huge file
-      return await mkdir(path.dirname(rawLogPath), { recursive: true })
+      return await mkdir(path.dirname(logPaths.rawLogPath), { recursive: true })
         .then(() => {
-          logger.debug(`[${cli}-yes] raw logs streaming to ${rawLogPath}`);
+          logger.debug(`[${cli}-yes] raw logs streaming to ${logPaths.rawLogPath}`);
           return f
             .forEach(async (chars) => {
-              await writeFile(rawLogPath, chars, { flag: "a" }).catch(() => null);
+              await writeFile(logPaths.rawLogPath!, chars, { flag: "a" }).catch(() => null);
             })
             .run();
         })
@@ -708,13 +716,16 @@ export default async function agentYes({
 
             if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
               logger.debug(`enter |${e}`);
-              return await sendEnter(400); // wait for idle for a short while and then send Enter
+              return await sendEnter(messageContext, 400); // wait for idle for a short while and then send Enter
             }
 
             // typingRespond matcher: if matched, send the specified message
             const typingResponded = await sflow(Object.entries(conf.typingRespond ?? {}))
               .filter(([_sendString, onThePatterns]) => onThePatterns.some((rx) => e.match(rx)))
-              .map(async ([sendString]) => await sendMessage(sendString, { waitForReady: false }))
+              .map(
+                async ([sendString]) =>
+                  await sendMessage(messageContext, sendString, { waitForReady: false }),
+              )
               .toCount();
             if (typingResponded) return;
 
@@ -759,11 +770,7 @@ export default async function agentYes({
     )
     .to(fromWritable(process.stdout));
 
-  if (logPath) {
-    await mkdir(path.dirname(logPath), { recursive: true }).catch(() => null);
-    await writeFile(logPath, terminalRender.render()).catch(() => null);
-    logger.info(`[${cli}-yes] Full logs saved to ${logPath}`);
-  }
+  await saveLogFile(logPaths.logPath, terminalRender.render());
 
   // and then get its exitcode
   const exitCode = await pendingExitCode.promise;
@@ -776,72 +783,15 @@ export default async function agentYes({
   await outputWriter.close();
 
   // deprecated logFile option, we have logPath now, but keep for backward compatibility
-  if (logFile) {
-    if (verbose) logger.info(`[${cli}-yes] Writing rendered logs to ${logFile}`);
-    const logFilePath = path.resolve(logFile);
-    await mkdir(path.dirname(logFilePath), { recursive: true }).catch(() => null);
-    await writeFile(logFilePath, terminalRender.render());
-  }
+  await saveDeprecatedLogFile(logFile, terminalRender.render(), verbose);
 
   return { exitCode, logs: terminalRender.render() };
-
-  async function sendEnter(waitms = 1000) {
-    // wait for idle for a bit to let agent cli finish rendering
-    const st = Date.now();
-    await idleWaiter.wait(waitms); // wait for idle a while
-    const et = Date.now();
-    // process.stdout.write(`\ridleWaiter.wait(${waitms}) took ${et - st}ms\r`);
-    logger.debug(`sendEn| idleWaiter.wait(${String(waitms)}) took ${String(et - st)}ms`);
-    nextStdout.unready();
-    // send the enter key
-    shell.write("\r");
-
-    // retry once if not received any output in 1 second after sending Enter
-    await Promise.race([
-      nextStdout.wait(),
-      new Promise<void>((resolve) =>
-        setTimeout(() => {
-          if (!nextStdout.ready) {
-            shell.write("\r");
-          }
-          resolve();
-        }, 1000),
-      ),
-    ]);
-
-    // retry the second time if not received any output in 3 second after sending Enter
-    await Promise.race([
-      nextStdout.wait(),
-      new Promise<void>((resolve) =>
-        setTimeout(() => {
-          if (!nextStdout.ready) {
-            shell.write("\r");
-          }
-          resolve();
-        }, 3000),
-      ),
-    ]);
-  }
-
-  async function sendMessage(message: string, { waitForReady = true } = {}) {
-    if (waitForReady) await stdinReady.wait();
-    // show in-place message: write msg and move cursor back start
-    logger.debug(`send  |${message}`);
-    nextStdout.unready();
-    shell.write(message);
-    idleWaiter.ping(); // just sent a message, wait for echo
-    logger.debug(`waiting next stdout|${message}`);
-    await nextStdout.wait();
-    logger.debug(`sending enter`);
-    await sendEnter(1000);
-    logger.debug(`sent enter`);
-  }
 
   async function exitAgent() {
     robust = false; // disable robust to avoid auto restart
 
     // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
-    for (const cmd of cliConf.exitCommands ?? ["/exit"]) await sendMessage(cmd);
+    for (const cmd of cliConf.exitCommands ?? ["/exit"]) await sendMessage(messageContext, cmd);
 
     // wait for shell to exit or kill it with a timeout
     let exited = false;
