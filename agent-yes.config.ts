@@ -164,6 +164,9 @@ function getDefaultConfig() {
       amp: {
         help: "",
         install: "npm i -g @sourcegraph/amp",
+        enter: [
+          /^.{0,4} Approve /
+        ]
       },
     },
   });
