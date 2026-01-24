@@ -19,7 +19,7 @@ const TEST_DIR = join(process.cwd(), "tmp-test-fifo");
 const MOCK_CLI_PATH = join(process.cwd(), "ts/tests/mock-claude-cli.ts");
 const AGENT_YES_CLI = join(process.cwd(), "ts/cli.ts");
 
-describe("FIFO append-prompt integration", () => {
+describe("IPC append-prompt integration", () => {
   beforeEach(() => {
     // Create clean test directory
     if (existsSync(TEST_DIR)) {
@@ -35,7 +35,7 @@ describe("FIFO append-prompt integration", () => {
     }
   });
 
-  it("should send prompt via FIFO to running agent", async () => {
+  it("should send prompt via IPC to running agent", async () => {
     const receivedLogPath = join(TEST_DIR, ".agent-yes", "mock-received.log");
 
     // Create test config that overrides claude binary to use mock
@@ -51,7 +51,7 @@ describe("FIFO append-prompt integration", () => {
 };`;
     require("fs").writeFileSync(join(configDir, "config.ts"), configContent);
 
-    // Start agent-yes with mock claude CLI and --fifo
+    // Start agent-yes with mock claude CLI and --fifo (IPC)
     const agentProc = spawn(
       "bun",
       [AGENT_YES_CLI, "--fifo", "claude", "--", "initial test prompt"],
@@ -140,7 +140,7 @@ describe("FIFO append-prompt integration", () => {
     });
   }, 20000); // 20s timeout for full test
 
-  it("should fail gracefully when no active FIFO agent exists", async () => {
+  it("should fail gracefully when no active IPC agent exists", async () => {
     // Try to append prompt when no agent is running
     const appendProc = spawn("bun", [AGENT_YES_CLI, "--append-prompt", "test prompt"], {
       cwd: TEST_DIR,

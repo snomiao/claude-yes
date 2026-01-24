@@ -1,4 +1,4 @@
-import { mkdir } from "fs/promises";
+import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { logger } from "./logger.ts";
 
@@ -67,17 +67,20 @@ class SqliteAdapter {
 
 export class PidStore {
   protected db!: SqliteAdapter;
-  private baseDir: string;
+  private storeDir: string;
   private dbPath: string;
 
   constructor(workingDir: string) {
-    this.baseDir = path.resolve(workingDir, ".agent-yes");
-    this.dbPath = path.join(this.baseDir, "pid.sqlite");
+    this.storeDir = path.resolve(workingDir, ".agent-yes");
+    this.dbPath = path.join(this.storeDir, "pid.sqlite");
   }
 
   async init(): Promise<void> {
-    await mkdir(path.join(this.baseDir, "logs"), { recursive: true });
-    await mkdir(path.join(this.baseDir, "fifo"), { recursive: true });
+    await mkdir(path.join(this.storeDir, "logs"), { recursive: true });
+    await mkdir(path.join(this.storeDir, "fifo"), { recursive: true });
+
+    // Auto-generate .gitignore for .agent-yes directory
+    await this.ensureGitignore();
 
     this.db = new SqliteAdapter();
     await this.db.init(this.dbPath);
@@ -182,11 +185,17 @@ export class PidStore {
   }
 
   getLogPath(pid: number): string {
-    return path.resolve(this.baseDir, "logs", `${pid}.log`);
+    return path.resolve(this.storeDir, "logs", `${pid}.log`);
   }
 
   getFifoPath(pid: number): string {
-    return path.resolve(this.baseDir, "fifo", `${pid}.stdin`);
+    if (process.platform === "win32") {
+      // Windows named pipe format
+      return `\\\\.\\pipe\\agent-yes-${pid}`;
+    } else {
+      // Linux FIFO file path
+      return path.resolve(this.storeDir, "fifo", `${pid}.stdin`);
+    }
   }
 
   async cleanStaleRecords(): Promise<void> {
@@ -223,6 +232,31 @@ export class PidStore {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  private async ensureGitignore(): Promise<void> {
+    const gitignorePath = path.join(this.storeDir, ".gitignore");
+    const gitignoreContent = `# Auto-generated .gitignore for agent-yes
+# Ignore all log files and runtime data
+logs/
+fifo/
+*.sqlite
+*.sqlite-*
+*.log
+*.raw.log
+*.lines.log
+*.debug.log
+`;
+
+    try {
+      await writeFile(gitignorePath, gitignoreContent, { flag: 'wx' }); // wx = create only if doesn't exist
+      logger.debug(`[pidStore] Created .gitignore in ${this.storeDir}`);
+    } catch (error: any) {
+      if (error.code !== 'EEXIST') {
+        logger.warn(`[pidStore] Failed to create .gitignore:`, error);
+      }
+      // If file exists, that's fine - don't overwrite existing gitignore
     }
   }
 

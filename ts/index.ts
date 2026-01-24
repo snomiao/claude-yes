@@ -580,14 +580,14 @@ export default async function agentYes({
       });
     })
 
-    // read from FIFO if available, e.g. /tmp/agent-yes-*.stdin, which can be used to send additional input from other processes
+    // read from IPC stream if available (FIFO on Linux, Named Pipes on Windows)
     .by((s) => {
       if (!useFifo) return s;
-      const fifoResult = createFifoStream(cli, pidStore.getFifoPath(shell.pid));
-      if (!fifoResult) return s;
-      pendingExitCode.promise.finally(() => fifoResult.cleanup());
+      const ipcResult = createFifoStream(cli, pidStore.getFifoPath(shell.pid));
+      if (!ipcResult) return s;
+      pendingExitCode.promise.finally(() => ipcResult.cleanup());
       process.stderr.write(`\n  Append prompts: ${cli}-yes --append-prompt '...'\n\n`);
-      return s.merge(fifoResult.stream);
+      return s.merge(ipcResult.stream);
     })
 
     // .map((e) => e.replaceAll('\x1a', '')) // remove ctrl+z from user's input, to prevent bug (but this seems bug)

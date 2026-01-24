@@ -94,7 +94,7 @@ export function parseCliArgs(argv: string[]) {
     })
     .option("fifo", {
       type: "boolean",
-      description: "Enable FIFO input stream for additional stdin input (Linux only)",
+      description: "Enable IPC input stream for additional stdin input (FIFO on Linux, Named Pipes on Windows)",
       default: false,
     })
     .positional("cli", {

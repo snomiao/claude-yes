@@ -5,22 +5,131 @@ import { unlink } from "fs/promises";
 import { dirname } from "path";
 import sflow from "sflow";
 import { logger } from "../logger.ts";
+import { createServer } from "net";
 
 /**
- * Creates a FIFO (named pipe) stream on Linux for additional stdin input
+ * Creates an IPC stream (FIFO on Linux, Named Pipes on Windows) for additional stdin input
  * @param cli - The CLI name for logging purposes
- * @param customPath - Optional custom path for the FIFO file; if provided, uses this instead of generating a /tmp path
+ * @param customPath - Optional custom path for the IPC file; if provided, uses this instead of generating a path
  * @returns An object with stream and cleanup function, or null if failed
  */
 export function createFifoStream(
   cli: string,
   customPath?: string,
 ): { stream: ReadableStream<string>; cleanup: () => Promise<void> } | null {
-  // Only create FIFO on Linux
-  if (process.platform !== "linux") {
+  if (process.platform === "win32") {
+    return createWindowsNamedPipe(cli, customPath);
+  } else if (process.platform === "linux") {
+    return createLinuxFifo(cli, customPath);
+  } else {
+    logger.warn(`[${cli}-yes] IPC not supported on platform: ${process.platform}`);
     return null;
   }
+}
 
+/**
+ * Creates a Windows named pipe for IPC
+ */
+function createWindowsNamedPipe(
+  cli: string,
+  customPath?: string,
+): { stream: ReadableStream<string>; cleanup: () => Promise<void> } | null {
+  try {
+    // Use customPath directly if provided (should already be in Windows pipe format)
+    // Otherwise generate a new pipe path
+    let pipePath: string;
+    if (customPath) {
+      pipePath = customPath;
+    } else {
+      const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 17);
+      const randomSuffix = Math.random().toString(36).substring(2, 5);
+      pipePath = `\\\\.\\pipe\\agent-yes-${timestamp}${randomSuffix}`;
+    }
+
+    logger.info(`[${cli}-yes] Creating Windows named pipe at ${pipePath}`);
+
+    const server = createServer();
+    let connection: any = null;
+    let isClosing = false;
+
+    // Create a ReadableStream that handles data from the named pipe
+    const stream = new ReadableStream<string>({
+      start(controller) {
+        server.on('connection', (socket) => {
+          connection = socket;
+          logger.info(`[${cli}-yes] Client connected to named pipe`);
+
+          socket.on('data', (chunk) => {
+            const data = chunk.toString();
+            logger.debug(`[${cli}-yes] Received data via named pipe: ${data}`);
+            controller.enqueue(data);
+          });
+
+          socket.on('end', () => {
+            logger.debug(`[${cli}-yes] Client disconnected from named pipe`);
+            connection = null;
+          });
+
+          socket.on('error', (error) => {
+            logger.warn(`[${cli}-yes] Named pipe socket error:`, error);
+            if (!isClosing) {
+              controller.error(error);
+            }
+          });
+        });
+
+        server.on('error', (error) => {
+          logger.warn(`[${cli}-yes] Named pipe server error:`, error);
+          if (!isClosing) {
+            controller.error(error);
+          }
+        });
+
+        server.listen(pipePath, () => {
+          logger.info(`[${cli}-yes] Named pipe server listening at ${pipePath}`);
+        });
+      },
+
+      cancel() {
+        isClosing = true;
+        if (connection) {
+          connection.end();
+        }
+        server.close();
+      }
+    });
+
+    const cleanup = async () => {
+      isClosing = true;
+      if (connection) {
+        connection.end();
+      }
+      server.close();
+      logger.info(`[${cli}-yes] Cleaned up Windows named pipe at ${pipePath}`);
+    };
+
+    // Cleanup on process exit
+    process.on("exit", () => cleanup().catch(() => null));
+    process.on("SIGINT", () => cleanup().catch(() => null));
+    process.on("SIGTERM", () => cleanup().catch(() => null));
+
+    return {
+      stream: stream,
+      cleanup
+    };
+  } catch (error) {
+    logger.warn(`[${cli}-yes] Failed to create Windows named pipe:`, error);
+    return null;
+  }
+}
+
+/**
+ * Creates a Linux FIFO for IPC (original implementation)
+ */
+function createLinuxFifo(
+  cli: string,
+  customPath?: string,
+): { stream: ReadableStream<string>; cleanup: () => Promise<void> } | null {
   let fifoPath: string | null = null;
   let fifoStream: ReturnType<typeof createReadStream> | null = null;
 
