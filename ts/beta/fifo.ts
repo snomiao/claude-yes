@@ -9,10 +9,12 @@ import { logger } from "../logger.ts";
 /**
  * Creates a FIFO (named pipe) stream on Linux for additional stdin input
  * @param cli - The CLI name for logging purposes
+ * @param customPath - Optional custom path for the FIFO file; if provided, uses this instead of generating a /tmp path
  * @returns An object with stream and cleanup function, or null if failed
  */
 export function createFifoStream(
   cli: string,
+  customPath?: string,
 ): { stream: ReadableStream<string>; cleanup: () => Promise<void> } | null {
   // Only create FIFO on Linux
   if (process.platform !== "linux") {
@@ -23,10 +25,13 @@ export function createFifoStream(
   let fifoStream: ReturnType<typeof createReadStream> | null = null;
 
   try {
-    const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 17);
-    const randomSuffix = Math.random().toString(36).substring(2, 5);
-
-    fifoPath = `/tmp/agent-yes-${timestamp}${randomSuffix}.stdin`;
+    if (customPath) {
+      fifoPath = customPath;
+    } else {
+      const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 17);
+      const randomSuffix = Math.random().toString(36).substring(2, 5);
+      fifoPath = `/tmp/agent-yes-${timestamp}${randomSuffix}.stdin`;
+    }
     mkdirSync(dirname(fifoPath), { recursive: true });
 
     // Create the named pipe using mkfifo
