@@ -1,12 +1,12 @@
-import Datastore from "@seald-io/nedb";
 import { mkdir } from "fs/promises";
 import path from "path";
 import { logger } from "./logger.ts";
 
 export interface PidRecord {
+  id?: number;
   pid: number;
   cli: string;
-  args: string[];
+  args: string;
   prompt?: string;
   logFile: string;
   fifoFile: string;
@@ -17,23 +17,95 @@ export interface PidRecord {
   updatedAt: number;
 }
 
+// Direct SQLite implementation to avoid Kysely compatibility issues
+class SqliteAdapter {
+  private db: any;
+
+  async init(dbPath: string) {
+    if (typeof globalThis.Bun !== "undefined") {
+      try {
+        const { Database } = await import("bun:sqlite");
+        this.db = new Database(dbPath);
+      } catch (error) {
+        logger.warn("[pidStore] bun:sqlite not available, falling back to better-sqlite3");
+        const Database = (await import("better-sqlite3")).default;
+        this.db = new Database(dbPath);
+      }
+    } else {
+      const Database = (await import("better-sqlite3")).default;
+      this.db = new Database(dbPath);
+    }
+  }
+
+  query(sql: string, params: any[] = []): any[] {
+    if (typeof this.db.prepare === "function") {
+      // better-sqlite3 style
+      return this.db.prepare(sql).all(params);
+    } else {
+      // bun:sqlite style
+      return this.db.query(sql).all(params);
+    }
+  }
+
+  run(sql: string, params: any[] = []): { lastInsertRowid?: number; changes?: number } {
+    if (typeof this.db.prepare === "function") {
+      // better-sqlite3 style
+      return this.db.prepare(sql).run(params);
+    } else {
+      // bun:sqlite style
+      this.db.run(sql, params);
+      return {}; // Bun doesn't return metadata in the same way
+    }
+  }
+
+  close() {
+    if (this.db.close) {
+      this.db.close();
+    }
+  }
+}
+
 export class PidStore {
-  protected db!: Datastore<PidRecord>;
+  protected db!: SqliteAdapter;
   private baseDir: string;
+  private dbPath: string;
 
   constructor(workingDir: string) {
     this.baseDir = path.resolve(workingDir, ".agent-yes");
+    this.dbPath = path.join(this.baseDir, "pid.sqlite");
   }
 
   async init(): Promise<void> {
     await mkdir(path.join(this.baseDir, "logs"), { recursive: true });
     await mkdir(path.join(this.baseDir, "fifo"), { recursive: true });
 
-    this.db = new Datastore<PidRecord>({
-      filename: path.join(this.baseDir, "pid.jsonl"),
-      autoload: true,
-    });
-    await this.db.loadDatabaseAsync();
+    this.db = new SqliteAdapter();
+    await this.db.init(this.dbPath);
+
+    // Enable WAL mode for better concurrency and performance
+    this.db.run("PRAGMA journal_mode=WAL");
+    this.db.run("PRAGMA synchronous=NORMAL");
+    this.db.run("PRAGMA cache_size=1000");
+    this.db.run("PRAGMA temp_store=memory");
+
+    // Create table if it doesn't exist
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS pid_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pid INTEGER NOT NULL UNIQUE,
+        cli TEXT NOT NULL,
+        args TEXT NOT NULL,
+        prompt TEXT,
+        logFile TEXT NOT NULL,
+        fifoFile TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active',
+        exitReason TEXT NOT NULL DEFAULT '',
+        exitCode INTEGER,
+        startedAt INTEGER NOT NULL,
+        updatedAt INTEGER NOT NULL
+      )
+    `);
+
     await this.cleanStaleRecords();
   }
 
@@ -49,21 +121,40 @@ export class PidStore {
     prompt?: string;
   }): Promise<PidRecord> {
     const now = Date.now();
-    const record: PidRecord = {
-      pid,
-      cli,
-      args,
-      prompt,
-      logFile: this.getLogPath(pid),
-      fifoFile: this.getFifoPath(pid),
-      status: "active",
-      exitReason: "",
-      startedAt: now,
-      updatedAt: now,
-    };
-    await this.db.insertAsync(record);
+    const argsJson = JSON.stringify(args);
+    const logFile = this.getLogPath(pid);
+    const fifoFile = this.getFifoPath(pid);
+
+    try {
+      this.db.run(`
+        INSERT INTO pid_records (pid, cli, args, prompt, logFile, fifoFile, status, exitReason, startedAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, 'active', '', ?, ?)
+      `, [pid, cli, argsJson, prompt, logFile, fifoFile, now, now]);
+    } catch (error: any) {
+      // Handle unique constraint violation by updating existing record
+      if (error.code === "SQLITE_CONSTRAINT_UNIQUE") {
+        this.db.run(`
+          UPDATE pid_records
+          SET cli = ?, args = ?, prompt = ?, logFile = ?, fifoFile = ?, status = 'active', exitReason = '', startedAt = ?, updatedAt = ?
+          WHERE pid = ?
+        `, [cli, argsJson, prompt, logFile, fifoFile, now, now, pid]);
+      } else {
+        throw error;
+      }
+    }
+
+    // Fetch the record
+    const result = this.db.query("SELECT * FROM pid_records WHERE pid = ?", [pid])[0];
+
+    if (!result) {
+      // Log all records for debugging
+      const allRecords = this.db.query("SELECT * FROM pid_records");
+      logger.error(`[pidStore] Failed to find record for PID ${pid}. All records:`, allRecords);
+      throw new Error(`Failed to register process ${pid}`);
+    }
+
     logger.debug(`[pidStore] Registered process ${pid}`);
-    return record;
+    return result;
   }
 
   async updateStatus(
@@ -71,12 +162,22 @@ export class PidStore {
     status: PidRecord["status"],
     extra?: { exitReason?: string; exitCode?: number },
   ): Promise<void> {
-    const update: Partial<PidRecord> = {
-      status,
-      updatedAt: Date.now(),
-      ...extra,
-    };
-    await this.db.updateAsync({ pid }, { $set: update }, {});
+    const updatedAt = Date.now();
+    const exitReason = extra?.exitReason || "";
+    const exitCode = extra?.exitCode;
+
+    if (exitCode !== undefined) {
+      this.db.run(
+        "UPDATE pid_records SET status = ?, exitReason = ?, exitCode = ?, updatedAt = ? WHERE pid = ?",
+        [status, exitReason, exitCode, updatedAt, pid]
+      );
+    } else {
+      this.db.run(
+        "UPDATE pid_records SET status = ?, exitReason = ?, updatedAt = ? WHERE pid = ?",
+        [status, exitReason, updatedAt, pid]
+      );
+    }
+
     logger.debug(`[pidStore] Updated process ${pid} status=${status}`);
   }
 
@@ -89,30 +190,31 @@ export class PidStore {
   }
 
   async cleanStaleRecords(): Promise<void> {
-    const activeRecords = await this.db.findAsync({
-      status: { $ne: "exited" } as any,
-    });
+    const activeRecords = this.db.query("SELECT * FROM pid_records WHERE status != 'exited'");
+
     for (const record of activeRecords) {
       if (!this.isProcessAlive(record.pid)) {
-        await this.db.updateAsync(
-          { pid: record.pid },
-          {
-            $set: {
-              status: "exited" as const,
-              exitReason: "stale-cleanup",
-              updatedAt: Date.now(),
-            },
-          },
-          {},
+        this.db.run(
+          "UPDATE pid_records SET status = 'exited', exitReason = 'stale-cleanup', updatedAt = ? WHERE pid = ?",
+          [Date.now(), record.pid]
         );
+
         logger.debug(`[pidStore] Cleaned stale record for PID ${record.pid}`);
       }
     }
   }
 
   async close(): Promise<void> {
-    await this.db.compactDatafileAsync();
-    logger.debug("[pidStore] Database compacted and closed");
+    // Optimize the database (equivalent to compacting in nedb)
+    try {
+      this.db.run("PRAGMA optimize");
+      this.db.run("VACUUM");
+    } catch (error) {
+      logger.warn("[pidStore] Failed to optimize database:", error);
+    }
+
+    this.db.close();
+    logger.debug("[pidStore] Database optimized and closed");
   }
 
   private isProcessAlive(pid: number): boolean {
@@ -127,9 +229,12 @@ export class PidStore {
   static async findActiveFifo(workingDir: string): Promise<string | null> {
     const store = new PidStore(workingDir);
     await store.init();
-    const records = await store.db.findAsync({ status: { $ne: "exited" } as any });
+
+    const records = store.db.query(
+      "SELECT * FROM pid_records WHERE status != 'exited' ORDER BY startedAt DESC LIMIT 1"
+    );
+
     await store.close();
-    const sorted = records.sort((a, b) => b.startedAt - a.startedAt);
-    return sorted[0]?.fifoFile ?? null;
+    return records[0]?.fifoFile ?? null;
   }
 }
