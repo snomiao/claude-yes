@@ -29,6 +29,7 @@
     "url": "git+https://github.com/snomiao/agent-yes.git"
   },
   "bin": {
+    "ay": "./dist/agent-yes.js",
     "agent-yes": "./dist/agent-yes.js",
     "amp-yes": "./dist/amp-yes.js",
     "auggie-yes": "./dist/auggie-yes.js",
@@ -61,7 +62,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "bun build ./ts/cli.ts ./ts/index.ts --outdir=dist --target=node --sourcemap --external=@snomiao/bun-pty --external=bun-pty --external=node-pty --external=from-node-stream --external=bun",
+    "build": "bun build ./ts/cli.ts ./ts/index.ts --outdir=dist --target=node --sourcemap --external=@seald-io/nedb --external=@snomiao/bun-pty --external=bun-pty --external=node-pty --external=from-node-stream --external=bun",
     "postbuild": "bun ./ts/postbuild.ts",
     "demo": "bun run build && bun link && claude-yes -- demo",
     "dev": "bun ts/index.ts",
@@ -73,6 +74,7 @@
     "test": "bun test --coverage"
   },
   "dependencies": {
+    "@seald-io/nedb": "^4.0.4",
     "@snomiao/bun-pty": "^0.3.4",
     "bun-pty": "^0.4.8",
     "from-node-stream": "^0.1.2"
