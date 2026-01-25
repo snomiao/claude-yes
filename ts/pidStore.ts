@@ -247,6 +247,10 @@ fifo/
 *.raw.log
 *.lines.log
 *.debug.log
+
+# Ignore .gitignore itself
+.gitignore
+
 `;
 
     try {
