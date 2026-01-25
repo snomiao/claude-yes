@@ -31,6 +31,12 @@ import {
 } from "./core/logging.ts";
 import { spawnAgent, getTerminalDimensions } from "./core/spawner.ts";
 import { AgentContext } from "./core/context.ts";
+import { createAutoResponseHandler } from "./core/responders.ts";
+import {
+  handleConsoleControlCodes,
+  createTerminateSignalHandler,
+  createTerminatorStream,
+} from "./core/streamHelpers.ts";
 
 export { removeControlCharacters };
 
@@ -471,22 +477,11 @@ export default async function agentYes({
     .map((buffer) => buffer.toString())
 
     .by(function handleTerminateSignals(s) {
-      let aborted = false;
-      return s.map((chunk) => {
-        // handle CTRL+Z and filter it out, as I dont know how to support it yet
-        if (!aborted && chunk === "\u001A") {
-          return "";
-        }
-        // handle CTRL+C, when stdin is not ready (no response from agent yet, usually this is when agent loading)
-        if (!aborted && !ctx.stdinReady.isReady && chunk === "\u0003") {
-          logger.error("User aborted: SIGINT");
-          shell.kill("SIGINT");
-          pendingExitCode.resolve(130); // SIGINT
-          aborted = true;
-          return chunk; // still pass into agent, but they prob be killed XD
-        }
-        return chunk; // normal inputs
+      const handler = createTerminateSignalHandler(ctx.stdinReady, (exitCode) => {
+        shell.kill("SIGINT");
+        pendingExitCode.resolve(exitCode);
       });
+      return s.map(handler);
     })
 
     // read from IPC stream if available (FIFO on Linux, Named Pipes on Windows)
@@ -545,36 +540,7 @@ export default async function agentYes({
     .by(function consoleResponder(e) {
       // wait for cli ready and send prompt if provided
       if (cli === "codex") shell.write(`\u001b[1;1R`); // send cursor position response when stdin is not tty
-      return e.forEach((text) => {
-        // render terminal output for log file
-        terminalRender.write(text);
-
-        // Handle Device Attributes query (DA) - ESC[c or ESC[0c
-        // This must be handled regardless of TTY status
-        if (text.includes("\u001b[c") || text.includes("\u001b[0c")) {
-          // Respond shell with VT100 with Advanced Video Option
-          shell.write("\u001b[?1;2c");
-          if (verbose) {
-            logger.debug("device|respond DA: VT100 with Advanced Video Option");
-          }
-          return;
-        }
-
-        // todo: .onStatus((msg)=> shell.write(msg))
-        if (process.stdin.isTTY) return; // only handle it when stdin is not tty, because tty already handled this
-
-        if (!text.includes("\u001b[6n")) return; // only asked for cursor position
-        // todo: use terminalRender API to get cursor position when new version is available
-        // xterm replies CSI row; column R if asked cursor position
-        // https://en.wikipedia.org/wiki/ANSI_escape_code#:~:text=citation%20needed%5D-,xterm%20replies,-CSI%20row%C2%A0%3B
-        // when agent asking position, respond with row; col
-        // const rendered = terminalRender.render();
-        const { col, row } = terminalRender.getCursorPosition();
-        shell.write(`\u001b[${row};${col}R`); // reply cli when getting cursor position
-        logger.debug(`cursor|respond position: row=${String(row)}, col=${String(col)}`);
-        // const row = rendered.split('\n').length + 1;
-        // const col = (rendered.split('\n').slice(-1)[0]?.length || 0) + 1;
-      });
+      return e.forEach((text) => handleConsoleControlCodes(text, shell, terminalRender, cli, verbose));
     })
 
     // auto-response
@@ -604,71 +570,16 @@ export default async function agentYes({
           // })
 
           // Generic auto-response handler driven by CLI_CONFIGURES
-          .forEach(async function autoResponseOnChunk(e, i) {
-            logger.debug(`stdout|${e}`);
-            // ready matcher: if matched, mark stdin ready
-            if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
-              logger.debug(`ready |${e}`);
-              if (cli === "gemini" && i <= 80) return; // gemini initial noise, only after many lines
-              ctx.stdinReady.ready();
-              ctx.stdinFirstReady.ready();
-            }
-            // enter matchers: send Enter when any enter regex matches
-
-            if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
-              logger.debug(`enter |${e}`);
-              return await sendEnter(ctx.messageContext, 400); // wait for idle for a short while and then send Enter
-            }
-
-            // typingRespond matcher: if matched, send the specified message
-            const typingResponded = await sflow(Object.entries(conf.typingRespond ?? {}))
-              .filter(([_sendString, onThePatterns]) => onThePatterns.some((rx) => e.match(rx)))
-              .map(
-                async ([sendString]) =>
-                  await sendMessage(ctx.messageContext, sendString, { waitForReady: false }),
-              )
-              .toCount();
-            if (typingResponded) return;
-
-            // fatal matchers: set isFatal flag when matched
-            if (conf.fatal?.some((rx: RegExp) => e.match(rx))) {
-              logger.debug(`fatal |${e}`);
-              ctx.isFatal = true;
-              await exitAgent();
-            }
-
-            // restartWithoutContinueArg matchers: set flag to restart without continue args
-            if (conf.restartWithoutContinueArg?.some((rx: RegExp) => e.match(rx))) {
-              await logger.debug(`restart-without-continue|${e}`);
-              ctx.shouldRestartWithoutContinue = true;
-              ctx.isFatal = true; // also set fatal to trigger exit
-              await exitAgent();
-            }
-
-            // session ID capture for codex
-            if (cli === "codex") {
-              const sessionId = extractSessionId(e);
-              if (sessionId) {
-                await logger.debug(`session|captured session ID: ${sessionId}`);
-                await storeSessionForCwd(workingDir, sessionId);
-              }
-            }
-          })
+          .forEach(async (line, lineIndex) =>
+            createAutoResponseHandler(line, lineIndex, { ctx, conf, cli, workingDir, exitAgent }),
+          )
           .run()
       );
     })
     .by((s) => (removeControlCharactersFromStdout ? s.map((e) => removeControlCharacters(e)) : s))
 
     // terminate whole stream when shell did exited (already crash-handled)
-    .by(
-      new TransformStream({
-        start: function terminator(ctrl) {
-          pendingExitCode.promise.then(() => ctrl.terminate());
-        },
-        transform: (e, ctrl) => ctrl.enqueue(e),
-        flush: (ctrl) => ctrl.terminate(),
-      }),
-    )
+    .by(createTerminatorStream(pendingExitCode.promise))
     .to(fromWritable(process.stdout));
 
   await saveLogFile(ctx.logPaths.logPath, terminalRender.render());
