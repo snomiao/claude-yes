@@ -8,6 +8,10 @@ import { extractSessionId, storeSessionForCwd } from "../resume/codexSessionMana
 
 /**
  * Auto-response handlers for CLI-specific patterns
+ *
+ * Provides intelligent auto-response logic that monitors CLI output and
+ * triggers appropriate actions based on configured patterns. Handles ready
+ * signals, fatal errors, enter key automation, and session management.
  */
 
 export interface AutoResponderOptions {
@@ -21,6 +25,32 @@ export interface AutoResponderOptions {
 /**
  * Create auto-response handler that processes CLI output lines
  * and triggers appropriate responses based on configured patterns
+ *
+ * Analyzes each line of CLI output and triggers configured responses:
+ * - Ready signals: Mark stdin as ready when agent is ready for input
+ * - Enter automation: Send Enter key when specific prompts are detected
+ * - Typing responses: Send configured text in response to patterns
+ * - Fatal errors: Trigger agent exit on fatal error patterns
+ * - Session management: Capture and store session IDs for resumption
+ *
+ * @param line - Output line to analyze
+ * @param lineIndex - Line number in the stream (0-indexed)
+ * @param options - Configuration and context for response handling
+ *
+ * @example
+ * ```typescript
+ * stream
+ *   .lines()
+ *   .forEach(async (line, i) =>
+ *     createAutoResponseHandler(line, i, {
+ *       ctx,
+ *       conf: cliConfig,
+ *       cli: 'claude',
+ *       workingDir: '/path/to/project',
+ *       exitAgent: async () => { ... }
+ *     })
+ *   );
+ * ```
  */
 export async function createAutoResponseHandler(
   line: string,
@@ -63,7 +93,7 @@ export async function createAutoResponseHandler(
 
   // restartWithoutContinueArg matchers: set flag to restart without continue args
   if (conf.restartWithoutContinueArg?.some((rx: RegExp) => line.match(rx))) {
-    await logger.debug(`restart-without-continue|${line}`);
+    logger.debug(`restart-without-continue|${line}`);
     ctx.shouldRestartWithoutContinue = true;
     ctx.isFatal = true; // also set fatal to trigger exit
     await exitAgent();
@@ -73,7 +103,7 @@ export async function createAutoResponseHandler(
   if (cli === "codex") {
     const sessionId = extractSessionId(line);
     if (sessionId) {
-      await logger.debug(`session|captured session ID: ${sessionId}`);
+      logger.debug(`session|captured session ID: ${sessionId}`);
       await storeSessionForCwd(workingDir, sessionId);
     }
   }

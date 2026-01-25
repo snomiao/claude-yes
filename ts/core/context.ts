@@ -8,7 +8,31 @@ import type { LogPaths } from "./logging.ts";
 
 /**
  * Shared context for agent session
- * Groups related state and dependencies for easier passing between modules
+ *
+ * Groups related state and dependencies for easier passing between modules.
+ * This class encapsulates all stateful components needed during an agent session,
+ * including the PTY shell, configuration, state managers, and flags.
+ *
+ * @example
+ * ```typescript
+ * const ctx = new AgentContext({
+ *   shell,
+ *   pidStore,
+ *   logPaths,
+ *   cli: 'claude',
+ *   cliConf,
+ *   verbose: true,
+ *   robust: true
+ * });
+ *
+ * // Access message context for sending messages
+ * await sendMessage(ctx.messageContext, 'Hello');
+ *
+ * // Check and update state
+ * if (ctx.isFatal) {
+ *   await exitAgent();
+ * }
+ * ```
  */
 export class AgentContext {
   // Core state
@@ -52,6 +76,11 @@ export class AgentContext {
 
   /**
    * Get message context for sendMessage/sendEnter helpers
+   *
+   * Provides a lightweight object with only the dependencies needed
+   * for message sending operations, avoiding circular references.
+   *
+   * @returns MessageContext object for use with sendMessage/sendEnter
    */
   get messageContext() {
     return {

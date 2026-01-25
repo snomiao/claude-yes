@@ -5,15 +5,30 @@ import type { SUPPORTED_CLIS } from "../SUPPORTED_CLIS.ts";
 
 /**
  * Stream processing utilities for terminal I/O
+ *
+ * Provides helper functions for handling terminal control codes,
+ * signal processing, and stream lifecycle management.
  */
 
 /**
  * Handle console control codes (cursor position, device attributes)
- * @param text Raw terminal output text
- * @param shell PTY shell instance
- * @param terminalRender Terminal renderer for cursor position
- * @param cli CLI name for special handling
- * @param verbose Whether to log verbose messages
+ *
+ * Processes ANSI escape sequences from the terminal output and responds
+ * appropriately. Handles Device Attributes (DA) queries and cursor position
+ * requests when stdin is not a TTY.
+ *
+ * @param text - Raw terminal output text containing potential control codes
+ * @param shell - PTY shell instance for sending responses
+ * @param terminalRender - Terminal renderer for cursor position tracking
+ * @param cli - CLI name for special handling (e.g., codex)
+ * @param verbose - Whether to log verbose debug messages
+ *
+ * @example
+ * ```typescript
+ * stream.forEach((text) => {
+ *   handleConsoleControlCodes(text, shell, terminalRender, 'claude', true);
+ * });
+ * ```
  */
 export function handleConsoleControlCodes(
   text: string,
@@ -51,6 +66,24 @@ export function handleConsoleControlCodes(
 
 /**
  * Create a transformer that handles terminate signals (CTRL+C, CTRL+Z)
+ *
+ * Returns a function that processes input chunks and handles keyboard
+ * interrupt signals. CTRL+C (SIGINT) is only processed when stdin is
+ * not ready (agent is loading), allowing graceful shutdown. CTRL+Z is
+ * currently filtered out as suspend/resume is not yet supported.
+ *
+ * @param stdinReady - ReadyManager indicating if stdin is ready
+ * @param onAbort - Callback invoked when user aborts with SIGINT
+ * @returns Transformer function that processes chunks and handles signals
+ *
+ * @example
+ * ```typescript
+ * const handler = createTerminateSignalHandler(ctx.stdinReady, (exitCode) => {
+ *   shell.kill('SIGINT');
+ *   process.exit(exitCode);
+ * });
+ * stream.map(handler);
+ * ```
  */
 export function createTerminateSignalHandler(
   stdinReady: { isReady: boolean },
@@ -78,6 +111,21 @@ export function createTerminateSignalHandler(
 
 /**
  * Create a terminator transform stream that ends when promise resolves
+ *
+ * Creates a TransformStream that automatically terminates when the provided
+ * promise resolves. Used to stop output processing when the agent exits.
+ *
+ * @param exitPromise - Promise that resolves when stream should terminate
+ * @returns TransformStream that terminates on promise resolution
+ *
+ * @example
+ * ```typescript
+ * const exitPromise = Promise.withResolvers<number>();
+ * stream.by(createTerminatorStream(exitPromise.promise));
+ *
+ * // Later, when agent exits:
+ * exitPromise.resolve(0);
+ * ```
  */
 export function createTerminatorStream(exitPromise: Promise<unknown>): TransformStream<string, string> {
   return new TransformStream({

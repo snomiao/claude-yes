@@ -27,6 +27,26 @@ export interface SpawnOptions {
 
 /**
  * Get install command based on platform and configuration
+ *
+ * Selects the appropriate install command from the configuration
+ * based on the current platform (Windows/Unix) and available shells.
+ * Falls back to npm if platform-specific commands aren't available.
+ *
+ * @param installConfig - Install command configuration (string or platform-specific object)
+ * @returns Install command string or null if no suitable command found
+ *
+ * @example
+ * ```typescript
+ * // Simple string config
+ * getInstallCommand('npm install -g claude-cli')
+ *
+ * // Platform-specific config
+ * getInstallCommand({
+ *   windows: 'npm install -g claude-cli',
+ *   unix: 'curl -fsSL install.sh | sh',
+ *   npm: 'npm install -g claude-cli'
+ * })
+ * ```
  */
 export function getInstallCommand(
   installConfig:
@@ -78,6 +98,32 @@ function isCommandNotFoundError(e: unknown): boolean {
 
 /**
  * Spawn agent CLI process with error handling and auto-install
+ *
+ * Creates a new PTY process for the specified CLI with comprehensive error
+ * handling. If the CLI is not found and auto-install is enabled, attempts
+ * to install it automatically. Includes special handling for bun-pty issues.
+ *
+ * @param options - Spawn configuration options
+ * @returns IPty process instance
+ * @throws Error if CLI not found and installation fails or is disabled
+ *
+ * @example
+ * ```typescript
+ * const shell = spawnAgent({
+ *   cli: 'claude',
+ *   cliConf: config.clis.claude,
+ *   cliArgs: ['--verbose'],
+ *   verbose: true,
+ *   install: false,
+ *   ptyOptions: {
+ *     name: 'xterm-color',
+ *     cols: 80,
+ *     rows: 30,
+ *     cwd: '/path/to/project',
+ *     env: process.env
+ *   }
+ * });
+ * ```
  */
 export function spawnAgent(options: SpawnOptions): IPty {
   const { cli, cliConf, cliArgs, verbose, install, ptyOptions } = options;
