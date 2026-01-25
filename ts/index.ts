@@ -29,6 +29,8 @@ import {
   saveDeprecatedLogFile,
   type LogPaths,
 } from "./core/logging.ts";
+import { spawnAgent, getTerminalDimensions } from "./core/spawner.ts";
+import { AgentContext } from "./core/context.ts";
 
 export { removeControlCharacters };
 
@@ -183,45 +185,15 @@ export default async function agentYes({
 
   process.stdin.setRawMode?.(true); // must be called any stdout/stdin usage
 
-  let isFatal = false; // when true, do not restart on crash, and exit agent
-  let shouldRestartWithoutContinue = false; // when true, restart without continue args
-
-  const stdinReady = new ReadyManager();
-  const stdinFirstReady = new ReadyManager(); // if user send ctrl+c before
-
-  // force ready after 10s to avoid stuck forever if the ready-word mismatched
-  sleep(10e3).then(() => {
-    if (!stdinReady.isReady) stdinReady.ready();
-    if (!stdinFirstReady.isReady) stdinFirstReady.ready();
-  });
-  const nextStdout = new ReadyManager();
-
   const shellOutputStream = new TransformStream<string, string>();
   const outputWriter = shellOutputStream.writable.getWriter();
 
   logger.debug(`Using ${ptyPackage} for pseudo terminal management.`);
 
-  let logPaths: LogPaths = {
-    logPath: false,
-    rawLogPath: false,
-    rawLinesLogPath: false,
-    debuggingLogsPath: false,
-  };
-
   // Detect if running as sub-agent
   const isSubAgent = !!process.env.CLAUDE_PPID;
   if (isSubAgent)
     logger.info(`[${cli}-yes] Running as sub-agent (CLAUDE_PPID=${process.env.CLAUDE_PPID})`);
-
-  const getPtyOptions = () => {
-    const ptyEnv = { ...(env ?? (process.env as Record<string, string>)) };
-    return {
-      name: "xterm-color",
-      ...getTerminalDimensions(),
-      cwd: cwd ?? process.cwd(),
-      env: ptyEnv,
-    };
-  };
 
   // Apply CLI specific configurations (moved to CLI_CONFIGURES)
   const cliConf = (CLIS_CONFIG as Record<string, AgentCliConfig>)[cli] || {};
@@ -337,118 +309,48 @@ export default async function agentYes({
       logger.warn(`Unknown promptArg format: ${cliConf.promptArg}`);
     }
   }
-  // Determine the actual cli command to run
 
-  // Helper function to get install command based on platform/availability
-  const getInstallCommand = (
-    installConfig:
-      | string
-      | { powershell?: string; bash?: string; npm?: string; unix?: string; windows?: string },
-  ): string | null => {
-    if (typeof installConfig === "string") {
-      return installConfig;
-    }
-
-    const isWindows = process.platform === "win32";
-    const platform = isWindows ? "windows" : "unix";
-
-    // Try platform-specific commands first
-    if (installConfig[platform]) {
-      return installConfig[platform];
-    }
-
-    // Try shell-specific commands
-    if (isWindows && installConfig.powershell) {
-      return installConfig.powershell;
-    }
-
-    if (!isWindows && installConfig.bash) {
-      return installConfig.bash;
-    }
-
-    // Fallback to npm if available
-    if (installConfig.npm) {
-      return installConfig.npm;
-    }
-
-    return null;
+  // Spawn the agent CLI process
+  const ptyEnv = { ...(env ?? (process.env as Record<string, string>)) };
+  const ptyOptions = {
+    name: "xterm-color",
+    ...getTerminalDimensions(),
+    cwd: cwd ?? process.cwd(),
+    env: ptyEnv,
   };
 
-  const spawn = () => {
-    const cliCommand = cliConf?.binary || cli;
-    let [bin, ...args] = [...parseCommandString(cliCommand), ...cliArgs];
-    if (verbose) logger.info(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
-    logger.info(`Spawning ${bin} with args: ${JSON.stringify(args)}`);
-    // throw new Error(JSON.stringify([bin!, args, getPtyOptions()]))
-    const spawned = pty.spawn(bin!, args, getPtyOptions());
-    logger.info(`[${cli}-yes] Spawned ${bin} with PID ${spawned.pid}`);
-    // if (globalThis.Bun)
-    //   args = args.map((arg) => `'${arg.replace(/'/g, "\\'")}'`);
-    return spawned;
-  };
-
-  let shell = catcher(
-    // error handler
-    (error: unknown, _fn, ..._args) => {
-      logger.error(`Fatal: Failed to start ${cli}.`);
-
-      const isNotFound = isCommandNotFoundError(error);
-      if (cliConf?.install && isNotFound) {
-        const installCmd = getInstallCommand(cliConf.install);
-        if (!installCmd) {
-          logger.error(`No suitable install command found for ${cli} on this platform`);
-          throw error;
-        }
-
-        logger.info(`Please install the cli by run ${installCmd}`);
-
-        if (install) {
-          logger.info(`Attempting to install ${cli}...`);
-          execaCommandSync(installCmd, { stdio: "inherit" });
-          logger.info(`${cli} installed successfully. Please rerun the command.`);
-          return spawn();
-        } else {
-          logger.error(`If you did not installed it yet, Please install it first: ${installCmd}`);
-          throw error;
-        }
-      }
-
-      if (globalThis.Bun && error instanceof Error && error.stack?.includes("bun-pty")) {
-        // try to fix bun-pty issues
-        logger.error(`Detected bun-pty issue, attempted to fix it. Please try again.`);
-        require("./pty-fix");
-        // unable to retry with same process, so exit here.
-      }
-      throw error;
-
-      function isCommandNotFoundError(e: unknown) {
-        if (e instanceof Error) {
-          return (
-            e.message.includes("command not found") || // unix
-            e.message.includes("ENOENT") || // unix
-            e.message.includes("spawn") // windows
-          );
-        }
-        return false;
-      }
-    },
-    spawn,
-  )();
+  let shell = spawnAgent({
+    cli,
+    cliConf,
+    cliArgs,
+    verbose,
+    install,
+    ptyOptions,
+  });
 
   // Register process in pidStore and compute log paths
   await pidStore.registerProcess({ pid: shell.pid, cli, args: cliArgs, prompt });
-  logPaths = initializeLogPaths(pidStore, shell.pid);
+  const logPaths = initializeLogPaths(pidStore, shell.pid);
   setupDebugLogging(logPaths.debuggingLogsPath);
 
-  const pendingExitCode = Promise.withResolvers<number | null>();
-
-  // Create message context for sendMessage/sendEnter helpers
-  const messageContext: MessageContext = {
+  // Create agent context
+  const ctx = new AgentContext({
     shell,
-    idleWaiter,
-    stdinReady,
-    nextStdout,
-  };
+    pidStore,
+    logPaths,
+    cli,
+    cliConf,
+    verbose,
+    robust,
+  });
+
+  // force ready after 10s to avoid stuck forever if the ready-word mismatched
+  sleep(10e3).then(() => {
+    if (!ctx.stdinReady.isReady) ctx.stdinReady.ready();
+    if (!ctx.stdinFirstReady.isReady) ctx.stdinFirstReady.ready();
+  });
+
+  const pendingExitCode = Promise.withResolvers<number | null>();
 
   async function onData(data: string) {
     // append data to the buffer, so we can process it later
@@ -457,18 +359,18 @@ export default async function agentYes({
 
   shell.onData(onData);
   shell.onExit(async function onExit({ exitCode }) {
-    stdinReady.unready(); // start buffer stdin
+    ctx.stdinReady.unready(); // start buffer stdin
     const agentCrashed = exitCode !== 0;
 
     // Handle restart without continue args (e.g., "No conversation found to continue")
     // logger.debug(``, { shouldRestartWithoutContinue, robust })
-    if (shouldRestartWithoutContinue) {
+    if (ctx.shouldRestartWithoutContinue) {
       await pidStore.updateStatus(shell.pid, "exited", {
         exitReason: "restarted",
         exitCode: exitCode ?? undefined,
       });
-      shouldRestartWithoutContinue = false; // reset flag
-      isFatal = false; // reset fatal flag to allow restart
+      ctx.shouldRestartWithoutContinue = false; // reset flag
+      ctx.isFatal = false; // reset fatal flag to allow restart
 
       // Restart without continue args - use original cliArgs without restoreArgs
       const cliCommand = cliConf?.binary || cli;
@@ -495,7 +397,7 @@ export default async function agentYes({
         );
         return;
       }
-      if (isFatal) {
+      if (ctx.isFatal) {
         await pidStore.updateStatus(shell.pid, "exited", {
           exitReason: "fatal",
           exitCode: exitCode ?? undefined,
@@ -549,9 +451,8 @@ export default async function agentYes({
       .replace(/\s+/g, " ")
       .match(/esc to interrupt|to run in background/);
 
-  const idleWaiter = new IdleWaiter();
   if (exitOnIdle)
-    idleWaiter.wait(exitOnIdle).then(async () => {
+    ctx.idleWaiter.wait(exitOnIdle).then(async () => {
       await pidStore.updateStatus(shell.pid, "idle").catch(() => null);
       if (isStillWorkingQ()) {
         logger.warn("[${cli}-yes] ${cli} is idle, but seems still working, not exiting yet");
@@ -577,7 +478,7 @@ export default async function agentYes({
           return "";
         }
         // handle CTRL+C, when stdin is not ready (no response from agent yet, usually this is when agent loading)
-        if (!aborted && !stdinReady.isReady && chunk === "\u0003") {
+        if (!aborted && !ctx.stdinReady.isReady && chunk === "\u0003") {
           logger.error("User aborted: SIGINT");
           shell.kill("SIGINT");
           pendingExitCode.resolve(130); // SIGINT
@@ -604,14 +505,14 @@ export default async function agentYes({
     .onStart(async function promptOnStart() {
       // send prompt when start
       logger.debug("Sending prompt message: " + JSON.stringify(prompt));
-      if (prompt) await sendMessage(messageContext, prompt);
+      if (prompt) await sendMessage(ctx.messageContext, prompt);
     })
 
     // pipe content by shell
     .by({
       writable: new WritableStream<string>({
         write: async (data) => {
-          await stdinReady.wait();
+          await ctx.stdinReady.wait();
           shell.write(data);
         },
       }),
@@ -619,21 +520,21 @@ export default async function agentYes({
     })
 
     .forEach(() => {
-      idleWaiter.ping();
+      ctx.idleWaiter.ping();
       pidStore.updateStatus(shell.pid, "active").catch(() => null);
     })
-    .forEach(() => nextStdout.ready())
+    .forEach(() => ctx.nextStdout.ready())
 
     .forkTo(async function rawLogger(f) {
-      if (!logPaths.rawLogPath) return f.run(); // no stream
+      if (!ctx.logPaths.rawLogPath) return f.run(); // no stream
 
       // try stream the raw log for realtime debugging, including control chars, note: it will be a huge file
-      return await mkdir(path.dirname(logPaths.rawLogPath), { recursive: true })
+      return await mkdir(path.dirname(ctx.logPaths.rawLogPath), { recursive: true })
         .then(() => {
-          logger.debug(`[${cli}-yes] raw logs streaming to ${logPaths.rawLogPath}`);
+          logger.debug(`[${cli}-yes] raw logs streaming to ${ctx.logPaths.rawLogPath}`);
           return f
             .forEach(async (chars) => {
-              await writeFile(logPaths.rawLogPath!, chars, { flag: "a" }).catch(() => null);
+              await writeFile(ctx.logPaths.rawLogPath!, chars, { flag: "a" }).catch(() => null);
             })
             .run();
         })
@@ -709,14 +610,14 @@ export default async function agentYes({
             if (conf.ready?.some((rx: RegExp) => e.match(rx))) {
               logger.debug(`ready |${e}`);
               if (cli === "gemini" && i <= 80) return; // gemini initial noise, only after many lines
-              stdinReady.ready();
-              stdinFirstReady.ready();
+              ctx.stdinReady.ready();
+              ctx.stdinFirstReady.ready();
             }
             // enter matchers: send Enter when any enter regex matches
 
             if (conf.enter?.some((rx: RegExp) => e.match(rx))) {
               logger.debug(`enter |${e}`);
-              return await sendEnter(messageContext, 400); // wait for idle for a short while and then send Enter
+              return await sendEnter(ctx.messageContext, 400); // wait for idle for a short while and then send Enter
             }
 
             // typingRespond matcher: if matched, send the specified message
@@ -724,7 +625,7 @@ export default async function agentYes({
               .filter(([_sendString, onThePatterns]) => onThePatterns.some((rx) => e.match(rx)))
               .map(
                 async ([sendString]) =>
-                  await sendMessage(messageContext, sendString, { waitForReady: false }),
+                  await sendMessage(ctx.messageContext, sendString, { waitForReady: false }),
               )
               .toCount();
             if (typingResponded) return;
@@ -732,15 +633,15 @@ export default async function agentYes({
             // fatal matchers: set isFatal flag when matched
             if (conf.fatal?.some((rx: RegExp) => e.match(rx))) {
               logger.debug(`fatal |${e}`);
-              isFatal = true;
+              ctx.isFatal = true;
               await exitAgent();
             }
 
             // restartWithoutContinueArg matchers: set flag to restart without continue args
             if (conf.restartWithoutContinueArg?.some((rx: RegExp) => e.match(rx))) {
               await logger.debug(`restart-without-continue|${e}`);
-              shouldRestartWithoutContinue = true;
-              isFatal = true; // also set fatal to trigger exit
+              ctx.shouldRestartWithoutContinue = true;
+              ctx.isFatal = true; // also set fatal to trigger exit
               await exitAgent();
             }
 
@@ -770,7 +671,7 @@ export default async function agentYes({
     )
     .to(fromWritable(process.stdout));
 
-  await saveLogFile(logPaths.logPath, terminalRender.render());
+  await saveLogFile(ctx.logPaths.logPath, terminalRender.render());
 
   // and then get its exitcode
   const exitCode = await pendingExitCode.promise;
@@ -788,10 +689,10 @@ export default async function agentYes({
   return { exitCode, logs: terminalRender.render() };
 
   async function exitAgent() {
-    robust = false; // disable robust to avoid auto restart
+    ctx.robust = false; // disable robust to avoid auto restart
 
     // send exit command to the shell, must sleep a bit to avoid claude treat it as pasted input
-    for (const cmd of cliConf.exitCommands ?? ["/exit"]) await sendMessage(messageContext, cmd);
+    for (const cmd of cliConf.exitCommands ?? ["/exit"]) await sendMessage(ctx.messageContext, cmd);
 
     // wait for shell to exit or kill it with a timeout
     let exited = false;
@@ -807,16 +708,6 @@ export default async function agentYes({
         }, 5000),
       ), // 5 seconds timeout
     ]);
-  }
-
-  function getTerminalDimensions() {
-    if (!process.stdout.isTTY) return { cols: 80, rows: 30 }; // default size when not tty
-    return {
-      // TODO: enforce minimum cols/rows to avoid layout issues
-      // cols: Math.max(process.stdout.columns, 80),
-      cols: Math.min(Math.max(20, process.stdout.columns), 80),
-      rows: process.stdout.rows,
-    };
   }
 }
 
