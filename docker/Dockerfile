@@ -11,13 +11,9 @@ RUN apt-get update -y && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# VS Code - auto-detect architecture
-RUN apt update -y && \
-    apt install software-properties-common apt-transport-https curl gnupg2 -y && \
-    curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /usr/share/keyrings/vscode.gpg > /dev/null && \
-    echo "deb [arch=amd64,arm64,armhf] https://packages.microsoft.com/repos/vscode stable main" | tee /etc/apt/sources.list.d/vscode.list > /dev/null && \
-    apt update && apt install code -y && \
-    rm -rf /var/lib/apt/lists/*
+# VS Code installation disabled for Docker compatibility
+# Users can install VS Code manually if needed in their containers
+# RUN apt update -y && apt install code -y
 
 # Install Rust for building bun-pty native module
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -29,17 +25,27 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # common db cli (optional, uncomment if needed)
 # RUN apt-get update -y && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
 
-# install agents cli globally
+# install agents cli globally - prefer native methods when available
+# Claude - use native installation (preferred)
+RUN curl -fsSL https://claude.ai/install.sh | bash
+
+# Cursor Agent - use native installation
+RUN curl -fsSL https://cursor.com/install | bash
+
+# Amp by Sourcegraph - use native installation
+RUN curl -fsSL https://ampcode.com/install.sh | bash
+
+# GitHub Copilot - use native installation
+RUN curl -fsSL https://gh.io/copilot-install | bash
+
+# Remaining tools via npm (no native installers available)
 RUN npm i -g \
-    @anthropic-ai/claude-code \
     @qwen-code/qwen-code \
     @vibe-kit/grok-cli \
     @google/gemini-cli \
     @openai/codex \
-    @github/copilot \
     @augmentcode/auggie \
-    opencode-ai \
-    @sourcegraph/amp
+    opencode-ai
     
 
 # install bun seems not working
