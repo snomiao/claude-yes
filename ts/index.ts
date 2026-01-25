@@ -386,7 +386,13 @@ export default async function agentYes({
       ];
       logger.info(`Restarting ${cli} ${JSON.stringify([bin, ...args])}`);
 
-      shell = pty.spawn(bin!, args, getPtyOptions());
+      const restartPtyOptions = {
+        name: "xterm-color",
+        ...getTerminalDimensions(),
+        cwd: cwd ?? process.cwd(),
+        env: ptyEnv,
+      };
+      shell = pty.spawn(bin!, args, restartPtyOptions);
       await pidStore.registerProcess({ pid: shell.pid, cli, args, prompt });
       shell.onData(onData);
       shell.onExit(onExit);
@@ -430,7 +436,13 @@ export default async function agentYes({
         }
       }
 
-      shell = pty.spawn(cli, restoreArgs, getPtyOptions());
+      const restorePtyOptions = {
+        name: "xterm-color",
+        ...getTerminalDimensions(),
+        cwd: cwd ?? process.cwd(),
+        env: ptyEnv,
+      };
+      shell = pty.spawn(cli, restoreArgs, restorePtyOptions);
       await pidStore.registerProcess({ pid: shell.pid, cli, args: restoreArgs, prompt });
       shell.onData(onData);
       shell.onExit(onExit);
@@ -487,7 +499,9 @@ export default async function agentYes({
     // read from IPC stream if available (FIFO on Linux, Named Pipes on Windows)
     .by((s) => {
       if (!useFifo) return s;
-      const ipcResult = createFifoStream(cli, pidStore.getFifoPath(shell.pid));
+      const fifoPath = pidStore.getFifoPath(shell.pid);
+      if (!fifoPath) return s; // Skip if no valid path
+      const ipcResult = createFifoStream(cli, fifoPath);
       if (!ipcResult) return s;
       pendingExitCode.promise.finally(() => ipcResult.cleanup());
       process.stderr.write(`\n  Append prompts: ${cli}-yes --append-prompt '...'\n\n`);
@@ -521,15 +535,16 @@ export default async function agentYes({
     .forEach(() => ctx.nextStdout.ready())
 
     .forkTo(async function rawLogger(f) {
-      if (!ctx.logPaths.rawLogPath) return f.run(); // no stream
+      const rawLogPath = ctx.logPaths.rawLogPath;
+      if (!rawLogPath) return f.run(); // no stream
 
       // try stream the raw log for realtime debugging, including control chars, note: it will be a huge file
-      return await mkdir(path.dirname(ctx.logPaths.rawLogPath), { recursive: true })
+      return await mkdir(path.dirname(rawLogPath), { recursive: true })
         .then(() => {
-          logger.debug(`[${cli}-yes] raw logs streaming to ${ctx.logPaths.rawLogPath}`);
+          logger.debug(`[${cli}-yes] raw logs streaming to ${rawLogPath}`);
           return f
             .forEach(async (chars) => {
-              await writeFile(ctx.logPaths.rawLogPath!, chars, { flag: "a" }).catch(() => null);
+              await writeFile(rawLogPath, chars, { flag: "a" }).catch(() => null);
             })
             .run();
         })
