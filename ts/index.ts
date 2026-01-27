@@ -140,19 +140,6 @@ export default async function agentYes({
   useSkills?: boolean; // if true, prepend SKILL.md header to the prompt for non-Claude agents
   useFifo?: boolean; // if true, enable FIFO input stream on Linux for additional stdin input
 }) {
-  // those overrides seems only works in bun
-  // await Promise.allSettled([
-  //   import(path.join(process.cwd(), "agent-yes.config")),
-  // ])
-  //   .then((e) => e.flatMap((e) => (e.status === "fulfilled" ? [e.value] : [])))
-  //   .then(e=>e.at(0))
-  //   .then((e) => e.default as ReturnType<typeof defineAgentYesConfig>)
-  //   .then(async (override) => deepMixin(config, override || {}))
-  //   .catch((error) => {
-  //     if (process.env.VERBOSE)
-  //       console.warn("Fail to load agent-yes.config.ts", error);
-  //   });
-
   if (!cli) throw new Error(`cli is required`);
   const conf =
     CLIS_CONFIG[cli] ||
@@ -486,6 +473,7 @@ export default async function agentYes({
   // Message streaming with stdin and optional FIFO (Linux only)
 
   await sflow(fromReadable<Buffer>(process.stdin))
+  
     .map((buffer) => buffer.toString())
 
     .by(function handleTerminateSignals(s) {

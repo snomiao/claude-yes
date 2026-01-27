@@ -138,10 +138,11 @@ function getDefaultConfig() {
         noEOL: true, // codex use cursor moving instead of EOL when rendering output
       },
       copilot: {
-        // promptArg: '--prompt', // use stdin to prompt or it will reject all bash commands
+        promptArg: '-i', // use stdin to prompt or it will reject all bash commands
         install: "npm install -g @github/copilot",
         ready: [/^ +> /, /Ctrl\+c Exit/],
-        enter: [/ │ ❯ +1. Yes, proceed/, /❯ +1. Yes/],
+        enter: [/ │ ❯ +1. Yes, proceed/, / ❯ +1. Yes/],
+        system: 'IMPORTANT: USE TOOLS TO RESEARCH/EXPLORE/WORKAROUND your self, except you need approve on DESTRUCTIVE OPERATIONS, DONT ASK QUESTIONS ON USERS REQUEST, JUST SOLVE IT.', //copilot asks too much
         fatal: [],
       },
       cursor: {
@@ -158,6 +159,9 @@ function getDefaultConfig() {
         install: "npm install -g @augmentcode/auggie",
         promptArg: "first-arg",
         ready: [/ > /, /\? to show shortcuts/],
+        typingRespond: {
+          "y\n": [/\[Y\] Enable indexing - Unlock full workspace understanding/],
+        },
         enter: [], // auggie seems not to ask for permission currently, which is super nice
         fatal: [], // no fatal patterns known yet
       },
