@@ -138,11 +138,12 @@ function getDefaultConfig() {
         noEOL: true, // codex use cursor moving instead of EOL when rendering output
       },
       copilot: {
-        promptArg: '-i', // use stdin to prompt or it will reject all bash commands
+        promptArg: "-i", // use stdin to prompt or it will reject all bash commands
         install: "npm install -g @github/copilot",
         ready: [/^ +> /, /Ctrl\+c Exit/],
         enter: [/ │ ❯ +1. Yes, proceed/, / ❯ +1. Yes/],
-        system: 'IMPORTANT: USE TOOLS TO RESEARCH/EXPLORE/WORKAROUND your self, except you need approve on DESTRUCTIVE OPERATIONS, DONT ASK QUESTIONS ON USERS REQUEST, JUST SOLVE IT.', //copilot asks too much
+        system:
+          "IMPORTANT: USE TOOLS TO RESEARCH/EXPLORE/WORKAROUND your self, except you need approve on DESTRUCTIVE OPERATIONS, DONT ASK QUESTIONS ON USERS REQUEST, JUST SOLVE IT.", //copilot asks too much
         fatal: [],
       },
       cursor: {
@@ -171,9 +172,15 @@ function getDefaultConfig() {
           bash: "curl -fsSL https://ampcode.com/install.sh | bash",
           npm: "npm i -g @sourcegraph/amp",
         },
-        enter: [
-          /^.{0,4} Approve /
-        ]
+        enter: [/^.{0,4} Approve /],
+      },
+      opencode: {
+        help: "https://opencode.ai/",
+        install: {
+          bash: "curl -fsSL https://opencode.ai/install | bash",
+          npm: "npm i -g opencode-ai",
+        },
+        enter: [],
       },
     },
   });

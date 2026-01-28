@@ -39,7 +39,8 @@
     "cursor-yes": "./dist/cursor-yes.js",
     "gemini-yes": "./dist/gemini-yes.js",
     "grok-yes": "./dist/grok-yes.js",
-    "qwen-yes": "./dist/qwen-yes.js"
+    "qwen-yes": "./dist/qwen-yes.js",
+    "opencode-yes": "./dist/opencode-yes.js"
   },
   "directories": {
     "doc": "docs"
@@ -76,8 +77,8 @@
   },
   "dependencies": {
     "@snomiao/bun-pty": "^0.3.4",
-    "bun-pty": "^0.4.8",
     "better-sqlite3": "^12.1.0",
+    "bun-pty": "^0.4.8",
     "from-node-stream": "^0.1.2"
   },
   "devDependencies": {

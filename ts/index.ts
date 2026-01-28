@@ -5,29 +5,20 @@ import path from "path";
 import DIE from "phpdie";
 import sflow from "sflow";
 import { TerminalTextRender } from "terminal-render";
-import { catcher } from "./catcher.ts";
-import {
-  extractSessionId,
-  getSessionForCwd,
-  storeSessionForCwd,
-} from "./resume/codexSessionManager.ts";
-import { IdleWaiter } from "./idleWaiter.ts";
+import { getSessionForCwd } from "./resume/codexSessionManager.ts";
 import pty, { ptyPackage } from "./pty.ts";
-import { ReadyManager } from "./ReadyManager.ts";
 import { removeControlCharacters } from "./removeControlCharacters.ts";
 import { acquireLock, releaseLock, shouldUseLock } from "./runningLock.ts";
 import { logger } from "./logger.ts";
 import { createFifoStream } from "./beta/fifo.ts";
 import { PidStore } from "./pidStore.ts";
 import { SUPPORTED_CLIS } from "./SUPPORTED_CLIS.ts";
-import winston from "winston";
-import { sendEnter, sendMessage, type MessageContext } from "./core/messaging.ts";
+import { sendMessage } from "./core/messaging.ts";
 import {
   initializeLogPaths,
   setupDebugLogging,
   saveLogFile,
   saveDeprecatedLogFile,
-  type LogPaths,
 } from "./core/logging.ts";
 import { spawnAgent, getTerminalDimensions } from "./core/spawner.ts";
 import { AgentContext } from "./core/context.ts";
@@ -519,9 +510,8 @@ export default async function agentYes({
     .forEach(() => {
       ctx.idleWaiter.ping();
       pidStore.updateStatus(shell.pid, "active").catch(() => null);
+      ctx.nextStdout.ready()
     })
-    .forEach(() => ctx.nextStdout.ready())
-
     .forkTo(async function rawLogger(f) {
       const rawLogPath = ctx.logPaths.rawLogPath;
       if (!rawLogPath) return f.run(); // no stream
@@ -556,21 +546,6 @@ export default async function agentYes({
             if (conf.noEOL) return s; // codex use cursor-move csi code insteadof \n to move lines, so the output have no \n at all, this hack prevents stuck on unended line
             return s.lines({ EOL: "NONE" }); // other clis use ink, which is rerendering the block based on \n lines
           })
-
-          // .forkTo(async function rawLinesLogger(f) {
-          //   if (!rawLinesLogPath) return f.run(); // no stream
-          //   // try stream the raw log for realtime debugging, including control chars, note: it will be a huge file
-          //   return await mkdir(path.dirname(rawLinesLogPath), { recursive: true })
-          //     .then(() => {
-          //       logger.debug(`[${cli}-yes] raw lines logs streaming to ${rawLinesLogPath}`);
-          //       return f
-          //         .forEach(async (chars, i) => {
-          //           await writeFile(rawLinesLogPath, `L${i}|` + chars, { flag: "a" }).catch(() => null);
-          //         })
-          //         .run();
-          //     })
-          //     .catch(() => f.run());
-          // })
 
           // Generic auto-response handler driven by CLI_CONFIGURES
           .forEach(async (line, lineIndex) =>
